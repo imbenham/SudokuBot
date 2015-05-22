@@ -7,6 +7,8 @@
 //
 
 import UIKit
+//import SudokuCheat-Bridging-Header.h
+//import Bolts
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -16,6 +18,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+        Parse.setApplicationId("TmrIKmoqwo7PIwSdm0OYkm9fanTEPndy9txFuEhL",
+            clientKey: "b9ZYfrsZlQjJNaPdmqbVa2hhUvXXqTeUwsGG0Xo7")
         return true
     }
 
