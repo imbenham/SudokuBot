@@ -7,8 +7,7 @@
 //
 
 import UIKit
-//import SudokuCheat-Bridging-Header.h
-//import Bolts
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -18,8 +17,30 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+        PuzzleCell.registerSubclass()
+        Puzzle.registerSubclass()
         Parse.setApplicationId("TmrIKmoqwo7PIwSdm0OYkm9fanTEPndy9txFuEhL",
             clientKey: "b9ZYfrsZlQjJNaPdmqbVa2hhUvXXqTeUwsGG0Xo7")
+        
+    
+        
+        let aPuzzle = Puzzle()
+        aPuzzle.initialValues = []
+        
+        
+        let cellList = [(1,1,2), (1,2,3), (1,3,6), (1,5,8), (1,6,9), (1,7,7), (2,1,9), (2,6,6), (3,2,4), (3,4,2), (3,6,5), (3,8,6),  (4,3,8), (4,4,9), (4,6,3),  (4,8,5), (5,2,9), (5,4,1), (5,6,7), (5,8,4), (6,2,1), (6,4,5), (6,6,8), (6,7,6), (7,2,9), (7,4,8), (7,6,1), (7,8,7), (8,4,7), (8,9,9), (9,3,2), (9,4,3), (9,5,9), (9,7,1), (9,8,5), (9,9,6)]
+        
+        
+        for item in cellList {
+            let pCell = PuzzleCell()
+            let row = getRowIndexFromTileIndex((item.0, item.1))
+            let column = getColumnIndexFromTileIndex((item.0, item.1))
+            pCell.setPCell(row, column: column, value: item.2)
+            //pCell.saveInBackground()
+            aPuzzle.initialValues.append(pCell)
+        }
+       aPuzzle.saveInBackground()
+    
         return true
     }
 

@@ -8,14 +8,13 @@
 
 import UIKit
 
-class SudokuItem:UIView {
-    var parentSquare: SudokuItem?
+class SudokuItem: UIView {
+    var parentSquare: Nester?
     var defaultIndex = 0
     
-    required init(index: Int, withParent: SudokuItem?) {
+    init(index: Int) {
         super.init(frame: CGRectZero)
         self.defaultIndex = index
-        parentSquare = withParent
     }
 
     required init(coder aDecoder: NSCoder) {
@@ -58,29 +57,64 @@ extension SudokuItem: Nestable {
 }
 
 
-class SudokuBoard: SudokuItem, Nester {
-   
-    var boxes: [SudokuItem]
-    var puzzle: Puzzle?
-
-
-    required init(index: Int, withParent: SudokuItem?) {
-        boxes = [Box]()
-        super.init(index: index, withParent: withParent)
-        
-        for index in 0...8 {
-            let aBox = Box(index: index, withParent:self)
-            boxes.append(aBox)
-            self.addSubview(aBox.view())
+class SudokuBoard: UIView, Nester {
     
+    weak var controller: SudokuController?
+    var boxes: [SudokuItem] = []
+    var puzzle: Puzzle?
+    var selectedTile: Tile? {
+        willSet(newSelectedTile) {
+            if let sel = selectedTile {
+                sel.backgroundColor = defaultColor
+            }
+            if newSelectedTile != nil {
+                newSelectedTile!.backgroundColor = selectedColor
+            }
         }
+        didSet {
+            if let contrl = self.controller {
+                contrl.boardSelectedTileChanged()
+            }
+        }
+    }
+    
+    var selectedColor = UIColor(red: 0.1, green: 0.1, blue: 0.9, alpha: 0.2)
+    var defaultColor = UIColor.whiteColor()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        for index in 0...8 {
+            let aBox = Box(index: index)
+            boxes.append(aBox)
+            self.addSubview(aBox)
+        }
+    }
+
+
+    
+    convenience init(controller: SudokuController) {
+        self.init(frame:CGRectZero)
+        self.controller = controller
+        for index in 0...8 {
+            let aBox = Box(index: index)
+            boxes.append(aBox)
+            self.addSubview(aBox)
+        }
+    }
+
+    required init(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        for index in 0...8 {
+            let aBox = Box(index: index)
+            boxes.append(aBox)
+            self.addSubview(aBox)
+        }
+    }
+    
+    override func layoutSubviews() {
         self.prepareBoxes()
     }
     
-    
-    required init(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
     
     func makeRow(row: Row)-> [SudokuItem] {
         switch row {
@@ -105,7 +139,7 @@ class SudokuBoard: SudokuItem, Nester {
     }
     
     
-    func prepareBoxes() {
+    private func prepareBoxes() {
         for nested in boxes {
             let box = nested as SudokuItem
             box.parentSquare = self
@@ -120,9 +154,21 @@ class SudokuBoard: SudokuItem, Nester {
         self.addConstraints(constraints)
     }
     
+    func tileTapped(sender: UIGestureRecognizer) {
+        
+        if let tapped = sender.view as? Tile {
+            self.selectedTile = tapped
+        }
+    }
     
     func view() -> UIView {
         return self
+    }
+    
+    func tilesReady() {
+        if let cntrlr = self.controller {
+            cntrlr.boardReady()
+        }
     }
     
 }
@@ -130,23 +176,39 @@ class SudokuBoard: SudokuItem, Nester {
 
 class Box: SudokuItem, Nester{
     
-    var boxes: [SudokuItem]
+    var boxes: [SudokuItem] = []
     
-    required init (index withIndex: Int, withParent: SudokuItem?){
-        boxes = [Tile]()
-        super.init(index: withIndex, withParent: withParent)
-        for index in 0...8 {
-            let aBox = Tile(index: index, withParent: self)
-            boxes.append(aBox)
-            self.addSubview(aBox)
-        }
-        
-        self.prepareBoxes()
-        
+    override init(index: Int) {
+        super.init(index:index)
     }
+    
+    convenience init (index withIndex: Int, withParent parent: SudokuBoard){
+        self.init(index: withIndex)
+        self.parentSquare = parent
+    }
+
     
     required init(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func layoutSubviews() {
+        if boxes.count == 0 {
+            for index in 0...8 {
+                let aBox = Tile(index: index, withParent: self)
+                boxes.append(aBox)
+                self.addSubview(aBox)
+                aBox.userInteractionEnabled = true
+                if let aBoard = self.parentSquare as? SudokuBoard {
+                    let tapRecognizer = UITapGestureRecognizer(target: aBoard, action: "tileTapped:")
+                    aBox.addGestureRecognizer(tapRecognizer)
+                }
+            }
+            self.prepareBoxes()
+            if let parent = self.parentSquare as? SudokuBoard {
+                parent.tilesReady()
+            }
+        }
     }
     
     func makeRow(row: Row)-> [SudokuItem] {
@@ -171,9 +233,8 @@ class Box: SudokuItem, Nester{
             return [boxes[2], boxes[5], boxes[8]]
         }
     }
-
     
-    func prepareBoxes() {
+    private func prepareBoxes() {
         for nested in boxes {
             let box = nested as SudokuItem
             box.backgroundColor = UIColor.whiteColor()
@@ -190,30 +251,54 @@ class Box: SudokuItem, Nester{
     func view() -> UIView {
         return self
     }
+    
 }
 
 class Tile: SudokuItem, Nestable {
     
-    var label = UILabel()
-    var value: TileValue = TileValue.Nil
-    
-    required init (index: Int, withParent: SudokuItem?) {
-        super.init(index: index, withParent: withParent)
-        self.addSubview(label)
-        label.setTranslatesAutoresizingMaskIntoConstraints(false)
-        label.textColor = UIColor.blackColor()
-        let horCenter = NSLayoutConstraint(item: label, attribute: .CenterX, relatedBy: .Equal, toItem: self, attribute: .CenterX, multiplier: 1, constant: 0)
-        let verCenter = NSLayoutConstraint(item: label, attribute: .CenterY, relatedBy: .Equal, toItem: self, attribute: .CenterY, multiplier: 1, constant: 0)
-        self.addConstraints([horCenter, verCenter])
+    var value: TileValue = TileValue.Nil {
+        didSet {
+            refreshLabel()
+        }
     }
+    var valueLabel = UILabel()
+    var labelColor = UIColor.blackColor()
+    
+    override init (index: Int) {
+        super.init(index: index)
+        
+    }
+    
+    convenience init (index: Int, withParent parent: Nester) {
+        self.init(index: index)
+        self.parentSquare = parent
+    }
+    
     
     required init(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
+    override func layoutSubviews() {
+        self.addSubview(valueLabel)
+        valueLabel.setTranslatesAutoresizingMaskIntoConstraints(false)
+        let labelCenterX = NSLayoutConstraint(item: valueLabel, attribute: .CenterX, relatedBy: .Equal, toItem: self, attribute: .CenterX, multiplier: 1, constant: 0)
+        let labelCenterY = NSLayoutConstraint(item: valueLabel, attribute: .CenterY, relatedBy: .Equal, toItem: self, attribute: .CenterY, multiplier: 1, constant: 0)
+        self.addConstraints([labelCenterX, labelCenterY])
+        refreshLabel()
+    }
+    
+    func getValueText()->String {
+        return self.value != .Nil ? "\(self.value.rawValue)" : ""
+    }
     
     func view() -> UIView {
         return self
+    }
+    
+    func refreshLabel() {
+        valueLabel.textColor = labelColor
+        valueLabel.text = self.getValueText()
     }
 }
 
@@ -363,23 +448,23 @@ enum TileValue:Int {
 }
 
 typealias TileIndex = (Box:Int, Tile:Int)
-typealias Cell = (Index: TileIndex, Value:TileValue)
+//typealias Cell = (Index: TileIndex, Value:TileValue)
 
 extension SudokuBoard {
-    // add game-logic related methods
+    
     func getBoxAtIndex(index: Int) -> Box {
         let boxOfBoxes = self.boxes as! [Box]
         return boxOfBoxes[index-1]
     }
     
-    func loadPuzzleWithIndexValues(valueList: [Cell]){
+    func loadPuzzleWithIndexValues(valueList: [PuzzleCell]){
         if valueList.count != 81 {
             return
         }
         
-        for pair in valueList {
-            let index = pair.0
-            let value = pair.1
+        for cell in valueList {
+            let index = getTileIndexForRow(cell.row, andColumn: cell.column)
+            let value = TileValue(rawValue:cell.value)!
             
             self.tileAtIndex(index).value = value
         }
@@ -387,11 +472,11 @@ extension SudokuBoard {
         
     }
     
-    func loadPuzzleWithNonNilIndexValues(valueList: [Cell]) {
+    func loadPuzzleWithNonNilIndexValues(valueList: [PuzzleCell]) {
         if valueList.count > 81 {
             return
         }
-        puzzle = Puzzle(nonNilValues: valueList, andBoard: self)
+        //puzzle = Puzzle(nonNilValues: valueList, andBoard: self)
     }
     
     func tileAtIndex(_index: TileIndex) -> Tile {
@@ -408,13 +493,13 @@ extension SudokuBoard {
         return nilTiles
     }
     
-    
 }
 
 extension Box {
     // add game-logic related methods
+    
     func getTileAtIndex(index: Int) -> Tile {
-        return boxes[index-1] as! Tile
+        return boxes[index] as! Tile
     }
     
     func getNilTiles() -> [Tile] {
@@ -433,17 +518,16 @@ extension Tile {
     // add game-logic related methods
     
     func tileIndex() -> TileIndex {
-        return (parentSquare!.index, index)
+        if let pSquare = parentSquare as? Box {
+            return (pSquare.index, index)
+        }
+        return (0, index)
     }
     
     func indexString() -> String {
         let box = tileIndex().0
         let tile = tileIndex().1
         return "This tile's index is: \(box).\(tile) "
-    }
-    
-    func getValueText()->String {
-        return self.value != .Nil ? "\(self.value.rawValue)" : ""
     }
     
     func getColumnIndex() -> Int {
@@ -510,5 +594,7 @@ extension Tile {
             }
         }
     }
+    
+   
     
 }
