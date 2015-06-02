@@ -77,6 +77,7 @@ class CreatePuzzleViewController:SudokuController {
 
     
     func createPuzzle() {
+        println("createPuzzle tapped")
         let valuatedTiles = nonNilTiles()
         var cells: [PuzzleCell] = cellsFromTiles(valuatedTiles)
         solution = matrix.solutionForValidPuzzle(cells)
@@ -111,6 +112,7 @@ class CreatePuzzleViewController:SudokuController {
             tile.value = .Nil
             tile.refreshLabel()
         }
+        self.solution = nil
         board.selectedTile = board.getNilTiles()[0]
     }
     
@@ -120,10 +122,7 @@ class CreatePuzzleViewController:SudokuController {
         
         
         let OKAction = UIAlertAction(title: "OK", style: .Default) { (_) in
-            self.dismissViewControllerAnimated(true) {
-                ()->() in
-                self.clearAll
-            }
+            self.clearAll()
         }
         alertController.addAction(OKAction)
         

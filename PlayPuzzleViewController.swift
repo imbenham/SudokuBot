@@ -68,10 +68,11 @@ class PlayPuzzleViewController: SudokuController {
     }
     
     func clearAll() {
+
         for tile in startingNils {
             tile.value = TileValue.Nil
         }
-        //puzzleSolved()
+
     }
     
     override func valueSelected(value: Int) {
@@ -109,4 +110,5 @@ class PlayPuzzleViewController: SudokuController {
     
         }
     }
+
 }

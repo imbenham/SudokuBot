@@ -126,27 +126,6 @@ class LinkedList<T:Equatable> {
         node.getVerticalHead().up = node.getVerticalTail()
     }
     
-    func containsNode(node: LinkedNode<T>) -> Bool {
-        
-        if !(node.up?.down?.vertOrder == node.vertOrder) {
-            return false
-        }
-        
-        if !(node.down?.up?.vertOrder == node.vertOrder) {
-            return false
-        }
-        
-        if !(node.left?.right?.latOrder == node.latOrder) {
-            return false
-        }
-        
-        if !(node.right?.left?.latOrder == node.latOrder) {
-            return false
-        }
-        
-        return true
-    }
-    
     func verticalCount() -> Int {
         var current:LinkedNode<T>? = verticalHead.down
         var count = 1
@@ -174,7 +153,6 @@ class LinkedList<T:Equatable> {
         return count
     }
 
-    
     func removeLateralLink(link: LinkedNode<T>) {
         link.left?.right = link.right
         if link.latOrder == lateralHead.latOrder {
@@ -406,12 +384,28 @@ class Matrix {
         //eliminatePuzzleGivens(initialValues)
     }
     
+    private func rebuild() {
+        rowsAndColumns = LinkedList<PuzzleNode>()
+        constructMatrix()
+        buildOutMatrix()
+        solutions = []
+        /*
+        while currentSolution.count != 0 {
+            println(unchooseLast())
+        }
+        solutions = []
+*/
+    }
+    
     func solutionForValidPuzzle(puzzle: [PuzzleCell]) -> [PuzzleCell]? {
         eliminatePuzzleGivens(puzzle)
         if countPuzzleSolutions() != 1 {
+            rebuild()
             return nil
         }
         let nodes = solutions[0]
+        rebuild()
+        
         return cellsFromConstraints(nodes)
     }
     
