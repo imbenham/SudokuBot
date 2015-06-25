@@ -34,6 +34,7 @@ class LinkedList<T:Equatable> {
         while current != nil {
             if current!.right == nil {
                 var newLink = LinkedNode<T>()
+                
                 newLink.key = key
                 newLink.left = current
                 current!.getLateralHead().left = newLink
@@ -43,6 +44,7 @@ class LinkedList<T:Equatable> {
                 break
             } else if current!.right!.latOrder == 0 {
                 var newLink = LinkedNode<T>()
+                
                 newLink.key = key
                 newLink.left = current
                 current!.getLateralHead().left = newLink
@@ -52,7 +54,6 @@ class LinkedList<T:Equatable> {
                 break
 
             }
-            
             current = current?.right
         }
         
@@ -69,6 +70,7 @@ class LinkedList<T:Equatable> {
         while current != nil {
             if current!.down == nil {
                 var newLink = LinkedNode<T>()
+                
                 newLink.key = key
                 newLink.up = current
                 current!.getVerticalHead().up = newLink
@@ -78,6 +80,7 @@ class LinkedList<T:Equatable> {
                 break
             } else if current!.down!.vertOrder == 0 {
                 var newLink = LinkedNode<T>()
+                
                 newLink.key = key
                 newLink.up = current
                 current!.getVerticalHead().up = newLink
@@ -154,57 +157,112 @@ class LinkedList<T:Equatable> {
     }
 
     func removeLateralLink(link: LinkedNode<T>) {
-        link.left?.right = link.right
-        if link.latOrder == lateralHead.latOrder {
-            if let newHead = link.right {
-                if newHead.latOrder != link.latOrder {
+        
+        if link.left?.latOrder == link.latOrder {
+            lateralHead = LinkedNode<T>()
+            lateralHead.key = nil
+        } else {
+            if link.latOrder == lateralHead.latOrder {
+                if let newHead = link.right {
                     lateralHead = newHead
-                } else {
-                    lateralHead = LinkedNode<T>()
                 }
-                lateralHead = newHead
-            } else {
-                lateralHead = LinkedNode<T>()
             }
+            link.left?.right = link.right
+            link.right?.left = link.left
         }
-        link.right?.left = link.left
     }
     func removeVerticalLink(link: LinkedNode<T>) {
-        link.up?.down = link.down
-        if link.vertOrder == verticalHead.vertOrder {
-            if let newHead = link.down {
-                if newHead.vertOrder != link.vertOrder {
+        
+        if link.up?.vertOrder == link.vertOrder {
+            verticalHead = LinkedNode<T>()
+            verticalHead.key = nil
+        } else {
+            if link.vertOrder == verticalHead.vertOrder {
+                if let newHead = link.down {
                     verticalHead = newHead
-                } else {
-                    verticalHead = LinkedNode<T>()
                 }
-            } else {
-                verticalHead = LinkedNode<T>()
             }
+            link.up?.down = link.down
+            link.down?.up = link.up
         }
-        link.down?.up = link.up
     }
     
     
     func insertLateralLink(link: LinkedNode<T>) {
         if lateralHead.key == nil {
             lateralHead = link
+        } else {
+            link.left?.right = link
+            link.right?.left = link
+            if link.latOrder <= lateralHead.latOrder {
+                lateralHead = link
+            }
         }
-        link.left?.right = link
-        link.right?.left = link
-        if link.latOrder <= lateralHead.latOrder {
-            lateralHead = link
-        }
+        
     }
     
     func insertVerticalLink(link: LinkedNode<T>) {
         if verticalHead.key == nil {
             verticalHead = link
+        } else {
+            link.up?.down = link
+            link.down?.up = link
+            if link.vertOrder <= verticalHead.vertOrder {
+                verticalHead = link
+            }
+
         }
-        link.up?.down = link
-        link.down?.up = link
-        if link.vertOrder <= verticalHead.vertOrder {
-            verticalHead = link
+    }
+    
+    func printRowHeadOrders() {
+        println(verticalHead.vertOrder)
+        var current = verticalHead.down
+        var prevOrder = 0
+        while current != nil {
+            if current!.vertOrder == verticalHead.vertOrder {
+                break
+            }
+            
+            var countString = "- "
+            if current!.countRow() != 5 {
+                countString += String(current!.countRow())
+            }
+
+            let numRow = current!.vertOrder
+            
+            if prevOrder + 1 != numRow {
+                 println("Jumps to: \(numRow)"+countString)
+            } else {
+                println("\(numRow)" + countString)
+            }
+            
+            prevOrder = numRow
+            current = current!.down
+        }
+    }
+    
+    func printColumnHeadOrders() {
+        println(lateralHead.latOrder)
+        var current = lateralHead.right
+        var prevOrder = 0
+        while current != nil {
+            if current!.latOrder == lateralHead.latOrder {
+                break
+            }
+            
+            var countString = "- "
+            if current!.countColumn() != 10 {
+                countString += String(current!.countColumn())
+            }
+            let numCol = current!.latOrder
+            if prevOrder + 1 != numCol {
+                println("Jumps to: \(numCol)"+countString)
+            } else {
+                println("\(numCol)" + countString)
+            }
+            
+            prevOrder = numCol
+            current = current!.right
         }
     }
 }
@@ -220,23 +278,25 @@ class LinkedNode<T> {
 
     
     func countColumn() -> Int {
-        var top: LinkedNode<T> = self.getVerticalHead()
+        let start = self.vertOrder
         var count = 1
-        while top.down != nil {
-            if top.down!.vertOrder == self.getLateralHead().vertOrder {
+        var current = self.down
+        while current != nil {
+            if current!.vertOrder == start {
                 break
             }
             count++
-            top = top.down!
+            current = current!.down
         }
         return count
     }
     
     func countRow() -> Int {
+        let head = self.getLateralHead()
         var current = self.getLateralHead()
         var count = 1
         while current.right != nil{
-            if current.right!.latOrder == 0 {
+            if current.right!.latOrder == head.latOrder {
                 break
             }
             count++
@@ -323,9 +383,10 @@ class LinkedNode<T> {
 
 typealias Constraint = (Value: Int?, Column: Int?, Row: Int?, Box: Int?)
 
-
 class PuzzleNode {
     var constraint: Constraint = (nil, nil, nil, nil)
+    var inserted = 0
+    var removed = 0
 }
 
 func == (lhs:PuzzleNode, rhs:PuzzleNode) -> Bool {
@@ -370,10 +431,8 @@ extension PuzzleNode: Equatable{}
 
 class Matrix {
     
-    var allNodes:[LinkedNode<PuzzleNode>] = []
-    
     var rowsAndColumns = LinkedList<PuzzleNode>()
-    typealias Choice = (Row: LinkedNode<PuzzleNode>, Columns:[LinkedNode<PuzzleNode>])
+    typealias Choice = (Chosen: LinkedNode<PuzzleNode>, Columns:[LinkedNode<PuzzleNode>], Root:Int)
     private var currentSolution = [Choice]()
     typealias Solution = [LinkedNode<PuzzleNode>]
     private var solutions = [Solution]()
@@ -384,17 +443,57 @@ class Matrix {
         //eliminatePuzzleGivens(initialValues)
     }
     
-    private func rebuild() {
+    func rebuild() {
+        /*
         rowsAndColumns = LinkedList<PuzzleNode>()
         constructMatrix()
         buildOutMatrix()
         solutions = []
-        /*
+    */
         while currentSolution.count != 0 {
-            println(unchooseLast())
+            unchooseLast()
         }
-        solutions = []
-*/
+        
+    }
+    
+    func generatePuzzle()->[PuzzleCell]? {
+        var puzz: [PuzzleCell] = []
+        let initialChoice = selectRandom()!
+        
+        if !findFirstSolution(initialChoice, root: initialChoice.vertOrder) {
+            return nil
+        }
+        
+        rebuild()
+        
+        puzz = cellsFromConstraints(solutions[0])
+        // test 2
+        println("solutions should have 81 objects and actually has \(puzz.count)")
+        
+        
+        puzz.removeRange(Range(start:1,end:39))
+        
+        let last = puzz.removeLast()
+        
+        puzz = minValuesForPuzzle(puzz, withLastRemoved: last)
+        
+        return puzz
+    }
+    
+    func minValuesForPuzzle(allVals:[PuzzleCell], withLastRemoved lastRemoved:PuzzleCell) -> [PuzzleCell] {
+        var initials = allVals
+        
+        eliminatePuzzleGivens(allVals)
+        
+        if countPuzzleSolutions() == 1 {
+            rebuild()
+            let last = initials.removeLast()
+            return minValuesForPuzzle(initials, withLastRemoved: last)
+        }
+        
+        initials.append(lastRemoved)
+
+        return initials
     }
     
     func solutionForValidPuzzle(puzzle: [PuzzleCell]) -> [PuzzleCell]? {
@@ -409,7 +508,8 @@ class Matrix {
         return cellsFromConstraints(nodes)
     }
     
-   func eliminatePuzzleGivens(cells: [PuzzleCell]) {
+    
+   func eliminatePuzzleGivens(cells: [PuzzleCell]) -> Int {
         let givenValues = translateCellsToConstraintList(cells)
         var rowsToSolve = [LinkedNode<PuzzleNode>]()
         
@@ -420,10 +520,13 @@ class Matrix {
         }
         
         for row in rowsToSolve {
-            solveForRow(row)
+            solveForRow(row, root: row.vertOrder)
         }
+    
+        return rowsAndColumns.verticalCount()
         
     }
+    
     
     func countPuzzleSolutions() -> Int {
         let bestColumn = selectColumn()
@@ -439,17 +542,26 @@ class Matrix {
         return 0
     }
     
+
     private func solved() -> Bool {
-        let lH = rowsAndColumns.lateralHead
-        if let latHeadDown = lH.down {
-            if latHeadDown.vertOrder != lH.vertOrder {
-                return false
-            }
+        
+        if rowsAndColumns.lateralCount() == 1 {
+            return true
         }
-        if let latHeadRight = lH.right {
-            if latHeadRight.latOrder != lH.latOrder {
+        
+        return false
+        var current = rowsAndColumns.lateralHead
+        let start = current.latOrder
+        if current.down!.down!.vertOrder != current.vertOrder {
+            return false
+        }
+        current = current.right!
+        
+        while current.latOrder != start {
+            if current.down!.down!.vertOrder != current.vertOrder {
                 return false
             }
+            current = current.right!
         }
         return true
     }
@@ -458,14 +570,13 @@ class Matrix {
         var solution: [LinkedNode<PuzzleNode>] = []
         
         for choice in currentSolution {
-            solution.append(choice.Row.getLateralHead())
+            solution.append(choice.Chosen.getLateralHead())
         }
         
         solutions.append(solution)
     }
-
-    
-    private func allSolutionsForPuzzle(rowChoice:LinkedNode<PuzzleNode>, andCount count:Int = 0, withCutOff cutOff:Int = 2) -> Int {
+  
+    private func allSolutionsForPuzzle(rowChoice:LinkedNode<PuzzleNode>, andCount count:Int = 0, withCutOff cutOff:Int = 2, andRoot root:Int = 0) -> Int {
         
         if count == cutOff {
             return cutOff
@@ -479,7 +590,7 @@ class Matrix {
         if solved() {
             addSolution()
             if let next = findNextRowChoice() {
-                return allSolutionsForPuzzle(next, andCount: count+1)
+                return allSolutionsForPuzzle(next.Node, andCount: count+1)
             } else {
                 return count+1
             }
@@ -488,41 +599,106 @@ class Matrix {
                 return allSolutionsForPuzzle(next, andCount: count)
             } else {
                 if let next = findNextRowChoice() {
-                    return allSolutionsForPuzzle(next, andCount: count)
+                    return allSolutionsForPuzzle(next.Node, andCount: count)
                 } else {
                     return count
                 }
             }
         }
     }
+
     
-    private func findNextRowChoice()->LinkedNode<PuzzleNode>? {
-        if let lastChoice = unchooseLast() {
-            if lastChoice.down?.vertOrder == 0 {
-                return findNextRowChoice()
+    private func findFirstSolution(rowChoice:LinkedNode<PuzzleNode>, root: Int) -> Bool {
+       /*
+        if currentSolution.count >= 50 {
+            
+            let eliminated = solveForRow(rowChoice, root: root)
+            
+            currentSolution.append(eliminated)
+            
+            let last = unchooseLast()
+            
+            rowsAndColumns.printColumnHeadOrders()
+            
+        }
+    
+*/
+        
+        let eliminated = solveForRow(rowChoice, root: root)
+        
+        currentSolution.append(eliminated)
+        
+    
+  
+        if currentSolution.count >= 75 {
+            
+            rowsAndColumns.printColumnHeadOrders()
+            //rowsAndColumns.printRowHeadOrders()
+            
+            unchooseLast()
+            
+            rowsAndColumns.printColumnHeadOrders()
+            //rowsAndColumns.printRowHeadOrders()
+
+        }
+
+        
+
+        
+        if currentSolution.count >= 80 {
+            
+            println("getting close")
+        }
+        
+        if solved() {
+            
+            addSolution()
+           return true
+        } else {
+            if let next = selectRandom() {
+                return findFirstSolution(next, root: next.vertOrder)
             } else {
-                return lastChoice.down
+                if let next = findNextRowChoice() {
+                    return findFirstSolution(next.Node, root: next.Root)
+                } else {
+                    return false
+                }
             }
+        }
+    }
+    
+    private func findNextRowChoice()->(Node: LinkedNode<PuzzleNode>, Root:Int)? {
+        if let lastChoice = unchooseLast() {
+            let next = lastChoice.Chosen.down!
+            return (next, lastChoice.Root)
         }
         return nil
     }
     
-    private func unchooseLast() -> LinkedNode<PuzzleNode>? {
-        if currentSolution.count == 0 {
+    private func unchooseLast() -> Choice? {
+        let csCount = currentSolution.count
+        if csCount == 0 {
             return nil
         }
-        
+    
         let lastChoice:Choice = self.currentSolution.removeLast()
         
+        let lcDown = lastChoice.Chosen.down!
         
         for col in lastChoice.Columns
         {
-            self.insertColumn(col)
+            insertColumn(col)
         }
-        return lastChoice.Row
+        var current = lastChoice.Chosen // YOU ARE ALSO HERE--NEED TO FIX REINSERTION
+        
+        if lcDown.vertOrder == 0 {
+            return unchooseLast()
+        }
+       
+        return lastChoice
     }
     
-    // grabs the next best column.  might want to combine this with check columns to create a function that checks if there are any possible solutions and then returns the next best guess, which would be an optional
+    
     private func selectColumn() -> LinkedNode<PuzzleNode>? {
         let latHeadOrder = rowsAndColumns.lateralHead.latOrder
         var current:LinkedNode<PuzzleNode> = rowsAndColumns.lateralHead
@@ -562,76 +738,131 @@ class Matrix {
         return current
     }
     
-    func solveForRow(row: LinkedNode<PuzzleNode>) -> Choice {
-        var columnList: [LinkedNode<PuzzleNode>] = []
-        var current = row.getLateralHead().right!
-        while current.latOrder != 0 {
-            removeColumn(current)
-            columnList.append(current.getVerticalHead())
+    private func selectRandom() -> LinkedNode<PuzzleNode>? {
+        var current = rowsAndColumns.lateralHead
+        let start = current.latOrder
+        var availableColumns:[LinkedNode<PuzzleNode>] = []
+        
+        
+       if current.countColumn() == 1 {
+            return nil
+       } else {
+            availableColumns.append(current)
+        }
+        current = current.right!
+        
+        while current.latOrder != start {
+            let count = current.countColumn()
+            if count == 1 {
+                return nil
+            } else {
+                availableColumns.append(current)
+            }
             current = current.right!
         }
         
-        return (row, columnList)
+        println("available columns: \(availableColumns.count)")
+        
+        let random = Int(arc4random_uniform(UInt32(availableColumns.count)-1))
+    
+        current = availableColumns[random]
+        
+        /*
+        let random2 = Int(arc4random_uniform(UInt32(current.countColumn()-1)))+1
+        var count = 0
+        
+        while count != random2 {
+            current = current.down!
+            count++
+        }*/
+        
+        return current.down!
+        
     }
     
-    func removeColumn(column: LinkedNode<PuzzleNode>) {
-        var current = column.getVerticalHead().down!
-        while current.vertOrder != 0 {
-            removeRow(current, preservingColumn: current)
-            current = current.down!
+    func solveForRow(row: LinkedNode<PuzzleNode>, root: Int = 0) -> Choice {
+        // YOU ARE HERE.  YOU JUST CHANGED TO SOLVING FOR THE CHOSEN ROW'S COLUMN FIRST, RATHER THAN THE FIRST COLUMN FROM THE LEFT
+        var columnList: [LinkedNode<PuzzleNode>] = [row]
+        var current = row.right!
+        while current.latOrder != row.latOrder {
+            if row.latOrder != 0 {
+                columnList.append(current)
+            }
+            
+            current = current.right!
         }
-        current = column.getVerticalHead()
-        rowsAndColumns.removeLateralLink(current)
-        current = current.down!
-        while current.vertOrder != 0 {
-            current.left?.right = current.right
-            current.right?.left = current.left
-            current = current.down!
+      
+        for column in columnList {
+            rowsAndColumns.removeLateralLink(column.getVerticalHead())
+            let rowsToRemove = coverColumn(column)
+            
+            for row in rowsToRemove {
+                removeRow(row)
+            }
         }
+        
+        /*
+       for row in rowList {
+            removeRow(row)
+        }*/
+        
+        return (row, columnList, root)
     }
     
-    func removeRow(row: LinkedNode<PuzzleNode>, preservingColumn column: LinkedNode<PuzzleNode>) {
-        if row.vertOrder == 0 {
-            println("this isn't right")
+    func coverColumn(column: LinkedNode<PuzzleNode>)->[LinkedNode<PuzzleNode>] {
+        var current = column
+        var rowsToRemove: [LinkedNode<PuzzleNode>] = []
+        while current.vertOrder != column.vertOrder {
+            if current.vertOrder != 0 {
+                rowsToRemove.append(current)
+            }
+            current = current.down!
         }
-        var current = row.getLateralHead()
-        rowsAndColumns.removeVerticalLink(current)
-        current = current.right!
-        while current.latOrder != column.latOrder {
+    
+        return rowsToRemove
+    }
+    
+    func removeRow(row: LinkedNode<PuzzleNode>) {
+        let rowOrder = row.latOrder
+        var current = row.right!
+        
+        /*while current.latOrder != column.latOrder {
             current.up?.down = current.down
             current.down?.up = current.up
             current = current.right!
-        }
-        current = current.right!
-        while current.latOrder != 0 {
-            current.up?.down = current.down
-            current.down?.up = current.up
+        }*/
+        //current = current.right!
+        while current.latOrder !=  rowOrder{
+            rowsAndColumns.removeVerticalLink(current)
             current = current.right!
         }
+        
     }
+    
     
     func insertColumn(column: LinkedNode<PuzzleNode>){
-        var current = column.getVerticalHead()
-        rowsAndColumns.insertLateralLink(current)
-        current = current.up!
+       
+        var current = column.up!
         
-        while current.vertOrder != 0 {
-            current.left?.right = current
-            current.right?.left = current
-            self.insertRow(current)
+        while current.vertOrder != column.vertOrder {
+            if current.vertOrder != 0 {
+                insertRow(current)
+            }
             current = current.up!
         }
+        rowsAndColumns.insertLateralLink(current)
+        
     }
-    
+
     func insertRow(row: LinkedNode<PuzzleNode>) {
-        var current = row.getLateralHead()
-        rowsAndColumns.insertVerticalLink(current)
-        current = current.right!
+        var current = row.getLateralHead().left!
         while current.latOrder != 0 {
             current.up?.down = current
             current.down?.up = current
-            current = current.right!
+            current = current.left!
         }
+        rowsAndColumns.insertVerticalLink(current)
+        
     }
     
 
@@ -706,13 +937,11 @@ class Matrix {
             if rowHead!.countRow() > 1 {
                 break
             }
-            allNodes.append(rowHead!)
             var count = 0
             while constHead != nil && count < 1 {
                 if constHead!.right!.latOrder == 0 {
                     count++
                 }
-                allNodes.append(constHead!)
                 if rowHead!.key! == constHead!.key! {
                     let newKey = PuzzleNode()
                     newKey.constraint = constHead!.key!.constraint
@@ -720,7 +949,6 @@ class Matrix {
                     newNode.key = newKey
                     rowsAndColumns.addLateralLinkFromNode(rowHead!.getLateralTail(), toNewNode: newNode)
                     rowsAndColumns.addVerticalLinkFromNode(constHead!.getVerticalTail(), toNewNode: newNode)
-                    allNodes.append(newNode)
                 }
                 constHead!.getVerticalTail().down = constHead!.getVerticalHead()
                 constHead = constHead!.right
@@ -732,7 +960,9 @@ class Matrix {
         } // end first while loop
     }
     
-    func findRowMatch(mRow: Constraint) -> LinkedNode<PuzzleNode> {
+    
+    // only use these functions for initial matrix set up
+    private func findRowMatch(mRow: Constraint) -> LinkedNode<PuzzleNode> {
     let aNode = matchValueWithinCell(mRow, node: findFirstNodeOfSameColumn(mRow, node: findFirstNodeOfSameRow(mRow, node: rowsAndColumns.verticalHead)))
     
     return aNode
@@ -777,16 +1007,6 @@ class Matrix {
     return node
     }
     
-    func translateCellsToConstraintList(cells:[PuzzleCell])->[Constraint] {
-        var matrixRowArray = [Constraint]()
-        for cell in cells {
-            let cIndex = cell.column
-            let rIndex = cell.row
-            let mRow:Constraint = (cell.value, cIndex, rIndex, getBox(cIndex, rIndex))
-            matrixRowArray.append(mRow)
-        }
-        return matrixRowArray
-    }
 }
 
 

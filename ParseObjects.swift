@@ -7,7 +7,40 @@
 //
 
 import Foundation
+class PuzzleCell {
+    // PFSubclassing
+   
+    
+    
+    
+    let row: Int
+    let column: Int
+    var value: Int
+    //@NSManaged var puzzle: Puzzle
+    
+    init(row: Int, column:Int, value:Int = 0) {
+        self.row = row
+        self.column = column
+        self.value = value
+    }
+    
+    // convenience initWithCell = getRowIndex, getColumnIndex, .rawValue from passed Cell
+    
+}
 
+class Puzzle {
+    
+    
+    let initialValues: [PuzzleCell]
+    var solution: [PuzzleCell]?
+    
+    init(nonNilValues: [PuzzleCell]) {
+        self.initialValues = nonNilValues
+    }
+}
+
+
+/*
 class PuzzleCell: PFObject, PFSubclassing {
     // PFSubclassing
     static func parseClassName() -> String {
@@ -48,5 +81,5 @@ class Puzzle: PFObject, PFSubclassing {
             self.initialValues.append(cell)
         }
     }
-}
+}*/
    

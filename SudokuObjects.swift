@@ -180,6 +180,19 @@ class Box: SudokuItem, Nester{
     
     override init(index: Int) {
         super.init(index:index)
+        
+        if boxes.count == 0 {
+            for ind in 0...8 {
+                let aBox = Tile(index: ind, withParent: self)
+                boxes.append(aBox)
+                self.addSubview(aBox)
+                aBox.userInteractionEnabled = true
+                if let aBoard = self.parentSquare as? SudokuBoard {
+                    let tapRecognizer = UITapGestureRecognizer(target: aBoard, action: "tileTapped:")
+                    aBox.addGestureRecognizer(tapRecognizer)
+                }
+            }
+        }
     }
     
     convenience init (index withIndex: Int, withParent parent: SudokuBoard){
@@ -193,22 +206,7 @@ class Box: SudokuItem, Nester{
     }
     
     override func layoutSubviews() {
-        if boxes.count == 0 {
-            for index in 0...8 {
-                let aBox = Tile(index: index, withParent: self)
-                boxes.append(aBox)
-                self.addSubview(aBox)
-                aBox.userInteractionEnabled = true
-                if let aBoard = self.parentSquare as? SudokuBoard {
-                    let tapRecognizer = UITapGestureRecognizer(target: aBoard, action: "tileTapped:")
-                    aBox.addGestureRecognizer(tapRecognizer)
-                }
-            }
-            self.prepareBoxes()
-            if let parent = self.parentSquare as? SudokuBoard {
-                parent.tilesReady()
-            }
-        }
+        self.prepareBoxes()
     }
     
     func makeRow(row: Row)-> [SudokuItem] {
@@ -246,6 +244,13 @@ class Box: SudokuItem, Nester{
         
         let constraints:[NSLayoutConstraint] = BoxSetter().configureConstraintsForParentSquare(self)
         self.addConstraints(constraints)
+        
+        
+        if let parent = self.parentSquare as? SudokuBoard {
+            parent.tilesReady()
+        }
+
+
     }
     
     func view() -> UIView {

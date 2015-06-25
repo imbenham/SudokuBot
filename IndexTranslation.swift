@@ -141,7 +141,7 @@ func getRowIndexFromTileIndex(tileIndex: TileIndex) -> Int {
     }
 }
 
-// constraints -> tiles
+// constraints <-> tiles
 
 func cellsFromConstraints(constraints: [LinkedNode<PuzzleNode>]) -> [PuzzleCell] {
     var puzzleNodes: [PuzzleNode] = []
@@ -152,8 +152,7 @@ func cellsFromConstraints(constraints: [LinkedNode<PuzzleNode>]) -> [PuzzleCell]
     }
     var cells: [PuzzleCell] = []
     for node in puzzleNodes {
-        let cell = PuzzleCell(className: "PuzzleCell")
-        cell.setPCell(node.constraint.Row!, column: node.constraint.Column!, value: node.constraint.Value!)
+        let cell = PuzzleCell(row: node.constraint.Row!, column: node.constraint.Column!, value: node.constraint.Value!)
         cells.append(cell)
     }
     return cells
@@ -172,20 +171,30 @@ func tileForConstraint(node: PuzzleNode, tiles:[Tile]) -> Tile? {
     return nil
 }
 
+
+func translateCellsToConstraintList(cells:[PuzzleCell])->[Constraint] {
+    var matrixRowArray = [Constraint]()
+    for cell in cells {
+        let cIndex = cell.column
+        let rIndex = cell.row
+        let mRow:Constraint = (cell.value, cIndex, rIndex, getBox(cIndex, rIndex))
+        matrixRowArray.append(mRow)
+    }
+    return matrixRowArray
+}
+
 //tiles -> cells
 func cellsFromTiles(tiles:[Tile]) -> [PuzzleCell] {
     var cells: [PuzzleCell] = []
     for tile in tiles {
-        let pCell = PuzzleCell(className: "PuzzleCell")
         let val = tile.value.rawValue
         let row = tile.getRowIndex()
         let column = tile.getColumnIndex()
-        pCell.setPCell(row, column: column, value: val)
+        let pCell = PuzzleCell(row: row, column: column, value: val)
         cells.append(pCell)
     }
     
     return cells
 }
 
-// tiles -> cells
 

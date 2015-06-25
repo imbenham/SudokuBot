@@ -69,6 +69,7 @@ class CheatViewController: SudokuController {
     }
     
     func solvePuzzle() {
+        /*
         for tile in nilTiles() {
             tile.labelColor = UIColor.redColor()
         }
@@ -95,6 +96,7 @@ class CheatViewController: SudokuController {
                 
             }
         }
+*/
     }
     
 

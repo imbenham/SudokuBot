@@ -46,7 +46,10 @@ class PlayPuzzleViewController: SudokuController {
 
     
     override func boardReady() {
-        PuzzleStore.sharedInstance.getPuzzleForController(self)
+        
+        if self.puzzle == nil {
+            refreshPuzzle()
+        }
     }
     
     override func puzzleReady() {
@@ -54,12 +57,16 @@ class PlayPuzzleViewController: SudokuController {
         let someCells:[PuzzleCell] = puzzle!.initialValues
         for pCell in someCells {
             let index = getTileIndexForRow(pCell.row, andColumn: pCell.column)
+            
             let tile = board.tileAtIndex(index)
             tile.value = TileValue(rawValue: pCell.value)!
             tile.userInteractionEnabled = false
         }
-        startingNils = nilTiles()
-        board.selectedTile = startingNils[0]
+        let startingNils = nilTiles()
+        if startingNils.count != 0 {
+            board.selectedTile = startingNils[0]
+        }
+        
         
         for tile in nilTiles() {
             tile.labelColor = UIColor.redColor()
@@ -83,6 +90,7 @@ class PlayPuzzleViewController: SudokuController {
     }
     
     func checkSolution() {
+        /*
         if solution == nil {
             solution = matrix.solutionForValidPuzzle(puzzle!.initialValues)!
         }
@@ -94,6 +102,11 @@ class PlayPuzzleViewController: SudokuController {
             }
         }
         puzzleSolved()
+*/
+    }
+    
+    func refreshPuzzle() {
+        PuzzleStore.sharedInstance.getRandomPuzzleForController(self)
     }
     
     func puzzleSolved() {
