@@ -30,10 +30,11 @@ class PuzzleStore {
     }
     
     func getRandomPuzzleForController(controller: SudokuController) {
-        if let puzz = controller.matrix.generatePuzzle() {
-            controller.puzzle = Puzzle(nonNilValues: puzz)
+       
+        controller.matrix.generatePuzzleWithCompletion({ puzz -> () in
+            controller.puzzle = puzz
             controller.puzzleReady()
-        }
-        
+        })
+
     }
 }

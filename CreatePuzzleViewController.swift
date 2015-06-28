@@ -81,13 +81,21 @@ class CreatePuzzleViewController:SudokuController {
     
     func createPuzzle() {
         
-        
+        /*
         let priority = DISPATCH_QUEUE_PRIORITY_DEFAULT
         dispatch_async(dispatch_get_global_queue(priority, 0), { ()->() in
-            self.matrix.generatePuzzle()
+            self.matrix.generatePuzzleWithCompletion({ puzz -> () in
+                self.puzzle = puzz
+                self.puzzleReady()
+                })
             dispatch_async(dispatch_get_main_queue(), {
-                
+                self.puzzleReady()
             })
+        })*/
+        
+        self.matrix.generatePuzzleWithCompletion({ puzz -> () in
+            self.puzzle = puzz
+            self.puzzleReady()
         })
         /*
     
@@ -197,6 +205,27 @@ class CreatePuzzleViewController:SudokuController {
             
         }
 
+    }
+    
+    override func puzzleReady() {
+        
+        let someCells:[PuzzleCell] = puzzle!.initialValues
+        for pCell in someCells {
+            let index = getTileIndexForRow(pCell.row, andColumn: pCell.column)
+            
+            let tile = board.tileAtIndex(index)
+            tile.value = TileValue(rawValue: pCell.value)!
+            tile.userInteractionEnabled = false
+        }
+        let startingNils = nilTiles()
+        if startingNils.count != 0 {
+            board.selectedTile = startingNils[0]
+        }
+        
+        for tile in nilTiles() {
+            tile.labelColor = UIColor.redColor()
+        }
+        
     }
 
 }

@@ -46,10 +46,10 @@ class PlayPuzzleViewController: SudokuController {
 
     
     override func boardReady() {
-        
+        /*
         if self.puzzle == nil {
             refreshPuzzle()
-        }
+        }*/
     }
     
     override func puzzleReady() {
@@ -103,6 +103,12 @@ class PlayPuzzleViewController: SudokuController {
         }
         puzzleSolved()
 */
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        if self.puzzle == nil {
+            refreshPuzzle()
+        }
     }
     
     func refreshPuzzle() {
