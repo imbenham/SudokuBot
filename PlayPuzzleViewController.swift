@@ -90,7 +90,7 @@ class PlayPuzzleViewController: SudokuController {
     }
     
     func checkSolution() {
-        /*
+      /*
         if solution == nil {
             solution = matrix.solutionForValidPuzzle(puzzle!.initialValues)!
         }
@@ -103,6 +103,7 @@ class PlayPuzzleViewController: SudokuController {
         }
         puzzleSolved()
 */
+
     }
     
     override func viewDidAppear(animated: Bool) {

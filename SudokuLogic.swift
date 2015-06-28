@@ -218,19 +218,23 @@ class LinkedList<T:Equatable> {
     
     func printRowHeadOrders() {
         //println(verticalHead.vertOrder)
-        var current = verticalHead.down
+        var current = verticalHead.down!
         var prevOrder = 0
-        while current != nil {
-            if current!.vertOrder == verticalHead.vertOrder {
-                break
-            }
+        while current.vertOrder != verticalHead.vertOrder {
             
-            var countString = "- "
-            if current!.countRow() != 5 {
-                countString += String(current!.countRow())
+            
+            var countString = " "
+            /*
+            if current.countRow() != 5 {
+                countString += String(current.countRow())
+            }*/
+            current = current.right!
+            while current.latOrder != 0 {
+                countString += "-\(current.latOrder)"
+                current = current.right!
             }
 
-            let numRow = current!.vertOrder
+            let numRow = current.vertOrder
             
             if prevOrder + 1 != numRow {
                  println("Jumps to: \(numRow)"+countString)
@@ -239,24 +243,26 @@ class LinkedList<T:Equatable> {
             }
             
             prevOrder = numRow
-            current = current!.down
+            current = current.down!
         }
     }
     
     func printColumnHeadOrders() {
         //println(lateralHead.latOrder)
-        var current = lateralHead.right
+        var current = lateralHead.right!
         var prevOrder = 0
-        while current != nil {
-            if current!.latOrder == lateralHead.latOrder {
-                break
-            }
-            
-            var countString = "- "
-            if current!.countColumn() != 10 {
+        while current.latOrder != lateralHead.latOrder {
+    
+            var countString = " "
+            /*if current!.countColumn() != 10 {
                 countString += String(current!.countColumn())
+            }*/
+            current = current.down!
+            while current.vertOrder != 0 {
+                countString += "-\(current.vertOrder)"
+                current = current.down!
             }
-            let numCol = current!.latOrder
+            let numCol = current.latOrder
             if prevOrder + 1 != numCol {
                 println("Jumps to: \(numCol)"+countString)
             } else {
@@ -264,7 +270,7 @@ class LinkedList<T:Equatable> {
             }
             
             prevOrder = numCol
-            current = current!.right
+            current = current.right!
         }
     }
 }
@@ -457,6 +463,7 @@ class Matrix {
     
     init() {
         constructMatrix()
+        buildOutMatrix()
     }
     
     func rebuild() {
@@ -477,18 +484,16 @@ class Matrix {
         // test 2
         println("solutions should have 81 objects and actually has \(puzz.count)")
         
-        let aPuzzle = Puzzle(nonNilValues: puzz)
         
-        completion(aPuzzle)
-        
-        
-        /*
         puzz.removeRange(Range(start:1,end:39))
         
         let last = puzz.removeLast()
         
         puzz = minValuesForPuzzle(puzz, withLastRemoved: last)
-        */
+        
+        let aPuzzle = Puzzle(nonNilValues: puzz)
+        
+        completion(aPuzzle)
         
         rebuild()
         
@@ -496,6 +501,8 @@ class Matrix {
     
     func minValuesForPuzzle(allVals:[PuzzleCell], withLastRemoved lastRemoved:PuzzleCell) -> [PuzzleCell] {
         var initials = allVals
+        
+        rebuild()
         
         eliminatePuzzleGivens(allVals)
         
@@ -562,6 +569,12 @@ class Matrix {
             return true
         }
         
+        let lh = rowsAndColumns.lateralHead
+        
+        if lh.vertOrder == lh.down!.vertOrder && lh.latOrder == lh.right!.latOrder {
+            return true
+        }
+        
         if self.currentSolution.count == 81 {
             return true
         }
@@ -617,6 +630,22 @@ class Matrix {
         currentSolution.append(eliminated)
     
         
+        if currentSolution.count == 80 {
+            /*
+            rowsAndColumns.printRowHeadOrders()
+            rowsAndColumns.printColumnHeadOrders()
+            
+            while currentSolution.count > 0 {
+                unchooseLast()
+            }
+            
+            rowsAndColumns.printRowHeadOrders()
+            rowsAndColumns.printColumnHeadOrders()
+*/
+            println("getting close!")
+        }
+        
+        
         if solved() {
             addSolution()
            return true
@@ -652,21 +681,26 @@ class Matrix {
     
         let lastChoice:Choice = self.currentSolution.removeLast()
         
+        for col in lastChoice.Columns.reverse() {
+            rowsAndColumns.insertLateralLink(col)
+        }
+        
         for row in lastChoice.Rows.reverse()
         {
             insertRow(row)
         }
         
-        for col in lastChoice.Columns {
-            rowsAndColumns.insertLateralLink(col)
-        }
+        
         
         var lcDown = lastChoice.Chosen.down!
         
-        if lcDown.vertOrder == 0 {
-            lcDown = lcDown.down!
+        //println("last chosen:\(lastChoice.Chosen.vertOrder), next up:\(lcDown.vertOrder), root:\(lastChoice.Root)")
+        
+        if lcDown.vertOrder == 0  {
+            return unchooseLast()
         }
      
+        
         if lcDown.vertOrder == lastChoice.Root {
             return unchooseLast()
         }
@@ -715,12 +749,15 @@ class Matrix {
     }
     
     private func selectRandom() -> LinkedNode<PuzzleNode>? {
+        println(rowsAndColumns.lateralCount())
         var current = rowsAndColumns.lateralHead
         let start = current.latOrder
         var availableColumns:[LinkedNode<PuzzleNode>] = []
         
         
-       if current.countColumn() == 1 {
+       if current.countColumn() == 0 {
+            return nil
+       } else if current.countColumn() == 1 {
             return nil
        } else {
             availableColumns.append(current)
@@ -729,7 +766,9 @@ class Matrix {
         
         while current.latOrder != start {
             let count = current.countColumn()
-            if count == 1 {
+            if count == 0 {
+                return nil
+            } else if count == 1{
                 return nil
             } else {
                 availableColumns.append(current)
@@ -751,25 +790,24 @@ class Matrix {
             count++
         }*/
         let selected = current.down!
-        
-        if selected.vertOrder == 0 {
-            println("stop")
+        current = current.down!
+        /*println("selected row has the following values left:")
+        while current.vertOrder != 0 {
+            println(current.vertOrder)
+            current = current.down!
         }
-        
+        */
         return selected
         
     }
     
-    func solveForRow(row: LinkedNode<PuzzleNode>, root: Int = 0) -> Choice {
-       
-        var columnList: [LinkedNode<PuzzleNode>] = [row.getVerticalHead()]
-        var current = row.right!
-        while current.latOrder != row.latOrder {
-            if current.latOrder != 0 {
-                let col = current.getVerticalHead()
-                columnList.append(col)
-            }
-            
+    func solveForRow(row: LinkedNode<PuzzleNode>, root: Int = 1) -> Choice {
+       let rowDown = row.down!.vertOrder
+        var columnList: [LinkedNode<PuzzleNode>] = []
+        var current = row.getLateralHead().right!
+        while current.latOrder != 0 {
+            let col = current.getVerticalHead()
+            columnList.append(col)
             current = current.right!
         }
         
@@ -778,12 +816,18 @@ class Matrix {
         
         for column in columnList {
             let rowsToRemove = coverColumn(column)
-            for aRow in rowsToRemove {
-                removeRow(aRow)
-            }
             removedRows += rowsToRemove
+            /*for aRow in rowsToRemove {
+                removeRow(aRow)
+            }*/
         }
         
+        /*
+        for aRow in removedRows {
+            removeRow(aRow)
+        }*/
+        
+        //println("chosen:\(row.vertOrder), next up: \(rowDown), root:\(root)")
         return (row, columnList, removedRows, root)
     }
     
@@ -792,6 +836,7 @@ class Matrix {
         var current = column.down!
         while current.vertOrder != 0 {
             rowsToRemove.append(current)
+            removeRow(current)
             current = current.down!
         }
         rowsAndColumns.removeLateralLink(current)
@@ -801,7 +846,8 @@ class Matrix {
     func removeRow(row: LinkedNode<PuzzleNode>) {
         var current = row.getLateralHead().right!
         while current.latOrder !=  0 {
-            rowsAndColumns.removeVerticalLink(current)
+            current.up!.down = current.down
+            current.down!.up = current.up
             current = current.right!
         }
         
@@ -811,7 +857,8 @@ class Matrix {
     func insertRow(row: LinkedNode<PuzzleNode>) {
         var current = row.getLateralHead().right!
         while current.latOrder != 0 {
-            rowsAndColumns.insertVerticalLink(current)
+            current.up!.down = current
+            current.down!.up = current
             current = current.right!
         }
         rowsAndColumns.insertVerticalLink(current)
@@ -826,7 +873,6 @@ class Matrix {
         buildColumnConstraints()
         buildRowConstraints()
         buildBoxConstraints()
-        buildOutMatrix()
     }
     
     private func buildCellConstraints(){
