@@ -43,7 +43,7 @@ func getBox(column: Int, row: Int) -> Int {
 }
 
 func getTileIndexForRow(row: Int, andColumn column: Int) -> TileIndex {
-    let box = getBox(column, row)
+    let box = getBox(column, row: row)
     switch row {
     case 1,4,7:
         switch column {
@@ -177,7 +177,7 @@ func translateCellsToConstraintList(cells:[PuzzleCell])->[Constraint] {
     for cell in cells {
         let cIndex = cell.column
         let rIndex = cell.row
-        let mRow:Constraint = (cell.value, cIndex, rIndex, getBox(cIndex, rIndex))
+        let mRow:Constraint = (cell.value, cIndex, rIndex, getBox(cIndex, row: rIndex))
         matrixRowArray.append(mRow)
     }
     return matrixRowArray

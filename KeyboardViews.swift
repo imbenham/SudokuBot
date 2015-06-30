@@ -29,8 +29,8 @@ class SudokuNumberPad: UIView {
                 oldCurrent.setTitleColor(defaultTitleColor, forState: .Normal)
             }
             if let someVal = current {
-                current!.backgroundColor = currentColor
-                current!.setTitleColor(currentTitleColor, forState: .Normal)
+                someVal.backgroundColor = currentColor
+                someVal.setTitleColor(currentTitleColor, forState: .Normal)
             }
         }
     }
@@ -72,7 +72,7 @@ class SudokuNumberPad: UIView {
     }
     
     func constrainButton(button: UIButton, atIndex index: Int) {
-        button.setTranslatesAutoresizingMaskIntoConstraints(false)
+        button.translatesAutoresizingMaskIntoConstraints = false
         let buttonY = NSLayoutConstraint(item: button, attribute: .CenterY, relatedBy: .Equal, toItem: self, attribute: .CenterY, multiplier: 1, constant: 0)
         let buttonHeight = NSLayoutConstraint(item: button, attribute: .Height, relatedBy: .Equal, toItem: self, attribute: .Height, multiplier: 1, constant: 0)
         let buttonWidth = NSLayoutConstraint(item: button, attribute: .Width, relatedBy: .Equal, toItem: self, attribute: .Height, multiplier: 1, constant: 0)
@@ -111,7 +111,7 @@ class SudokuNumberPad: UIView {
             }
             current = buttons[existingValue-1]
         } else {
-            if let nowCurrent = current {
+            if current != nil {
                 current = nil
             }
         }

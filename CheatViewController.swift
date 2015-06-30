@@ -34,8 +34,8 @@ class CheatViewController: SudokuController {
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        solveButton.setTranslatesAutoresizingMaskIntoConstraints(false)
-        clearButton.setTranslatesAutoresizingMaskIntoConstraints(false)
+        solveButton.translatesAutoresizingMaskIntoConstraints = false
+        clearButton.translatesAutoresizingMaskIntoConstraints = false
         
         let solveRightEdge = NSLayoutConstraint(item: solveButton, attribute: .Trailing, relatedBy: .Equal, toItem: self.board, attribute: .Trailing, multiplier: 1, constant: 0)
         let solveBottomPin = NSLayoutConstraint(item: solveButton, attribute: .Bottom, relatedBy: .Equal, toItem: self.bottomLayoutGuide, attribute: .Top, multiplier: 1, constant: -8)

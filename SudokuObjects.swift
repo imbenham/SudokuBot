@@ -147,7 +147,7 @@ class SudokuBoard: UIView, Nester {
             box.layer.borderColor = UIColor.blackColor().CGColor
             box.layer.borderWidth = 1.0
             box.userInteractionEnabled = true
-            box.setTranslatesAutoresizingMaskIntoConstraints(false)
+            box.translatesAutoresizingMaskIntoConstraints = false
         }
         
         let constraints = BoxSetter().configureConstraintsForParentSquare(self)
@@ -239,7 +239,7 @@ class Box: SudokuItem, Nester{
             box.layer.borderColor = UIColor.lightGrayColor().CGColor
             box.layer.borderWidth = 1.0
             box.userInteractionEnabled = true
-            box.setTranslatesAutoresizingMaskIntoConstraints(false)
+            box.translatesAutoresizingMaskIntoConstraints = false
         }
         
         let constraints:[NSLayoutConstraint] = BoxSetter().configureConstraintsForParentSquare(self)
@@ -259,7 +259,7 @@ class Box: SudokuItem, Nester{
     
 }
 
-class Tile: SudokuItem, Nestable {
+class Tile: SudokuItem {
     
     var value: TileValue = TileValue.Nil {
         didSet {
@@ -286,7 +286,7 @@ class Tile: SudokuItem, Nestable {
     
     override func layoutSubviews() {
         self.addSubview(valueLabel)
-        valueLabel.setTranslatesAutoresizingMaskIntoConstraints(false)
+        valueLabel.translatesAutoresizingMaskIntoConstraints = false
         let labelCenterX = NSLayoutConstraint(item: valueLabel, attribute: .CenterX, relatedBy: .Equal, toItem: self, attribute: .CenterX, multiplier: 1, constant: 0)
         let labelCenterY = NSLayoutConstraint(item: valueLabel, attribute: .CenterY, relatedBy: .Equal, toItem: self, attribute: .CenterY, multiplier: 1, constant: 0)
         self.addConstraints([labelCenterX, labelCenterY])

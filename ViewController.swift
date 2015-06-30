@@ -34,7 +34,7 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     
     func setUpBoard() {
-        board.setTranslatesAutoresizingMaskIntoConstraints(false)
+        board.translatesAutoresizingMaskIntoConstraints = false
         
         let topPin = NSLayoutConstraint(item: board, attribute: .Top, relatedBy: .Equal, toItem: self.topLayoutGuide, attribute: .Bottom, multiplier: 1, constant: 20)
         let centerPin = NSLayoutConstraint(item: board, attribute: .CenterX, relatedBy: .Equal, toItem: self.view, attribute: .CenterX, multiplier: 1, constant: 0)
@@ -50,7 +50,7 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     override func viewDidLayoutSubviews() {
-        numPad.setTranslatesAutoresizingMaskIntoConstraints(false)
+        numPad.translatesAutoresizingMaskIntoConstraints = false
         let numPadWidth = NSLayoutConstraint(item: numPad, attribute: .Width, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1, constant: 0)
         let numPadHeight = NSLayoutConstraint(item: numPad, attribute: .Height, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1/9, constant: 0)
         let numPadCenterX = NSLayoutConstraint(item: numPad, attribute: .CenterX, relatedBy: .Equal, toItem: board, attribute: .CenterX, multiplier: 1, constant: 0)

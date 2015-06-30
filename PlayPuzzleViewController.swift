@@ -32,7 +32,7 @@ class PlayPuzzleViewController: SudokuController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         
-        clearButton.setTranslatesAutoresizingMaskIntoConstraints(false)
+        clearButton.translatesAutoresizingMaskIntoConstraints = false
         
         let clearWidth = NSLayoutConstraint(item: clearButton, attribute: .Width, relatedBy: .Equal, toItem: self.board, attribute: .Width, multiplier: 1/3, constant: 0)
         let clearHeight = NSLayoutConstraint(item: clearButton, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: 40)
