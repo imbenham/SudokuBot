@@ -53,7 +53,7 @@ class PlayPuzzleViewController: SudokuController {
     }
     
     override func puzzleReady() {
-        
+        print("puzzleReady called")
         let someCells:[PuzzleCell] = puzzle!.initialValues
         for pCell in someCells {
             let index = getTileIndexForRow(pCell.row, andColumn: pCell.column)
@@ -68,17 +68,24 @@ class PlayPuzzleViewController: SudokuController {
         }
         
         
-        for tile in nilTiles() {
+        /*for tile in nilTiles() {
             tile.labelColor = UIColor.redColor()
-        }
+        }*/
         
     }
     
     func clearAll() {
-
-        for tile in startingNils {
-            tile.value = TileValue.Nil
+        
+        let tiles = self.tiles()
+        for tile in tiles {
+            tile.value = .Nil
         }
+
+        matrix.rebuild()
+        refreshPuzzle()
+       /* for tile in startingNils {
+            tile.value = TileValue.Nil
+        }*/
 
     }
     

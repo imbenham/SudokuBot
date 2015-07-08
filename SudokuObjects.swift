@@ -84,7 +84,8 @@ class SudokuBoard: UIView, Nester {
     override init(frame: CGRect) {
         super.init(frame: frame)
         for index in 0...8 {
-            let aBox = Box(index: index)
+            let aBox = Box(index: index, withParent: self)
+            aBox.parentSquare = self
             boxes.append(aBox)
             self.addSubview(aBox)
         }
@@ -180,17 +181,12 @@ class Box: SudokuItem, Nester{
     
     override init(index: Int) {
         super.init(index:index)
-        
         if boxes.count == 0 {
             for ind in 0...8 {
                 let aBox = Tile(index: ind, withParent: self)
                 boxes.append(aBox)
                 self.addSubview(aBox)
                 aBox.userInteractionEnabled = true
-                if let aBoard = self.parentSquare as? SudokuBoard {
-                    let tapRecognizer = UITapGestureRecognizer(target: aBoard, action: "tileTapped:")
-                    aBox.addGestureRecognizer(tapRecognizer)
-                }
             }
         }
     }
@@ -198,6 +194,13 @@ class Box: SudokuItem, Nester{
     convenience init (index withIndex: Int, withParent parent: SudokuBoard){
         self.init(index: withIndex)
         self.parentSquare = parent
+        
+        for aBox in self.boxes {
+            let tapRecognizer = UITapGestureRecognizer(target: parent, action: "tileTapped:")
+            aBox.addGestureRecognizer(tapRecognizer)
+        }
+        
+
     }
 
     
