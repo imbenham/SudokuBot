@@ -12,14 +12,29 @@ import UIKit
 
 class SudokuController: UIViewController, NumPadDelegate {
     
-    var board: SudokuBoard = SudokuBoard(frame: CGRectZero)
+    var board: SudokuBoard
     var numPad: SudokuNumberPad
     var matrix = Matrix()
-    var puzzle: Puzzle? 
+    private var _puzzle: Puzzle?
+    var puzzle: Puzzle? {
+        var puzzCopy: Puzzle!
+        dispatch_sync(concurrentPuzzleQueue){
+            puzzCopy = self._puzzle
+        }
+        return puzzCopy
+    }
+    
+    private var difficulty: PuzzleDifficulty = .Easy
+    
+    private let concurrentPuzzleQueue = dispatch_queue_create(
+    "com.isaacbenham.SudokuCheat.puzzleQueue", DISPATCH_QUEUE_CONCURRENT)
+    
+    private let spinner: UIActivityIndicatorView = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.WhiteLarge)
     
     
     required init(coder aDecoder: NSCoder) {
         numPad = SudokuNumberPad(frame: CGRectZero)
+        board = SudokuBoard(frame: CGRectZero)
         super.init(coder: aDecoder)
     }
     
@@ -27,8 +42,9 @@ class SudokuController: UIViewController, NumPadDelegate {
         super.viewDidLoad()
         board.controller = self
         numPad.delegate = self
-        self.view.addSubview(board)
-        self.view.addSubview(numPad)
+        view.addSubview(board)
+        view.addSubview(numPad)
+        board.addSubview(spinner)
         self.setUpBoard()
     }
     
@@ -51,11 +67,15 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     override func viewDidLayoutSubviews() {
         numPad.translatesAutoresizingMaskIntoConstraints = false
+        spinner.translatesAutoresizingMaskIntoConstraints = false
         let numPadWidth = NSLayoutConstraint(item: numPad, attribute: .Width, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1, constant: 0)
         let numPadHeight = NSLayoutConstraint(item: numPad, attribute: .Height, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1/9, constant: 0)
         let numPadCenterX = NSLayoutConstraint(item: numPad, attribute: .CenterX, relatedBy: .Equal, toItem: board, attribute: .CenterX, multiplier: 1, constant: 0)
         let numPadTopSpace = NSLayoutConstraint(item: numPad, attribute: .Top, relatedBy: .Equal, toItem: board, attribute: .Bottom, multiplier: 1, constant: 8)
-        self.view.addConstraints([numPadWidth, numPadHeight, numPadCenterX, numPadTopSpace])
+        let spinnerHor = NSLayoutConstraint(item: spinner, attribute: .CenterX, relatedBy: .Equal, toItem: board, attribute: .CenterX, multiplier: 1, constant: 0)
+        let spinnerVert = NSLayoutConstraint(item: spinner, attribute: .CenterY, relatedBy: .Equal, toItem: board, attribute: .CenterY, multiplier: 1, constant: 0)
+        
+        self.view.addConstraints([numPadWidth, numPadHeight, numPadCenterX, numPadTopSpace, spinnerHor, spinnerVert])
         
     }
     
@@ -101,6 +121,22 @@ class SudokuController: UIViewController, NumPadDelegate {
         return nilTiles
     }
     
+    // puzzle fetching
+    func fetchPuzzle() {
+        board.selectedTile = board.tileAtIndex((5,4))
+        spinner.startAnimating()
+        dispatch_barrier_async(concurrentPuzzleQueue) {
+            self.matrix.generatePuzzleOfDifficulty(self.difficulty) { puzz -> () in
+                dispatch_async(GlobalMainQueue){
+                    self.spinner.stopAnimating()
+                    self._puzzle = puzz
+                    self.puzzleReady()
+                }
+            }
+        }
+        
+    }
+    
     // Board tile selected handler
     func boardSelectedTileChanged() {
         numPad.refresh()
@@ -113,7 +149,7 @@ class SudokuController: UIViewController, NumPadDelegate {
         }
     }
     
-    func puzzleReady(){
+    func puzzleReady() {
         
     }
     

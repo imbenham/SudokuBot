@@ -89,19 +89,9 @@ class SudokuBoard: UIView, Nester {
             boxes.append(aBox)
             self.addSubview(aBox)
         }
+        self.prepareBoxes()
     }
-
-
     
-    convenience init(controller: SudokuController) {
-        self.init(frame:CGRectZero)
-        self.controller = controller
-        for index in 0...8 {
-            let aBox = Box(index: index)
-            boxes.append(aBox)
-            self.addSubview(aBox)
-        }
-    }
 
     required init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -110,10 +100,11 @@ class SudokuBoard: UIView, Nester {
             boxes.append(aBox)
             self.addSubview(aBox)
         }
+        self.prepareBoxes()
     }
     
     override func layoutSubviews() {
-        self.prepareBoxes()
+        //self.prepareBoxes()
     }
     
     

@@ -69,13 +69,13 @@ class CheatViewController: SudokuController {
     }
     
     func solvePuzzle() {
-        /*
+        
         for tile in nilTiles() {
             tile.labelColor = UIColor.redColor()
         }
 
         let valuatedTiles = nonNilTiles()
-        var cells: [PuzzleCell] = cellsFromTiles(valuatedTiles)
+        let cells: [PuzzleCell] = cellsFromTiles(valuatedTiles)
         if let solution = matrix.solutionForValidPuzzle(cells) {
             for cell in solution {
                 let tIndex = getTileIndexForRow(cell.row, andColumn: cell.column)
@@ -96,7 +96,7 @@ class CheatViewController: SudokuController {
                 
             }
         }
-*/
+
     }
     
 

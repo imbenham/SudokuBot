@@ -12,7 +12,7 @@ class PuzzleStore {
     //let user = PFUser.currentUser()
     
     static let sharedInstance = PuzzleStore()
-    
+   /*
     func getPuzzleForController(controller: SudokuController) {
         let query = PFQuery(className: "Puzzle")
         query.includeKey("initialValues")
@@ -37,4 +37,5 @@ class PuzzleStore {
         })
 
     }
+*/
 }

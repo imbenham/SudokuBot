@@ -404,43 +404,38 @@ class LinkedNode<T> {
     }
 }
 
-class PuzzleNode {
+struct PuzzleNode {
 
     var value:Int?
     var column:Int?
     var row:Int?
     var box:Int?
     
+
     
-    convenience init(value: Int, column: Int, row: Int, box: Int) {
-        self.init()
+     init(value: Int, column: Int, row: Int, box: Int) {
         self.value = value
         self.column = column
         self.row = row
         self.box = box
     }
-    convenience init(value: Int, column: Int) {
-        self.init()
+     init(value: Int, column: Int) {
         self.value = value
         self.column = column
     }
-    convenience init(value: Int, row: Int) {
-        self.init()
+     init(value: Int, row: Int) {
         self.value = value
         self.row = row
     }
-    convenience init(row: Int, column: Int) {
-        self.init()
+     init(row: Int, column: Int) {
         self.row = row
         self.column = column
     }
-    convenience init(value: Int, box: Int) {
-        self.init()
+     init(value: Int, box: Int) {
         self.value = value
         self.box = box
     }
-    convenience init(node: PuzzleNode){
-        self.init()
+     init(node: PuzzleNode){
         self.value = node.value
         self.row = node.row
         self.column = node.column
@@ -487,6 +482,14 @@ func == (lhs:PuzzleNode, rhs:PuzzleNode) -> Bool {
 
 extension PuzzleNode: Equatable{}
 
+enum PuzzleDifficulty: Int {
+    case Easy = 100
+    case Medium = 135
+    case Hard = 170
+    case Insane = 230
+    
+}
+
 class Matrix {
     
     var rowsAndColumns = LinkedList<PuzzleNode>()
@@ -513,7 +516,7 @@ class Matrix {
         solutions = []
     }
     
-    func generatePuzzleWithCompletion(completion: Puzzle -> ()) {
+    func generatePuzzleOfDifficulty(difficulty: PuzzleDifficulty, withCompletion completion: Puzzle -> ()) {
         var puzz: [PuzzleCell] = []
         let initialChoice = selectColumn()!
         
@@ -527,44 +530,68 @@ class Matrix {
         
         let last = puzz.removeLast()
         
-        puzz = minValuesForPuzzle(puzz, withLastRemoved: last)
+        // get a list of minimal givens that need to be left in the grid for a valid puzzle and a list of all the values that are taken out
+        let filtered = minValuesForPuzzle(puzz, withLastRemoved: last)
+        // add removed values from the second list back into the first list until a puzzle of the desired difficulty level is achieved
+        let finished = puzzleOfSpecifedDifficulty(difficulty, withGivens: filtered.Givens, andSolution: filtered.Solution)
         
-        var solution: [LinkedNode<PuzzleNode>] = []
-        
-        for choice in currentSolution {
-            solution.append(choice.Chosen.getLateralHead())
-        }
-        
+        puzz = finished.Givens
+
         
         let aPuzzle = Puzzle(nonNilValues: puzz)
+        aPuzzle.solution = finished.Solution
 
         completion(aPuzzle)
         
         rebuild()
         
     }
-    
-    func minValuesForPuzzle(var allVals:[PuzzleCell], withLastRemoved lastRemoved:PuzzleCell, var andTried tried:[PuzzleCell]=[]) -> [PuzzleCell] {
+
+    private func puzzleOfSpecifedDifficulty(difficulty:PuzzleDifficulty, var withGivens givens:[PuzzleCell], var andSolution solution:[PuzzleCell]) -> (Givens: [PuzzleCell], Solution:[PuzzleCell]) {
         rebuild()
         
-        eliminatePuzzleGivens(allVals + tried)
+        let rawDiff = eliminatePuzzleGivens(givens)
         
-    
-        let numSolutions = countPuzzleSolutions()
-        let currentCount = allVals.count
-        let random = Int(arc4random_uniform((UInt32(allVals.count-1))))
-        if numSolutions == 1 {
-            let last = allVals.removeAtIndex(random)
-            return minValuesForPuzzle(allVals, withLastRemoved: last)
-        } else if currentCount > 20 {
-            tried.append(lastRemoved)
-            let last = allVals.removeAtIndex(random)
-            return minValuesForPuzzle(allVals, withLastRemoved: last, andTried: tried)
+        if rawDiff > difficulty.rawValue {
+            let cellToAdd = solution.removeLast()
+            givens.append(cellToAdd)
+            return puzzleOfSpecifedDifficulty(difficulty, withGivens: givens, andSolution: solution)
         }
         
-        allVals.append(lastRemoved)
-
-        return allVals
+        return (givens, solution)
+    }
+    
+    func minValuesForPuzzle(var allVals:[PuzzleCell], withLastRemoved lastRemoved:PuzzleCell, var andTried tried:[PuzzleCell]=[], var andSolution solution:[PuzzleCell]=[]) -> (Givens:[PuzzleCell], Solution:[PuzzleCell]) {
+        defer {
+            rebuild()
+        }
+        
+        let difficulty = eliminatePuzzleGivens(allVals + tried)
+        
+        let numSolutions = countPuzzleSolutions()
+        
+        if allVals.count == 0 {
+            if numSolutions == 1 {
+                print("givens: \(tried.count); remaining possible assignments: \(difficulty)")
+                return (tried, solution)
+            }
+        
+            tried.append(lastRemoved)
+            return (tried, solution)
+        }
+        
+        
+        let random = Int(arc4random_uniform((UInt32(allVals.count-1))))
+        
+        let next = allVals.removeAtIndex(random)
+        
+        if numSolutions > 1 {
+            tried.append(lastRemoved)
+            return minValuesForPuzzle(allVals, withLastRemoved: next, andTried: tried, andSolution: solution)
+        } else {
+            solution.append(lastRemoved)
+            return minValuesForPuzzle(allVals, withLastRemoved: next, andTried: tried, andSolution: solution)
+        }
     }
     
     func solutionForValidPuzzle(puzzle: [PuzzleCell]) -> [PuzzleCell]? {
@@ -579,7 +606,7 @@ class Matrix {
     }
     
     
-   func eliminatePuzzleGivens(cells: [PuzzleCell]) {
+   func eliminatePuzzleGivens(cells: [PuzzleCell]) -> Int {
         let givenValues = translateCellsToConstraintList(cells)
         var rowsToSolve = [LinkedNode<PuzzleNode>]()
         
@@ -592,6 +619,7 @@ class Matrix {
             eliminated.append(solveForRow(row, root: row.vertOrder))
         }
     
+        return rowsAndColumns.verticalCount()
     }
     
     
