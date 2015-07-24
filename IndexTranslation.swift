@@ -141,7 +141,7 @@ func getRowIndexFromTileIndex(tileIndex: TileIndex) -> Int {
     }
 }
 
-// constraints <-> tiles
+// Nodes <-> Cells
 
 func cellsFromConstraints(constraints: [LinkedNode<PuzzleNode>]) -> [PuzzleCell] {
     var puzzleNodes: [PuzzleNode] = []
@@ -156,6 +156,15 @@ func cellsFromConstraints(constraints: [LinkedNode<PuzzleNode>]) -> [PuzzleCell]
         cells.append(cell)
     }
     return cells
+}
+
+func cellNodeDictFromNodes(nodes: [LinkedNode<PuzzleNode>]) -> [PuzzleCell: LinkedNode<PuzzleNode>]{
+    var dict: [PuzzleCell: LinkedNode<PuzzleNode>] = [:]
+    for node in nodes {
+        let cell = PuzzleCell(row: node.key!.row!, column: node.key!.column!, value: node.key!.value!)
+        dict[cell] = node
+    }
+    return dict
 }
 
 func tileForConstraint(node: PuzzleNode, tiles:[Tile]) -> Tile? {
@@ -217,5 +226,43 @@ var GlobalUtilityQueue: dispatch_queue_t {
 
 var GlobalBackgroundQueue: dispatch_queue_t {
     return dispatch_get_global_queue(Int(QOS_CLASS_BACKGROUND.rawValue), 0)
+}
+
+extension UIButton {
+    convenience init(tag: Int) {
+        self.init()
+        self.tag = tag
+    }
+}
+
+enum SymbolSet {
+    case Standard, Critters, Flags
+    
+    func getSymbolForTyleValue(value: TileValue) -> String {
+        switch self {
+        case Standard:
+            return String(value.rawValue)
+        case Critters:
+            let dict:[Int:String] = [1:"🐥", 2:"🙈", 3:"🐼", 4:"🐰", 5:"🐷", 6:"🐘", 7:"🐢", 8:"🐙", 9:"🐌"]
+            return dict[value.rawValue]!
+        case Flags:
+            let dict = [1:"🇨🇭", 2:"🇸🇪", 3:"🇨🇱", 4:"🇨🇦", 5:"🇯🇵", 6:"🇹🇷", 7:"🇫🇮", 8:"🇰🇷", 9:"🇲🇽"]
+            return dict[value.rawValue]!
+        }
+    }
+    
+    func getSymbolForValue(value: Int) -> String {
+        switch self {
+        case Standard:
+            return String(value)
+        case Critters:
+            let dict:[Int:String] = [1:"🐥", 2:"🙈", 3:"🐼", 4:"🐰", 5:"🐷", 6:"🐘", 7:"🐢", 8:"🐙", 9:"🐌"]
+            return dict[value]!
+        case Flags:
+            let dict = [1:"🇨🇭", 2:"🇸🇪", 3:"🇨🇱", 4:"🇨🇦", 5:"🇯🇵", 6:"🇹🇷", 7:"🇫🇮", 8:"🇰🇷", 9:"🇲🇽"]
+            return dict[value]!
+        }
+    }
+
 }
 

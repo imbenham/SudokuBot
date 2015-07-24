@@ -7,7 +7,7 @@
 //
 
 import Foundation
-class PuzzleCell {
+struct PuzzleCell: Hashable {
     // PFSubclassing
    
     
@@ -24,8 +24,22 @@ class PuzzleCell {
         self.value = value
     }
     
+    
+    // hashable conformance
+    
+    var hashValue: Int {
+        let rowString = String(row)
+        let columnString = String(column)
+        let valString = String(value)
+        
+        return Int(rowString+columnString+valString)!
+    }
     // convenience initWithCell = getRowIndex, getColumnIndex, .rawValue from passed Cell
     
+}
+
+func == (lhs: PuzzleCell, rhs: PuzzleCell) -> Bool {
+    return lhs.hashValue == rhs.hashValue
 }
 
 class Puzzle {

@@ -13,37 +13,72 @@ class PlayPuzzleViewController: SudokuController {
     var startingNils: [Tile] = []
     
    
-    let clearButton: UIButton = UIButton()
+    let clearButton: UIButton = UIButton(tag: 0)
+    let hintButton: UIButton = UIButton(tag: 1)
+    let optionsButton: UIButton = UIButton(tag: 2)
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = UIColor.orangeColor()
+        setUpButtons()
         
-        self.view.addSubview(clearButton)
-        
-        clearButton.backgroundColor = UIColor.whiteColor()
-        clearButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
-        clearButton.setTitle("Clear", forState: .Normal)
-        clearButton.layer.cornerRadius = 5.0
-        clearButton.addTarget(self, action: "clearAll", forControlEvents: .TouchUpInside)
+
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.Action, target: self, action: "") // use this to tinker with settings??
 
     }
     
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+    
+    func setUpButtons() {
+        let buttons = [clearButton, hintButton, optionsButton]
         
-        clearButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        let clearWidth = NSLayoutConstraint(item: clearButton, attribute: .Width, relatedBy: .Equal, toItem: self.board, attribute: .Width, multiplier: 1/3, constant: 0)
-        let clearHeight = NSLayoutConstraint(item: clearButton, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: 40)
-        let clearBottomPin = NSLayoutConstraint(item: clearButton, attribute: .Bottom, relatedBy: .Equal, toItem: self.bottomLayoutGuide, attribute: .Top, multiplier: 1, constant: -8)
-        let clearCenterX = NSLayoutConstraint(item: clearButton, attribute: .CenterX, relatedBy: .Equal, toItem: self.board, attribute: .CenterX, multiplier: 1, constant: 0)
-        
-        let constraints = [clearWidth, clearHeight, clearBottomPin, clearCenterX]
-        self.view.addConstraints(constraints)
-        
-    }
+        for button in buttons {
+            view.addSubview(button)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            let tag = button.tag
+            //let leftNeighbor = tag == 2 ? buttons[1] : numPad
+            let pinAttribute: NSLayoutAttribute = tag == 0 ? .Leading : .Trailing
+            
 
+            
+            
+            // lay out the buttons
+            
+            let width = NSLayoutConstraint(item: button, attribute: .Width, relatedBy: .Equal, toItem: numPad, attribute: .Width, multiplier: 1/4, constant: 0)
+            let height = NSLayoutConstraint(item: button, attribute: .Height, relatedBy: .Equal, toItem: numPad, attribute: .Height, multiplier: 1, constant: 0)
+            let bottomPin = NSLayoutConstraint(item: button, attribute: .Bottom, relatedBy: .Equal, toItem: self.bottomLayoutGuide, attribute: .Top, multiplier: 1, constant: -8)
+            let sidePin = NSLayoutConstraint(item: button, attribute: pinAttribute, relatedBy: .Equal, toItem: numPad, attribute: pinAttribute, multiplier: 1, constant: 0)
+            
+            let constraints = tag == 1 ? [width, height, bottomPin, NSLayoutConstraint(item: button, attribute: .CenterX, relatedBy: .Equal, toItem: numPad, attribute: .CenterX, multiplier: 1, constant: 0)] : [width, height, bottomPin, sidePin]
+            self.view.addConstraints(constraints)
+            
+            // configure the buttons
+            
+            let buttonInfo = buttonInfoForTag(tag)
+            
+            button.backgroundColor = UIColor.whiteColor()
+            button.setTitleColor(UIColor.blackColor(), forState: .Normal)
+            button.setTitle(buttonInfo.title, forState: .Normal)
+            button.layer.cornerRadius = 5.0
+            button.layer.borderColor = UIColor.blackColor().CGColor
+            button.layer.borderWidth = 2.0
+            button.addTarget(self, action: Selector(buttonInfo.action), forControlEvents: .TouchUpInside)
+            
+            
+        }
+
+    }
+    
+    func buttonInfoForTag(tag: Int) -> (title: String, action: String) {
+        switch tag {
+        case 0:
+            return ("Clear", "clearAll")
+        case 1:
+            return ("Hint", "showHint:")
+        default:
+            return ("Options", "showOptions:")
+        }
+    }
     
     override func boardReady() {
         /*
@@ -83,12 +118,23 @@ class PlayPuzzleViewController: SudokuController {
             tile.value = .Nil
         }
 
-        matrix.rebuild()
         fetchPuzzle()
        /* for tile in startingNils {
             tile.value = TileValue.Nil
         }*/
 
+    }
+    
+    func showHint(sender: AnyObject) {
+        print("Hint me!")
+    }
+    
+    func showOptions(sender: AnyObject) {
+        print("Options!")
+        
+       
+        let optionSheet = self.storyboard!.instantiateViewControllerWithIdentifier("options")
+        navigationController!.showViewController(optionSheet, sender: sender)
     }
     
     override func valueSelected(value: Int) {

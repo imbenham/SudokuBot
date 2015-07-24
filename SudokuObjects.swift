@@ -262,6 +262,7 @@ class Tile: SudokuItem {
     }
     var valueLabel = UILabel()
     var labelColor = UIColor.blackColor()
+    var symbolSet = SymbolSet.Flags
     
     override init (index: Int) {
         super.init(index: index)
@@ -275,8 +276,10 @@ class Tile: SudokuItem {
     
     
     required init(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        super.init(coder: aDecoder)
     }
+    
+    
     
     override func layoutSubviews() {
         self.addSubview(valueLabel)
@@ -288,7 +291,7 @@ class Tile: SudokuItem {
     }
     
     func getValueText()->String {
-        return self.value != .Nil ? "\(self.value.rawValue)" : ""
+        return self.value != .Nil ? symbolSet.getSymbolForTyleValue(value) : ""
     }
     
     func view() -> UIView {
@@ -436,6 +439,7 @@ enum TileValue:Int {
     case Nine = 9
     case Nil = 0
     
+    
     static func getFullSet()->Set<TileValue>{
         return [TileValue.One, TileValue.Two, TileValue.Three, TileValue.Four, TileValue.Five, TileValue.Six, TileValue.Seven, TileValue.Eight, TileValue.Nine]
         
@@ -444,6 +448,8 @@ enum TileValue:Int {
     func description() -> String {
         return "\(self.rawValue)"
     }
+    
+    
 }
 
 typealias TileIndex = (Box:Int, Tile:Int)

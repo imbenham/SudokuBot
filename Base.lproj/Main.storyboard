@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="7531" systemVersion="14C109" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="TJh-N4-tPB">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="8121.20" systemVersion="14D136" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="WFQ-4l-gLN">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="7520"/>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="8101.16"/>
     </dependencies>
     <scenes>
-        <!--Honest View Controller-->
+        <!--Home View Controller-->
         <scene sceneID="iyM-jV-XbZ">
             <objects>
-                <viewController id="Wrd-Tw-nav" customClass="HonestViewController" customModule="SudokuCheat" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="Wrd-Tw-nav" customClass="HomeViewController" customModule="SudokuCheat" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="vRD-Ym-pOa"/>
                         <viewControllerLayoutGuide type="bottom" id="Whc-Qb-lmS"/>
@@ -16,47 +17,104 @@
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="GE4-hG-F85">
-                                <rect key="frame" x="250" y="149" width="100" height="100"/>
+                            <button opaque="NO" tag="2" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Rb4-8O-nUu">
+                                <rect key="frame" x="250" y="250" width="100" height="100"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="100" id="0pr-ha-t5Q"/>
-                                    <constraint firstAttribute="height" constant="100" id="kEK-nl-Mar"/>
+                                    <constraint firstAttribute="height" constant="100" id="EfY-M0-b7J"/>
+                                    <constraint firstAttribute="width" constant="100" id="Inf-Y8-Ey8"/>
                                 </constraints>
-                                <state key="normal" title="Play">
+                                <state key="normal" title="Hard">
                                     <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
-                                    <segue destination="th5-hC-sdf" kind="show" identifier="showPlayPuzzle" id="pai-vY-eFc"/>
+                                    <segue destination="th5-hC-sdf" kind="show" id="m7F-tE-C3r"/>
                                 </connections>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Tde-f7-GfR">
-                                <rect key="frame" x="250" y="259" width="100" height="100"/>
+                            <button opaque="NO" tag="3" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="D2l-VG-8wJ">
+                                <rect key="frame" x="250" y="360" width="100" height="100"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                <state key="normal" title="Create">
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="100" id="qU7-G5-C3G"/>
+                                    <constraint firstAttribute="width" constant="100" id="s9b-PP-H1b"/>
+                                </constraints>
+                                <state key="normal" title="Insane">
                                     <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
-                                    <segue destination="9em-sG-vH1" kind="show" id="i8i-Bn-yr3"/>
+                                    <segue destination="th5-hC-sdf" kind="show" id="key-Dm-Hkl"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="4" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="PoY-Nl-stR">
+                                <rect key="frame" x="250" y="470" width="100" height="100"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="100" id="OTI-os-A1j"/>
+                                    <constraint firstAttribute="height" constant="100" id="tOY-3N-BkX"/>
+                                </constraints>
+                                <state key="normal" title="Cheat">
+                                    <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <segue destination="6Fu-Rc-3fj" kind="show" id="Utx-XK-Ji2"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="4b1-n9-4us">
+                                <rect key="frame" x="250" y="30" width="100" height="100"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="100" id="0en-td-Zpm"/>
+                                    <constraint firstAttribute="width" constant="100" id="ls2-Gl-dD6"/>
+                                </constraints>
+                                <state key="normal" title="Easy">
+                                    <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <segue destination="th5-hC-sdf" kind="show" id="aD0-qP-Lc4"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Aa1-Eb-jeU">
+                                <rect key="frame" x="250" y="140" width="100" height="100"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="100" id="93h-hr-hIB"/>
+                                    <constraint firstAttribute="width" constant="100" id="rg1-sF-iwb"/>
+                                </constraints>
+                                <state key="normal" title="Medium">
+                                    <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <segue destination="th5-hC-sdf" kind="show" id="0oM-n5-4Ff"/>
                                 </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
-                            <constraint firstItem="GE4-hG-F85" firstAttribute="top" secondItem="vRD-Ym-pOa" secondAttribute="bottom" constant="129" id="2y7-1v-cnT"/>
-                            <constraint firstItem="Tde-f7-GfR" firstAttribute="width" secondItem="GE4-hG-F85" secondAttribute="width" id="4l5-1z-USJ"/>
-                            <constraint firstItem="Tde-f7-GfR" firstAttribute="height" secondItem="GE4-hG-F85" secondAttribute="height" id="DOR-jI-dmz"/>
-                            <constraint firstAttribute="centerX" secondItem="GE4-hG-F85" secondAttribute="centerX" id="Lqt-rj-zv0"/>
-                            <constraint firstItem="Tde-f7-GfR" firstAttribute="top" secondItem="GE4-hG-F85" secondAttribute="bottom" constant="10" id="ZsA-E8-cIF"/>
-                            <constraint firstAttribute="centerX" secondItem="Tde-f7-GfR" secondAttribute="centerX" id="ff6-mr-cVZ"/>
+                            <constraint firstItem="Rb4-8O-nUu" firstAttribute="centerY" secondItem="tLe-sX-Ykm" secondAttribute="centerY" id="FB1-gr-sqw"/>
+                            <constraint firstItem="D2l-VG-8wJ" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="Hat-As-ZB6"/>
+                            <constraint firstItem="Aa1-Eb-jeU" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="KXg-Xe-ri0"/>
+                            <constraint firstItem="Rb4-8O-nUu" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="TBs-cs-rLO"/>
+                            <constraint firstItem="D2l-VG-8wJ" firstAttribute="top" secondItem="Rb4-8O-nUu" secondAttribute="bottom" constant="10" id="fPk-Ow-usa"/>
+                            <constraint firstItem="Rb4-8O-nUu" firstAttribute="top" secondItem="Aa1-Eb-jeU" secondAttribute="bottom" constant="10" id="hKk-tf-78T"/>
+                            <constraint firstItem="4b1-n9-4us" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="iLw-Ra-Kji"/>
+                            <constraint firstItem="PoY-Nl-stR" firstAttribute="top" secondItem="D2l-VG-8wJ" secondAttribute="bottom" constant="10" id="mCv-58-XOU"/>
+                            <constraint firstItem="PoY-Nl-stR" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="scx-Ge-2mU"/>
+                            <constraint firstItem="Aa1-Eb-jeU" firstAttribute="top" secondItem="4b1-n9-4us" secondAttribute="bottom" constant="10" id="yhk-Yj-ctv"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="EID-QM-qzy"/>
                     <connections>
-                        <outlet property="createButton" destination="Tde-f7-GfR" id="VQg-yd-Hx5"/>
-                        <outlet property="playButton" destination="GE4-hG-F85" id="oom-OX-rRs"/>
+                        <outlet property="cheatButton" destination="PoY-Nl-stR" id="wz2-PF-TIf"/>
+                        <outlet property="easyButton" destination="4b1-n9-4us" id="lCO-WH-soR"/>
+                        <outlet property="hardButton" destination="Rb4-8O-nUu" id="gkv-K6-f49"/>
+                        <outlet property="insaneButton" destination="D2l-VG-8wJ" id="dTp-Pp-etM"/>
+                        <outlet property="mediumButton" destination="Aa1-Eb-jeU" id="b3M-Dn-cf0"/>
+                        <outlet property="middleButtonY" destination="FB1-gr-sqw" id="1ky-Iy-Ka8"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LDH-KE-pcE" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -76,72 +134,55 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
+                    <toolbarItems>
+                        <barButtonItem title="Item" id="6eI-ID-yeh"/>
+                    </toolbarItems>
+                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="EBE-qU-vfJ" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2661" y="-316"/>
+            <point key="canvasLocation" x="2714" y="-313"/>
         </scene>
-        <!--Create Puzzle View Controller-->
-        <scene sceneID="T3X-ZP-EMa">
+        <!--Puzzle Options View Controller-->
+        <scene sceneID="JVj-v2-uan">
             <objects>
-                <viewController id="9em-sG-vH1" customClass="CreatePuzzleViewController" customModule="SudokuCheat" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="options" useStoryboardIdentifierAsRestorationIdentifier="YES" id="gCc-iB-ePb" customClass="PuzzleOptionsViewController" customModule="SudokuCheat" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
-                        <viewControllerLayoutGuide type="top" id="615-i1-9xm"/>
-                        <viewControllerLayoutGuide type="bottom" id="60z-GM-w0n"/>
+                        <viewControllerLayoutGuide type="top" id="tE3-Ia-fpO"/>
+                        <viewControllerLayoutGuide type="bottom" id="7V2-JU-Izh"/>
                     </layoutGuides>
-                    <view key="view" contentMode="scaleToFill" id="HAz-MW-f3w">
+                    <view key="view" contentMode="scaleToFill" id="hLC-Fh-b2V">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
                 </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="yja-DX-VYO" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="Z1M-oh-pSn" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2651" y="352"/>
+            <point key="canvasLocation" x="3435" y="-313"/>
         </scene>
-        <!--Cheat-->
-        <scene sceneID="6Wm-Ze-Tz5">
+        <!--Cheat View Controller-->
+        <scene sceneID="S7B-Gc-Xc1">
             <objects>
-                <viewController id="jPD-fX-65q" customClass="CheatViewController" customModule="SudokuCheat" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="6Fu-Rc-3fj" customClass="CheatViewController" customModule="SudokuCheat" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
-                        <viewControllerLayoutGuide type="top" id="ZCy-Ia-Ulq"/>
-                        <viewControllerLayoutGuide type="bottom" id="2NB-S5-qhT"/>
+                        <viewControllerLayoutGuide type="top" id="3Ds-MY-2RU"/>
+                        <viewControllerLayoutGuide type="bottom" id="LVD-IF-Pbr"/>
                     </layoutGuides>
-                    <view key="view" contentMode="scaleToFill" id="Lyy-Ld-SL4">
+                    <view key="view" contentMode="scaleToFill" id="a90-wi-IPB">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
-                    <tabBarItem key="tabBarItem" title="Cheat" id="l8d-lT-Kx7"/>
                 </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="ppv-le-Kv5" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="R9D-A8-zd0" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1052" y="599"/>
+            <point key="canvasLocation" x="2714" y="381"/>
         </scene>
-        <!--Tab Bar Controller-->
-        <scene sceneID="l6K-cq-Qt0">
-            <objects>
-                <tabBarController automaticallyAdjustsScrollViewInsets="NO" id="TJh-N4-tPB" sceneMemberID="viewController">
-                    <toolbarItems/>
-                    <nil key="simulatedBottomBarMetrics"/>
-                    <tabBar key="tabBar" contentMode="scaleToFill" id="UWW-lR-Asp">
-                        <autoresizingMask key="autoresizingMask"/>
-                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
-                    </tabBar>
-                    <connections>
-                        <segue destination="WFQ-4l-gLN" kind="relationship" relationship="viewControllers" id="7tC-WP-ml7"/>
-                        <segue destination="jPD-fX-65q" kind="relationship" relationship="viewControllers" id="3l1-Af-6D4"/>
-                    </connections>
-                </tabBarController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="r8d-gA-a2B" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="280" y="241"/>
-        </scene>
-        <!--Honest-->
+        <!--Navigation Controller-->
         <scene sceneID="1mR-j7-tey">
             <objects>
                 <navigationController automaticallyAdjustsScrollViewInsets="NO" id="WFQ-4l-gLN" sceneMemberID="viewController">
-                    <tabBarItem key="tabBarItem" title="Honest" id="cte-Mf-JHb"/>
                     <toolbarItems/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="wVC-s1-Dbb">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
@@ -157,4 +198,7 @@
             <point key="canvasLocation" x="1052" y="-68"/>
         </scene>
     </scenes>
+    <inferredMetricsTieBreakers>
+        <segue reference="aD0-qP-Lc4"/>
+    </inferredMetricsTieBreakers>
 </document>

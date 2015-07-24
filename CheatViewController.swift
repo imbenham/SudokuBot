@@ -76,7 +76,7 @@ class CheatViewController: SudokuController {
 
         let valuatedTiles = nonNilTiles()
         let cells: [PuzzleCell] = cellsFromTiles(valuatedTiles)
-        if let solution = matrix.solutionForValidPuzzle(cells) {
+        if let solution = Matrix.sharedInstance.solutionForValidPuzzle(cells) {
             for cell in solution {
                 let tIndex = getTileIndexForRow(cell.row, andColumn: cell.column)
                 board.tileAtIndex(tIndex).value = TileValue(rawValue: cell.value)!

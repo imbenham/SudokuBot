@@ -34,6 +34,14 @@ class SudokuNumberPad: UIView {
             }
         }
     }
+    var symbolSet: SymbolSet = .Flags {
+        didSet {
+            for val in 1...9 {
+                setTextTitleForValue(val)
+            }
+            
+        }
+    }
     var currentColor = UIColor.blackColor()
     var defaultColor = UIColor.whiteColor()
     var defaultTitleColor = UIColor.blackColor()
@@ -53,10 +61,8 @@ class SudokuNumberPad: UIView {
     override func layoutSubviews() {
         self.userInteractionEnabled = true
         for index in 0...buttons.count-1 {
+            setTextTitleForValue(index+1)
             let button = buttons[index]
-            let title = "\(index+1)"
-            button.setTitle(title, forState: .Normal)
-            button.setTitle(title, forState: .Selected)
             button.setTitleColor(defaultTitleColor, forState: .Normal)
             button.backgroundColor = defaultColor
             self.addSubview(button)
@@ -69,6 +75,14 @@ class SudokuNumberPad: UIView {
            button.addTarget(self, action: "buttonTapped:", forControlEvents: .TouchUpInside)
         
         }
+    }
+    
+    private func setTextTitleForValue(value:Int) {
+        let button = buttons[value-1]
+        let title = symbolSet.getSymbolForValue(value)
+        print(title)
+        button.setTitle(title, forState: .Normal)
+        button.setTitle(title, forState: .Selected)
     }
     
     func constrainButton(button: UIButton, atIndex index: Int) {
