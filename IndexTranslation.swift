@@ -238,6 +238,7 @@ extension UIButton {
 enum SymbolSet {
     case Standard, Critters, Flags
     
+    
     func getSymbolForTyleValue(value: TileValue) -> String {
         switch self {
         case Standard:

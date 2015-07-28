@@ -262,8 +262,22 @@ class Tile: SudokuItem {
     }
     var valueLabel = UILabel()
     var labelColor = UIColor.blackColor()
-    var symbolSet = SymbolSet.Flags
-    
+    var symbolSet: SymbolSet {
+        get {
+            let defaults = NSUserDefaults.standardUserDefaults()
+            let symType = defaults.integerForKey("symbolSet")
+            switch symType {
+            case 0:
+                return .Standard
+            case 1:
+                return .Critters
+            default:
+                return .Flags
+            }
+        }
+
+    }
+
     override init (index: Int) {
         super.init(index: index)
         

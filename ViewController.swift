@@ -23,7 +23,51 @@ class SudokuController: UIViewController, NumPadDelegate {
         return puzzCopy
     }
     
+    var tiles: [Tile] {
+        get {
+            var mutableTiles = [Tile]()
+            let boxList = self.board.boxes as! [Box]
+            for box in boxList {
+                let containedTiles = box.boxes as! [Tile]
+                mutableTiles.extend(containedTiles)
+            }
+            return mutableTiles
+        }
+    }
+    
+    var nilTiles: [Tile] {
+        get {
+            var nilTiles = [Tile]()
+            for tile in tiles {
+                if tile.value == .Nil {
+                    nilTiles.append(tile)
+                }
+            }
+            return nilTiles
+        }
+    }
+    
+    var nonNilTiles: [Tile] {
+        get {
+            var nilTiles = [Tile]()
+            for tile in tiles {
+                if tile.value == .Nil {
+                    nilTiles.append(tile)
+                }
+            }
+            return nilTiles
+        }
+    }
+    
     var difficulty: PuzzleDifficulty = .Easy
+    
+    var numPadHeight: CGFloat {
+        get {
+            return self.board.frame.size.width * 1/9
+        }
+    }
+    
+    
     
     private let concurrentPuzzleQueue = dispatch_queue_create(
     "com.isaacbenham.SudokuCheat.puzzleQueue", DISPATCH_QUEUE_CONCURRENT)
@@ -45,8 +89,25 @@ class SudokuController: UIViewController, NumPadDelegate {
         view.addSubview(numPad)
         board.addSubview(spinner)
         self.setUpBoard()
+        
+        // register to receive notifications when user defaults change
+        let notificationCenter = NSNotificationCenter.defaultCenter()
+        notificationCenter.addObserver(self, selector: Selector("defaultsChanged:"), name: NSUserDefaultsDidChangeNotification, object: nil)
     }
     
+    
+    func defaultsChanged(notification: NSNotification) {
+    
+        numPad.refreshButtonText()
+        for tile in tiles {
+            tile.refreshLabel()
+        }
+    }
+    
+   deinit {
+        let notificationCenter = NSNotificationCenter.defaultCenter()
+        notificationCenter.removeObserver(self)
+    }
     
     func setUpBoard() {
         board.translatesAutoresizingMaskIntoConstraints = false
@@ -83,42 +144,15 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     func clearAllValues() {
-        for tile in tiles() {
+        for tile in tiles {
             tile.value = TileValue.Nil
         }
         board.selectedTile = nil
         numPad.refresh()
     }
     
-    func tiles() -> [Tile] {
-        var mutableTiles = [Tile]()
-        let boxList = self.board.boxes as! [Box]
-        for box in boxList {
-            let containedTiles = box.boxes as! [Tile]
-            mutableTiles.extend(containedTiles)
-        }
-        return mutableTiles
-    }
     
-    func nonNilTiles()->[Tile]{
-        var nonNilTiles = [Tile]()
-        for tile in tiles() {
-            if tile.value != .Nil {
-                nonNilTiles.append(tile)
-            }
-        }
-        return nonNilTiles
-    }
     
-    func nilTiles()->[Tile]{
-        var nilTiles = [Tile]()
-        for tile in tiles() {
-            if tile.value == .Nil {
-                nilTiles.append(tile)
-            }
-        }
-        return nilTiles
-    }
     
     // puzzle fetching
     func fetchPuzzle() {
@@ -142,9 +176,9 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     func boardReady() {
-        let nils = nilTiles()
-        if nils.count > 0 {
-            board.selectedTile = nils[0]
+        
+        if nilTiles.count > 0 {
+            board.selectedTile = nilTiles[0]
         }
     }
     
@@ -184,24 +218,27 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
     
     let tableView = UITableView(frame: CGRectZero, style: .Grouped)
     let baseView = UIView(frame: CGRectZero)
-    var selectedSet = NSIndexPath(forRow: 0, inSection: 0) {
+    var selectedIndex:NSIndexPath = NSIndexPath(forRow: 0, inSection: 0)  {
         willSet {
-            if selectedSet != newValue {
-                let cell = tableView.cellForRowAtIndexPath(selectedSet)
+            if selectedIndex != newValue {
+                let cell = tableView.cellForRowAtIndexPath(selectedIndex)
                 cell?.accessoryType = .None
             }
         }
         didSet {
-            if selectedSet != oldValue {
-                let cell = tableView.cellForRowAtIndexPath(selectedSet)
+            if selectedIndex != oldValue {
+                let cell = tableView.cellForRowAtIndexPath(selectedIndex)
                 cell?.accessoryType = .Checkmark
             }
         }
     }
     
     required init(coder aDecoder: NSCoder) {
+        
         super.init(coder: aDecoder)
+        
     }
+
     
     override func viewDidLoad() {
         tableView.registerClass(UITableViewCell.self, forCellReuseIdentifier: "cell")
@@ -210,6 +247,13 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
         self.layoutTableView()
         tableView.delegate = self
         tableView.dataSource = self
+        
+        let defaults = NSUserDefaults.standardUserDefaults()
+        let selected = defaults.integerForKey("symbolSet")
+        
+        let index = NSIndexPath(forRow: selected, inSection: 0)
+        print("selected index at viewDidLoad = \(index)")
+        selectedIndex = index
     }
     
     func layoutTableView() {
@@ -267,7 +311,6 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
             switch indexPath.row {
             case 0:
                 cell.textLabel?.text = "Standard: 1-9"
-                cell.accessoryType = .Checkmark
             case 1:
                 cell.textLabel?.text = "Critters:🐥-🐌"
             default:
@@ -275,6 +318,10 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
             }
         default:
             break
+        }
+        
+        if indexPath == selectedIndex {
+            cell.accessoryType = .Checkmark
         }
         return cell
         
@@ -284,9 +331,27 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
         
         if indexPath.section == 0 {
             print("cell selected")
-            selectedSet = indexPath
+            selectedIndex = indexPath
         }
         
+        // testing... move later
+        saveAndDismiss()
+        
+    }
+    
+    // saving changes
+    
+    func saveAndDismiss() {
+        print("dimissed!")
+        let selected = NSNumber(integer: selectedIndex.row)
+        let defaults = NSUserDefaults.standardUserDefaults()
+        
+        defaults.setObject(selected, forKey: "symbolSet")
+        
+        defaults.synchronize()
+        
+        print(defaults.objectForKey("symbolSet")!)
+        navigationController!.popViewControllerAnimated(true)
     }
     
     

@@ -60,7 +60,7 @@ class CheatViewController: SudokuController {
     
     func clearAll() {
         // alert view?
-        let tiles = self.tiles()
+        let tiles = self.tiles
         for tile in tiles {
             tile.value = .Nil
             tile.refreshLabel()

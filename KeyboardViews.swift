@@ -34,12 +34,18 @@ class SudokuNumberPad: UIView {
             }
         }
     }
-    var symbolSet: SymbolSet = .Flags {
-        didSet {
-            for val in 1...9 {
-                setTextTitleForValue(val)
+    var symbolSet: SymbolSet {
+        get {
+            let defaults = NSUserDefaults.standardUserDefaults()
+            let symType = defaults.integerForKey("symbolSet")
+            switch symType {
+            case 0:
+                return .Standard
+            case 1:
+                return .Critters
+            default:
+                return .Flags
             }
-            
         }
     }
     var currentColor = UIColor.blackColor()
@@ -47,6 +53,7 @@ class SudokuNumberPad: UIView {
     var defaultTitleColor = UIColor.blackColor()
     var currentTitleColor = UIColor.whiteColor()
     var delegate: NumPadDelegate?
+    var buttonHeight:CGFloat = 0.0
     
     override init(frame: CGRect) {
         buttons = [one, two, three, four, five, six, seven, eight, nine]
@@ -68,12 +75,19 @@ class SudokuNumberPad: UIView {
             self.addSubview(button)
             constrainButton(button, atIndex: index)
             let radius = self.frame.height/2
+            buttonHeight = radius
             button.layer.cornerRadius = radius
             button.layer.borderColor = UIColor.blackColor().CGColor
-            button.layer.borderWidth = 1.0
+            button.layer.borderWidth = 2.0
             button.tag = index+1
            button.addTarget(self, action: "buttonTapped:", forControlEvents: .TouchUpInside)
         
+        }
+    }
+    
+    func refreshButtonText() {
+        for val in 1...9 {
+            setTextTitleForValue(val)
         }
     }
     

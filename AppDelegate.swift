@@ -21,6 +21,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       
         Parse.setApplicationId("TmrIKmoqwo7PIwSdm0OYkm9fanTEPndy9txFuEhL",
             clientKey: "b9ZYfrsZlQjJNaPdmqbVa2hhUvXXqTeUwsGG0Xo7")
+        
+        let defaults = NSUserDefaults.standardUserDefaults()
+        let number = NSNumber(integer: 0)
+        
+        defaults.registerDefaults(["symbolSet":number])
+        
+        defaults.synchronize()
     
         return true
     }

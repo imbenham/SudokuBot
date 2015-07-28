@@ -411,7 +411,6 @@ struct PuzzleNode {
     var row:Int?
     var box:Int?
     
-
     
      init(value: Int, column: Int, row: Int, box: Int) {
         self.value = value
@@ -482,13 +481,41 @@ func == (lhs:PuzzleNode, rhs:PuzzleNode) -> Bool {
 
 extension PuzzleNode: Equatable{}
 
-enum PuzzleDifficulty: Int {
-    case Easy = 140
-    case Medium = 170
-    case Hard = 190
-    case Insane = 230
+enum PuzzleDifficulty: Equatable, Hashable {
+    case Easy
+    case Medium
+    case Hard
+    case Insane
+    case Custom (Int)
+    
+    var hashValue: Int {
+        get {
+            return self.toInt()
+        }
+    }
+    
+    func toInt() -> Int {
+        switch self{
+        case .Easy:
+            return 0
+        case .Medium:
+            return 1
+        case .Hard:
+            return 2
+        case .Insane:
+            return 3
+        case .Custom(let diff):
+            return 4 + diff
+        }
+    }
     
 }
+
+func == (lhs:PuzzleDifficulty, rhs:PuzzleDifficulty) -> Bool{
+    return lhs.toInt() == rhs.toInt()
+}
+
+
 
 class Matrix {
     
@@ -501,11 +528,21 @@ class Matrix {
     typealias Solution = [LinkedNode<PuzzleNode>]
     private var solutions = [Solution]()
     private var solutionDict: [PuzzleCell: LinkedNode<PuzzleNode>]?
+    private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 7, .Medium: 170, .Hard: 190, .Insane: 230] // easy should be 130
+    
     
     init() {
         constructMatrix()
     }
     
+    func getRawDifficultyForPuzzle(difficulty: PuzzleDifficulty) -> Int {
+        switch difficulty{
+        case .Custom(let diff):
+            return diff
+        default:
+            return rawDiffDict[difficulty]!
+        }
+    }
     private func rebuild() {
         while currentSolution.count != 0 {
             let lastChoice:Choice = currentSolution.removeLast()
@@ -555,11 +592,11 @@ class Matrix {
 
     private func puzzleOfSpecifedDifficulty(difficulty:PuzzleDifficulty, var withGivens givens:[PuzzleCell], var andSolution solution:[PuzzleCell]) -> (Givens: [PuzzleCell], Solution:[PuzzleCell]) {
         
+        let targetDiff = getRawDifficultyForPuzzle(difficulty)
+        
         let rawDiff = solveForRows(getRowsFromCells(givens))
         
-        print(difficulty.rawValue)
-        
-        if rawDiff > difficulty.rawValue {
+        if rawDiff > targetDiff {
             let cellToAdd = solution.removeLast()
             givens.append(cellToAdd)
             return puzzleOfSpecifedDifficulty(difficulty, withGivens: givens, andSolution: solution)
