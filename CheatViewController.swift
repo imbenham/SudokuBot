@@ -12,24 +12,29 @@ class CheatViewController: SudokuController {
     
     let solveButton: UIButton = UIButton()
     let clearButton: UIButton = UIButton()
+    var shown = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        self.view.backgroundColor = UIColor.orangeColor()
+        originalContentView.backgroundColor = UIColor.orangeColor()
         
-        self.view.addSubview(solveButton)
+        originalContentView.addSubview(solveButton)
         solveButton.backgroundColor = UIColor.whiteColor()
         solveButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
         solveButton.setTitle("Solve", forState: .Normal)
         solveButton.layer.cornerRadius = 5.0
         solveButton.addTarget(self, action: "solvePuzzle", forControlEvents: .TouchUpInside)
-        self.view.addSubview(clearButton)
+        originalContentView.addSubview(clearButton)
         clearButton.backgroundColor = UIColor.whiteColor()
         clearButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
         clearButton.setTitle("Clear", forState: .Normal)
         clearButton.layer.cornerRadius = 5.0
         clearButton.addTarget(self, action: "clearAll", forControlEvents: .TouchUpInside)
+        
+        let defaults = NSUserDefaults.standardUserDefaults()
+        defaults.setInteger(0, forKey: "symbolSet")
+        
     }
     
     override func viewDidLayoutSubviews() {
@@ -49,7 +54,19 @@ class CheatViewController: SudokuController {
         
         
         let constraints = [solveRightEdge, solveBottomPin, buttonWidth, buttonHeight, clearWidth, clearHeight, clearBottomPin, clearLeftEdge]
-        self.view.addConstraints(constraints)
+        view.addConstraints(constraints)
+        
+    }
+    
+    override func viewDidAppear(animated: Bool) {
+        if !shown {
+            let instructionAlert = UIAlertController(title: "Welcome to the dark side.", message: "Enter any valid puzzle and your phone will magically solve it for you. With magic.", preferredStyle: .Alert)
+            let dismiss = UIAlertAction(title: "OK", style: .Cancel, handler: nil)
+            instructionAlert.addAction(dismiss)
+            self.presentViewController(instructionAlert, animated:true, completion: nil)
+            
+            shown = true
+        }
         
     }
     
@@ -65,16 +82,16 @@ class CheatViewController: SudokuController {
             tile.value = .Nil
             tile.refreshLabel()
         }
-        board.selectedTile = nilTiles()[0]
+        board.selectedTile = nilTiles[0]
     }
     
     func solvePuzzle() {
         
-        for tile in nilTiles() {
+        for tile in nilTiles {
             tile.labelColor = UIColor.redColor()
         }
 
-        let valuatedTiles = nonNilTiles()
+        let valuatedTiles = nonNilTiles
         let cells: [PuzzleCell] = cellsFromTiles(valuatedTiles)
         if let solution = Matrix.sharedInstance.solutionForValidPuzzle(cells) {
             for cell in solution {
@@ -83,7 +100,7 @@ class CheatViewController: SudokuController {
             }
             board.selectedTile = nil
         } else {
-            let alertController = UIAlertController(title: "Invalid Puzzle", message: "SudokuCheat can't help you because the puzzle you've tried to solve has more or less than one solution.", preferredStyle: .Alert)
+            let alertController = UIAlertController(title: "Invalid Puzzle", message: "Your phone can't help you because the puzzle you've tried to solve has more or less than one solution. It's not THAT magical.", preferredStyle: .Alert)
             
             let OKAction = UIAlertAction(title: "OK", style: .Default) { (_) in
                 self.dismissViewControllerAnimated(true) {

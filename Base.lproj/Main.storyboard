@@ -16,110 +16,17 @@
                     <view key="view" contentMode="scaleToFill" id="tLe-sX-Ykm">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <button opaque="NO" tag="2" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Rb4-8O-nUu">
-                                <rect key="frame" x="250" y="250" width="100" height="100"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="100" id="EfY-M0-b7J"/>
-                                    <constraint firstAttribute="width" constant="100" id="Inf-Y8-Ey8"/>
-                                </constraints>
-                                <state key="normal" title="Hard">
-                                    <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                </state>
-                                <connections>
-                                    <segue destination="th5-hC-sdf" kind="show" id="m7F-tE-C3r"/>
-                                </connections>
-                            </button>
-                            <button opaque="NO" tag="3" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="D2l-VG-8wJ">
-                                <rect key="frame" x="250" y="360" width="100" height="100"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="100" id="qU7-G5-C3G"/>
-                                    <constraint firstAttribute="width" constant="100" id="s9b-PP-H1b"/>
-                                </constraints>
-                                <state key="normal" title="Insane">
-                                    <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                </state>
-                                <connections>
-                                    <segue destination="th5-hC-sdf" kind="show" id="key-Dm-Hkl"/>
-                                </connections>
-                            </button>
-                            <button opaque="NO" tag="4" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="PoY-Nl-stR">
-                                <rect key="frame" x="250" y="470" width="100" height="100"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="100" id="OTI-os-A1j"/>
-                                    <constraint firstAttribute="height" constant="100" id="tOY-3N-BkX"/>
-                                </constraints>
-                                <state key="normal" title="Cheat">
-                                    <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                </state>
-                                <connections>
-                                    <segue destination="6Fu-Rc-3fj" kind="show" id="Utx-XK-Ji2"/>
-                                </connections>
-                            </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="4b1-n9-4us">
-                                <rect key="frame" x="250" y="30" width="100" height="100"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="100" id="0en-td-Zpm"/>
-                                    <constraint firstAttribute="width" constant="100" id="ls2-Gl-dD6"/>
-                                </constraints>
-                                <state key="normal" title="Easy">
-                                    <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                </state>
-                                <connections>
-                                    <segue destination="th5-hC-sdf" kind="show" id="aD0-qP-Lc4"/>
-                                </connections>
-                            </button>
-                            <button opaque="NO" tag="1" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Aa1-Eb-jeU">
-                                <rect key="frame" x="250" y="140" width="100" height="100"/>
-                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="100" id="93h-hr-hIB"/>
-                                    <constraint firstAttribute="width" constant="100" id="rg1-sF-iwb"/>
-                                </constraints>
-                                <state key="normal" title="Medium">
-                                    <color key="titleColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
-                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
-                                </state>
-                                <connections>
-                                    <segue destination="th5-hC-sdf" kind="show" id="0oM-n5-4Ff"/>
-                                </connections>
-                            </button>
-                        </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                        <constraints>
-                            <constraint firstItem="Rb4-8O-nUu" firstAttribute="centerY" secondItem="tLe-sX-Ykm" secondAttribute="centerY" id="FB1-gr-sqw"/>
-                            <constraint firstItem="D2l-VG-8wJ" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="Hat-As-ZB6"/>
-                            <constraint firstItem="Aa1-Eb-jeU" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="KXg-Xe-ri0"/>
-                            <constraint firstItem="Rb4-8O-nUu" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="TBs-cs-rLO"/>
-                            <constraint firstItem="D2l-VG-8wJ" firstAttribute="top" secondItem="Rb4-8O-nUu" secondAttribute="bottom" constant="10" id="fPk-Ow-usa"/>
-                            <constraint firstItem="Rb4-8O-nUu" firstAttribute="top" secondItem="Aa1-Eb-jeU" secondAttribute="bottom" constant="10" id="hKk-tf-78T"/>
-                            <constraint firstItem="4b1-n9-4us" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="iLw-Ra-Kji"/>
-                            <constraint firstItem="PoY-Nl-stR" firstAttribute="top" secondItem="D2l-VG-8wJ" secondAttribute="bottom" constant="10" id="mCv-58-XOU"/>
-                            <constraint firstItem="PoY-Nl-stR" firstAttribute="centerX" secondItem="tLe-sX-Ykm" secondAttribute="centerX" id="scx-Ge-2mU"/>
-                            <constraint firstItem="Aa1-Eb-jeU" firstAttribute="top" secondItem="4b1-n9-4us" secondAttribute="bottom" constant="10" id="yhk-Yj-ctv"/>
-                        </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="EID-QM-qzy"/>
                     <connections>
-                        <outlet property="cheatButton" destination="PoY-Nl-stR" id="wz2-PF-TIf"/>
-                        <outlet property="easyButton" destination="4b1-n9-4us" id="lCO-WH-soR"/>
-                        <outlet property="hardButton" destination="Rb4-8O-nUu" id="gkv-K6-f49"/>
-                        <outlet property="insaneButton" destination="D2l-VG-8wJ" id="dTp-Pp-etM"/>
-                        <outlet property="mediumButton" destination="Aa1-Eb-jeU" id="b3M-Dn-cf0"/>
-                        <outlet property="middleButtonY" destination="FB1-gr-sqw" id="1ky-Iy-Ka8"/>
+                        <segue destination="th5-hC-sdf" kind="show" identifier="playSegue" id="VwT-QY-IJw"/>
+                        <segue destination="6Fu-Rc-3fj" kind="show" identifier="cheatSegue" id="sVJ-Gj-PZ3"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="LDH-KE-pcE" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1868" y="-78"/>
+            <point key="canvasLocation" x="2050.5" y="-250.5"/>
         </scene>
         <!--Play Puzzle View Controller-->
         <scene sceneID="zV4-9Y-4uW">
@@ -198,7 +105,4 @@
             <point key="canvasLocation" x="1052" y="-68"/>
         </scene>
     </scenes>
-    <inferredMetricsTieBreakers>
-        <segue reference="aD0-qP-Lc4"/>
-    </inferredMetricsTieBreakers>
 </document>

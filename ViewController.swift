@@ -7,13 +7,32 @@
 //
 
 import UIKit
-// look up voice-over
+import iAd
+
+extension UINavigationController {
+    public override func supportedInterfaceOrientations() -> UIInterfaceOrientationMask {
+        if let presented = self.topViewController {
+            return presented.supportedInterfaceOrientations()
+        } else {
+            return .AllButUpsideDown
+        }
+    }
+}
 
 
-class SudokuController: UIViewController, NumPadDelegate {
+class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
     
+    var startingNils: [Tile] = []
     var board: SudokuBoard
     var numPad: SudokuNumberPad
+    
+    var inactivateInterface: (()->())!
+    var activateInterface: (()->())!
+    var bannerView = ADBannerView(adType: .Banner)
+    var bannerPin: NSLayoutConstraint?
+    private var bannerLayoutComplete = false
+   
+    
     private var _puzzle: Puzzle?
     var puzzle: Puzzle? {
         var puzzCopy: Puzzle!
@@ -51,7 +70,7 @@ class SudokuController: UIViewController, NumPadDelegate {
         get {
             var nilTiles = [Tile]()
             for tile in tiles {
-                if tile.value == .Nil {
+                if tile.value != .Nil {
                     nilTiles.append(tile)
                 }
             }
@@ -67,10 +86,23 @@ class SudokuController: UIViewController, NumPadDelegate {
         }
     }
     
+    var  wrongTiles: [Tile] {
+        var wrong: [Tile] = []
+        for tile in nonNilTiles {
+            if let correct = tile.solutionValue {
+                if correct != tile.value.rawValue {
+                    wrong.append(tile)
+                }
+            }
+        }
+        return wrong
+    }
+    
     
     
     private let concurrentPuzzleQueue = dispatch_queue_create(
     "com.isaacbenham.SudokuCheat.puzzleQueue", DISPATCH_QUEUE_CONCURRENT)
+    private let backgroundThread = GlobalBackgroundQueue
     
     private let spinner: UIActivityIndicatorView = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.WhiteLarge)
     
@@ -83,18 +115,43 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         board.controller = self
         numPad.delegate = self
         view.addSubview(board)
         view.addSubview(numPad)
         board.addSubview(spinner)
-        self.setUpBoard()
+        
+        setUpBoard()
+        
+        numPad.translatesAutoresizingMaskIntoConstraints = false
+        spinner.translatesAutoresizingMaskIntoConstraints = false
+        let numPadWidth = NSLayoutConstraint(item: numPad, attribute: .Width, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1, constant: 0)
+        let numPadHeight = NSLayoutConstraint(item: numPad, attribute: .Height, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1/9, constant: 0)
+        let numPadCenterX = NSLayoutConstraint(item: numPad, attribute: .CenterX, relatedBy: .Equal, toItem: board, attribute: .CenterX, multiplier: 1, constant: 0)
+        let numPadTopSpace = NSLayoutConstraint(item: numPad, attribute: .Top, relatedBy: .Equal, toItem: board, attribute: .Bottom, multiplier: 1, constant: 8)
+        let spinnerHor = NSLayoutConstraint(item: spinner, attribute: .CenterX, relatedBy: .Equal, toItem: board, attribute: .CenterX, multiplier: 1, constant: 0)
+        let spinnerVert = NSLayoutConstraint(item: spinner, attribute: .CenterY, relatedBy: .Equal, toItem: board, attribute: .CenterY, multiplier: 1, constant: 0)
+        
+        view.addConstraints([numPadWidth, numPadHeight, numPadCenterX, numPadTopSpace, spinnerHor, spinnerVert])
         
         // register to receive notifications when user defaults change
         let notificationCenter = NSNotificationCenter.defaultCenter()
         notificationCenter.addObserver(self, selector: Selector("defaultsChanged:"), name: NSUserDefaultsDidChangeNotification, object: nil)
     }
     
+    override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        if self.canDisplayBannerAds && bannerPin?.constant != 0 && !bannerView.bannerLoaded {
+            layoutAnimated(true)
+        }
+      
+    }
+    
+    override func supportedInterfaceOrientations() -> UIInterfaceOrientationMask {
+        return .Portrait
+    }
     
     func defaultsChanged(notification: NSNotification) {
     
@@ -110,15 +167,17 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     func setUpBoard() {
+
+        
         board.translatesAutoresizingMaskIntoConstraints = false
         
         let topPin = NSLayoutConstraint(item: board, attribute: .Top, relatedBy: .Equal, toItem: self.topLayoutGuide, attribute: .Bottom, multiplier: 1, constant: 20)
-        let centerPin = NSLayoutConstraint(item: board, attribute: .CenterX, relatedBy: .Equal, toItem: self.view, attribute: .CenterX, multiplier: 1, constant: 0)
-        let boardWidth = NSLayoutConstraint(item: board, attribute: .Width, relatedBy: .Equal, toItem: self.view, attribute: .Width, multiplier: 0.95, constant: 0)
+        let centerPin = NSLayoutConstraint(item: board, attribute: .CenterX, relatedBy: .Equal, toItem: originalContentView, attribute: .CenterX, multiplier: 1, constant: 0)
+        let boardWidth = NSLayoutConstraint(item: board, attribute: .Width, relatedBy: .Equal, toItem: originalContentView, attribute: .Width, multiplier: 0.95, constant: 0)
         let boardHeight = NSLayoutConstraint(item: board, attribute: .Height, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1, constant: 0)
         
         let constraints = [topPin, centerPin, boardWidth, boardHeight]
-        self.view.addConstraints(constraints)
+        originalContentView.addConstraints(constraints)
         
         board.backgroundColor = UIColor(red: 0.5, green: 0.5, blue: 1, alpha: 1)
         
@@ -126,17 +185,35 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     override func viewDidLayoutSubviews() {
-        numPad.translatesAutoresizingMaskIntoConstraints = false
-        spinner.translatesAutoresizingMaskIntoConstraints = false
-        let numPadWidth = NSLayoutConstraint(item: numPad, attribute: .Width, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1, constant: 0)
-        let numPadHeight = NSLayoutConstraint(item: numPad, attribute: .Height, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1/9, constant: 0)
-        let numPadCenterX = NSLayoutConstraint(item: numPad, attribute: .CenterX, relatedBy: .Equal, toItem: board, attribute: .CenterX, multiplier: 1, constant: 0)
-        let numPadTopSpace = NSLayoutConstraint(item: numPad, attribute: .Top, relatedBy: .Equal, toItem: board, attribute: .Bottom, multiplier: 1, constant: 8)
-        let spinnerHor = NSLayoutConstraint(item: spinner, attribute: .CenterX, relatedBy: .Equal, toItem: board, attribute: .CenterX, multiplier: 1, constant: 0)
-        let spinnerVert = NSLayoutConstraint(item: spinner, attribute: .CenterY, relatedBy: .Equal, toItem: board, attribute: .CenterY, multiplier: 1, constant: 0)
+        super.viewDidLayoutSubviews()
         
-        self.view.addConstraints([numPadWidth, numPadHeight, numPadCenterX, numPadTopSpace, spinnerHor, spinnerVert])
         
+    }
+    
+    override func viewWillLayoutSubviews() {
+        if self.canDisplayBannerAds  && !bannerLayoutComplete {
+            view.addSubview(bannerView)
+            bannerView.delegate = self
+            
+            bannerView.translatesAutoresizingMaskIntoConstraints = false
+            originalContentView.translatesAutoresizingMaskIntoConstraints = false
+            
+            
+            bannerPin = NSLayoutConstraint(item: bannerView, attribute: .Top, relatedBy: .Equal, toItem: view, attribute: .Bottom, multiplier: 1, constant: 0)
+            let bannerLeft = NSLayoutConstraint(item: bannerView, attribute: .Leading, relatedBy: .Equal, toItem:view, attribute: .Leading, multiplier: 1, constant: 0)
+            let bannerRight = NSLayoutConstraint(item: bannerView, attribute: .Trailing, relatedBy: .Equal, toItem: view, attribute: .Trailing, multiplier: 1, constant: 0)
+            
+            
+            let contentBottom = NSLayoutConstraint(item: originalContentView, attribute: .Bottom, relatedBy: .Equal, toItem: bannerView, attribute: .Top, multiplier: 1, constant: 0)
+            let contentLeft = NSLayoutConstraint(item: originalContentView, attribute: .Leading, relatedBy: .Equal, toItem: view, attribute: .Leading, multiplier: 1, constant: 0)
+            let contentRight = NSLayoutConstraint(item: originalContentView, attribute: .Trailing, relatedBy: .Equal, toItem: view, attribute: .Trailing, multiplier: 1, constant: 0)
+            let contentTop = NSLayoutConstraint(item: originalContentView, attribute: .Top, relatedBy: .Equal, toItem: view, attribute: .Top, multiplier: 1, constant: 0)
+            view.addConstraints([contentBottom, contentLeft, contentRight, contentTop, bannerPin!, bannerLeft, bannerRight])
+            
+            bannerLayoutComplete = true
+        }
+
+       
     }
     
     func tileAtIndex(_index: TileIndex) -> Tile {
@@ -156,18 +233,67 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     // puzzle fetching
     func fetchPuzzle() {
+        
+        bannerView.userInteractionEnabled = false
+       
+        UIView.animateWithDuration(0.25) {
+            self.navigationController?.navigationBarHidden = true
+            self.inactivateInterface()
+        }
         board.selectedTile = board.tileAtIndex((5,4))
+        board.userInteractionEnabled = false
+        
         spinner.startAnimating()
+        let handler: ((Puzzle, [PuzzleCell]) -> ()) = {
+            puzz, solution -> () in
+            dispatch_async(GlobalMainQueue){
+                self.spinner.stopAnimating()
+                self._puzzle = puzz
+                
+                for cell in solution {
+                    let tIndex = getTileIndexForRow(cell.row, andColumn: cell.column)
+                    let tile = self.board.tileAtIndex(tIndex)
+                    tile.solutionValue = cell.value
+                    self.startingNils.append(tile)
+                }
+                self.board.userInteractionEnabled = true
+                UIView.animateWithDuration(0.25) {
+                    self.navigationController?.navigationBarHidden = false
+                }
+                self.puzzleReady()
+                let matrix = Matrix.sharedInstance
+                let diffs = matrix.emptyCaches
+                for diff in diffs {
+                    matrix.cachePuzzleOfDifficulty(diff)
+                }
+
+            }
+            
+        }
         dispatch_barrier_async(concurrentPuzzleQueue) {
-            Matrix.sharedInstance.generatePuzzleOfDifficulty(self.difficulty) { puzz -> () in
-                dispatch_async(GlobalMainQueue){
-                    self.spinner.stopAnimating()
-                    self._puzzle = puzz
-                    self.puzzleReady()
+            let matrix = Matrix.sharedInstance
+            if let puzz = matrix.getCachedPuzzleOfDifficulty(self.difficulty) {
+                handler(puzz, puzz.solution!)
+
+            } else {
+                matrix.generatePuzzleOfDifficulty(self.difficulty) { puzz, solution -> () in
+                    handler(puzz, solution)
                 }
             }
+            
+        }
+    }
+    
+    func replayCurrent() {
+        if _puzzle == nil {
+            return
         }
         
+        UIView.animateWithDuration(0.5) {
+            for tile in self.startingNils {
+                tile.value = TileValue.Nil
+            }
+        }
     }
     
     // Board tile selected handler
@@ -183,7 +309,11 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     func puzzleReady() {
-        
+        activateInterface()
+        if !canDisplayBannerAds {
+            canDisplayBannerAds = true
+        }
+        bannerView.userInteractionEnabled = true
     }
     
     
@@ -212,12 +342,68 @@ class SudokuController: UIViewController, NumPadDelegate {
         return nil
     }
     
+    // banner view delegate
+    
+    func bannerViewDidLoadAd(banner: ADBannerView!) {
+        print("test!")
+        layoutAnimated(true)
+    }
+    
+    func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
+        
+        print(error)
+        layoutAnimated(true)
+    }
+    
+    
+    func layoutAnimated(animated: Bool) {
+        
+        if !canDisplayBannerAds {
+            if bannerPin?.constant != 0 {
+                view.layoutIfNeeded()
+                UIView.animateWithDuration(0.25) {
+                    self.bannerPin?.constant = 0
+                    self.view.layoutIfNeeded()
+                }
+            }
+            return
+        }
+        
+        if bannerView.bannerLoaded  {
+            if bannerPin?.constant == 0 {
+                view.layoutIfNeeded()
+                UIView.animateWithDuration(0.25) {
+                    self.bannerPin?.constant = -self.bannerView.frame.size.height
+                    self.view.layoutIfNeeded()
+                }
+            }
+        } else {
+            if bannerPin?.constant != 0 {
+                view.layoutIfNeeded()
+                UIView.animateWithDuration(0.25) {
+                    self.bannerPin?.constant = 0
+                    self.view.layoutIfNeeded()
+                }
+            }
+        }
+    }
+    
+    func bannerViewActionShouldBegin(banner: ADBannerView!, willLeaveApplication willLeave: Bool) -> Bool {
+        return true
+    }
+    
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        super.prepareForSegue(segue, sender: sender)
+
+    }
+    
 }
 
 class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     
     let tableView = UITableView(frame: CGRectZero, style: .Grouped)
     let baseView = UIView(frame: CGRectZero)
+    let saveButton = UIButton()
     var selectedIndex:NSIndexPath = NSIndexPath(forRow: 0, inSection: 0)  {
         willSet {
             if selectedIndex != newValue {
@@ -233,6 +419,19 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
         }
     }
     
+    var timedStatus = true {
+        didSet {
+            let indexPath = NSIndexPath(forRow: 0, inSection: 1)
+            let cell = tableView.cellForRowAtIndexPath(indexPath)
+            cell?.textLabel!.text = timedStatusString
+        }
+    }
+    var timedStatusString: String {
+        get {
+            return timedStatus ? "On" : "Off"
+        }
+    }
+    
     required init(coder aDecoder: NSCoder) {
         
         super.init(coder: aDecoder)
@@ -241,9 +440,22 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
 
     
     override func viewDidLoad() {
+        super.viewDidLoad()
         tableView.registerClass(UITableViewCell.self, forCellReuseIdentifier: "cell")
         view.addSubview(tableView)
         view.addSubview(baseView)
+        baseView.addSubview(saveButton)
+        saveButton.addTarget(self, action: Selector("saveAndDismiss"), forControlEvents: .TouchUpInside)
+        saveButton.setTitle("Save", forState: .Normal)
+        saveButton.layer.borderColor = UIColor.darkGrayColor().CGColor
+        saveButton.layer.borderWidth = 2.0
+        saveButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
+        saveButton.layer.cornerRadius = 5.0
+        saveButton.backgroundColor = UIColor.whiteColor()
+        saveButton.showsTouchWhenHighlighted = true
+        baseView.backgroundColor = UIColor.lightGrayColor()
+       
+        
         self.layoutTableView()
         tableView.delegate = self
         tableView.dataSource = self
@@ -252,13 +464,18 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
         let selected = defaults.integerForKey("symbolSet")
         
         let index = NSIndexPath(forRow: selected, inSection: 0)
-        print("selected index at viewDidLoad = \(index)")
         selectedIndex = index
+        
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
     }
     
     func layoutTableView() {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         baseView.translatesAutoresizingMaskIntoConstraints = false
+        saveButton.translatesAutoresizingMaskIntoConstraints = false
         
         let basePin = NSLayoutConstraint(item: baseView, attribute: .Bottom, relatedBy: .Equal, toItem: view, attribute: .Bottom, multiplier: 1, constant: 0)
         let baseWidth = NSLayoutConstraint(item: baseView, attribute: .Width, relatedBy: .Equal, toItem: view, attribute: .Width, multiplier: 1, constant: 0)
@@ -268,7 +485,12 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
         let topPin = NSLayoutConstraint(item: tableView, attribute: .Top, relatedBy: .Equal, toItem: self.topLayoutGuide, attribute: .Bottom, multiplier: 1, constant: 0)
         let bottomPin = NSLayoutConstraint(item: tableView, attribute: .Bottom, relatedBy: .Equal, toItem: baseView, attribute: .Top, multiplier: 1, constant: 0)
         
-        let constraints = [basePin, baseWidth, baseHeight, tvWidth, topPin, bottomPin]
+        let buttonHeight = NSLayoutConstraint(item: saveButton, attribute: .Height, relatedBy: .Equal, toItem: baseView, attribute: .Height, multiplier: 4/5, constant: 0)
+        let buttonWidth = NSLayoutConstraint(item: saveButton, attribute: .Width, relatedBy: .Equal, toItem: baseView, attribute: .Width, multiplier: 1/6, constant: 0)
+        let buttonVertCenter = NSLayoutConstraint(item: saveButton, attribute: .CenterY, relatedBy: .Equal, toItem: baseView, attribute: .CenterY, multiplier: 1, constant: 0)
+        let buttonPin = NSLayoutConstraint(item: saveButton, attribute: .Trailing, relatedBy: .Equal, toItem: baseView, attribute: .Trailing, multiplier: 1, constant: -8)
+        
+        let constraints = [basePin, baseWidth, baseHeight, tvWidth, topPin, bottomPin, buttonHeight, buttonWidth, buttonVertCenter, buttonPin]
         
         self.view.addConstraints(constraints)
         
@@ -276,17 +498,15 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
 
     
     func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        return 3
+        return 2
     }
     
     func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
         case 0:
             return "Change Symbol Set"
-        case 1:
-            return "New Puzzle"
          default:
-            return "Give Up"
+            return "Timer"
         }
     }
     
@@ -294,8 +514,6 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
         switch section{
         case 0:
             return 3
-        case 1:
-            return 4
         default:
             return 1
             
@@ -317,7 +535,7 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
                 cell.textLabel?.text = "Flags:🇨🇭-🇲🇽"
             }
         default:
-            break
+            cell.textLabel?.text = timedStatusString
         }
         
         if indexPath == selectedIndex {
@@ -330,29 +548,31 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         
         if indexPath.section == 0 {
-            print("cell selected")
             selectedIndex = indexPath
+        } else {
+            timedStatus = !timedStatus
         }
-        
-        // testing... move later
-        saveAndDismiss()
         
     }
     
     // saving changes
     
     func saveAndDismiss() {
-        print("dimissed!")
-        let selected = NSNumber(integer: selectedIndex.row)
+        
+        let selected = selectedIndex.row
         let defaults = NSUserDefaults.standardUserDefaults()
         
-        defaults.setObject(selected, forKey: "symbolSet")
+        defaults.setInteger(selected, forKey: "symbolSet")
+        defaults.setBool(timedStatus, forKey: "timed")
         
         defaults.synchronize()
         
-        print(defaults.objectForKey("symbolSet")!)
-        navigationController!.popViewControllerAnimated(true)
+        presentingViewController!.dismissViewControllerAnimated(true) {
+          
+        }
+
     }
+    
     
     
 }

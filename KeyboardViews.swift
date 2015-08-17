@@ -94,7 +94,7 @@ class SudokuNumberPad: UIView {
     private func setTextTitleForValue(value:Int) {
         let button = buttons[value-1]
         let title = symbolSet.getSymbolForValue(value)
-        print(title)
+        
         button.setTitle(title, forState: .Normal)
         button.setTitle(title, forState: .Selected)
     }

@@ -235,6 +235,13 @@ extension UIButton {
     }
 }
 
+extension UIView {
+    convenience init(tag: Int) {
+        self.init()
+        self.tag = tag
+    }
+}
+
 enum SymbolSet {
     case Standard, Critters, Flags
     
