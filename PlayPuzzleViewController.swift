@@ -16,12 +16,10 @@ class PlayPuzzleViewController: SudokuController {
     var hintButton: UIButton = UIButton(tag: 1)
     let optionsButton: UIButton = UIButton(tag: 2)
     let playAgainButton: UIButton = UIButton(tag: 3)
-    let containerView = UIView(tag: 4)
     var containerWidth: NSLayoutConstraint!
     var containerHeight: NSLayoutConstraint!
-    var labelColor = UIColor.blackColor()
+    //var labelColor = UIColor.blackColor()
     var containerSubviews: (front: UIView, back: UIView)!
-    
    
     
     var timed: Bool {
@@ -37,6 +35,7 @@ class PlayPuzzleViewController: SudokuController {
     private var timeElapsed: Double = 0
     
     override func viewDidLoad() {
+        containerSubviews = (front: hintButton, back:playAgainButton)
         super.viewDidLoad()
         self.originalContentView.backgroundColor = UIColor.orangeColor()
         
@@ -61,7 +60,6 @@ class PlayPuzzleViewController: SudokuController {
            UIView.animateWithDuration(0.25) {
                 self.optionsButton.alpha = 0.5
                 self.clearButton.alpha = 0.5
-                self.labelColor = UIColor.redColor()
                 self.containerSubviews.front.alpha = 0.5
                 self.containerSubviews.back.alpha = 0
             }
@@ -96,13 +94,11 @@ class PlayPuzzleViewController: SudokuController {
                 animations = {
                     self.optionsButton.alpha = 1.0
                     self.clearButton.alpha = 1.0
-                    self.labelColor = UIColor.blackColor()
                     self.containerSubviews.front.alpha = 1.0
                     self.containerSubviews.back.alpha = 0
                 }
             } else {
                 animations = {
-                    self.labelColor = UIColor.blackColor()
                     self.containerSubviews.front.alpha = 1.0
                 }
             }
@@ -117,28 +113,24 @@ class PlayPuzzleViewController: SudokuController {
         containerView.addSubview(playAgainButton)
         playAgainButton.alpha = 0
         containerView.bringSubviewToFront(hintButton)
-        containerSubviews = (front: hintButton, back:playAgainButton)
         containerView.contentMode = .Center
         hintButton.contentMode = .ScaleToFill
         playAgainButton.contentMode = .ScaleToFill
-        setUpButtons()
-        
+        containerView.translatesAutoresizingMaskIntoConstraints = false
     }
     
     
     override func viewDidAppear(animated: Bool) {
+        super.viewDidAppear(animated)
         if self.puzzle == nil {
             fetchPuzzle()
         }
         
     }
     
-    override func viewWillAppear(animated: Bool) {
-       activateInterface()
-        
-    }
     
     override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
         inactivateInterface()
     }
    
@@ -150,7 +142,6 @@ class PlayPuzzleViewController: SudokuController {
         containerView.clipsToBounds = true
         containerView.layer.cornerRadius = containerView.frame.size.height/2
         containerView.layer.borderWidth = 2.0
-        containerView.layer.borderColor = hintButton.superview != nil ? UIColor.blackColor().CGColor : UIColor.whiteColor().CGColor
         
         configureButtons()
         
@@ -164,7 +155,6 @@ class PlayPuzzleViewController: SudokuController {
             layoutAnimated(true)
         }
         
-        
     }
     
     override func viewDidDisappear(animated: Bool) {
@@ -173,7 +163,7 @@ class PlayPuzzleViewController: SudokuController {
     }
     
     
-    func setUpButtons() {
+    override func setUpButtons() {
         let buttons:[UIView] = [clearButton, containerView, optionsButton]
         
         for viewItem in buttons {
@@ -189,14 +179,18 @@ class PlayPuzzleViewController: SudokuController {
             
             let bottomPinOffset: CGFloat = tag == 4 ? -40 : -8
             
-            let bottomPinPriority: UILayoutPriority = tag == 4 ? 750 : 1000
+            let bottomPinRelation: NSLayoutRelation = tag == 4 ? .GreaterThanOrEqual : .Equal
+            
+            
+            
             
             
             // lay out the buttons
            
             
-            let bottomPin = NSLayoutConstraint(item: viewItem, attribute: .Bottom, relatedBy: .Equal, toItem: originalContentView, attribute: .Bottom, multiplier: 1, constant: bottomPinOffset)
-            bottomPin.priority = bottomPinPriority
+            let bottomPin = NSLayoutConstraint(item: viewItem, attribute: .Bottom, relatedBy: bottomPinRelation, toItem: originalContentView, attribute: .Bottom, multiplier: 1, constant: bottomPinOffset)
+            bottomPin.priority = 1000
+            
             
             var constraints:[NSLayoutConstraint] = []
             
@@ -210,15 +204,25 @@ class PlayPuzzleViewController: SudokuController {
             }
             
             if tag == 4 {
-                containerHeight = NSLayoutConstraint(item: viewItem, attribute: .Height, relatedBy: .Equal, toItem: numPad, attribute: .Width, multiplier: widthMultiplier, constant: 0)
-                containerWidth = NSLayoutConstraint(item: viewItem, attribute: .Width, relatedBy: .Equal, toItem: numPad, attribute: .Width, multiplier: widthMultiplier, constant: 0)
+                let multiplier = containerSubviews.front == hintButton ? widthMultiplier : widthMultiplier * 2
+                
+                containerHeight = NSLayoutConstraint(item: viewItem, attribute: .Height, relatedBy: .Equal, toItem: numPad, attribute: .Width, multiplier: multiplier, constant: 0)
+                containerHeight.priority = 999
+                containerWidth = NSLayoutConstraint(item: viewItem, attribute: .Width, relatedBy: .Equal, toItem: numPad, attribute: .Width, multiplier: multiplier, constant: 0)
+                containerWidth.priority = 999
                 let topPin = NSLayoutConstraint(item: viewItem, attribute: .Top, relatedBy: .GreaterThanOrEqual, toItem: numPad, attribute: .Bottom, multiplier: 1, constant: 8)
                 topPin.priority = 1000
-                constraints = [containerWidth, containerHeight, bottomPin, topPin, NSLayoutConstraint(item: viewItem, attribute: .CenterX, relatedBy: .Equal, toItem: numPad, attribute: .CenterX, multiplier: 1, constant: 0)]
+                let bottomLimiter = NSLayoutConstraint(item: viewItem, attribute: .Bottom, relatedBy: .LessThanOrEqual, toItem: originalContentView, attribute: .Bottom, multiplier: 1, constant: -5)
+                bottomLimiter.priority = 1000
+                let centerY = NSLayoutConstraint(item: viewItem, attribute: .CenterY, relatedBy: .Equal, toItem: clearButton, attribute: .Top, multiplier: 1, constant: -15)
+                centerY.priority = 500
+                let centerX = NSLayoutConstraint(item: viewItem, attribute: .CenterX, relatedBy: .Equal, toItem: numPad, attribute: .CenterX, multiplier: 1, constant: 0)
+                constraints = [containerWidth, containerHeight, bottomPin, topPin, bottomLimiter, centerX, centerY]
+                
             }
             
          
-            view.addConstraints(constraints)
+            originalContentView.addConstraints(constraints)
             
             
             // configure the buttons
@@ -263,11 +267,12 @@ class PlayPuzzleViewController: SudokuController {
             } else {
                 button.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
             }
-            
-            
-
         }
         
+        playAgainButton.titleLabel?.adjustsFontSizeToFitWidth = false
+        playAgainButton.titleLabel?.numberOfLines = 0
+        playAgainButton.titleLabel?.textAlignment = .Center
+        containerView.layer.borderColor = hintButton == containerSubviews.front ? UIColor.blackColor().CGColor : UIColor.whiteColor().CGColor
     }
     
     func switchButton() {
@@ -278,6 +283,8 @@ class PlayPuzzleViewController: SudokuController {
         let back = self.containerSubviews.back
         
         
+        
+        
         if (hintButton == front) {
             animations = { () in
                
@@ -286,6 +293,7 @@ class PlayPuzzleViewController: SudokuController {
                 self.containerView.bringSubviewToFront(back)
                 self.view.layoutIfNeeded()
                 self.containerHeight.constant += self.containerView.bounds.size.height
+                self.view.layoutIfNeeded()
                 self.containerWidth.constant += self.containerView.bounds.size.width
                 self.view.layoutIfNeeded()
                 self.containerView.layer.cornerRadius = self.containerView.frame.size.height/2
@@ -300,6 +308,7 @@ class PlayPuzzleViewController: SudokuController {
                 self.containerView.bringSubviewToFront(back)
                 self.view.layoutIfNeeded()
                 self.containerHeight.constant -= self.containerView.bounds.size.height/2
+                self.view.layoutIfNeeded()
                 self.containerWidth.constant -= self.containerView.bounds.size.width/2
                 self.view.layoutIfNeeded()
                 self.containerView.layer.cornerRadius = self.containerView.frame.size.height/2
@@ -319,7 +328,7 @@ class PlayPuzzleViewController: SudokuController {
     
     }
     
-    func buttonInfoForTag(tag: Int) -> (title: String, action: String) {
+    private func buttonInfoForTag(tag: Int) -> (title: String, action: String) {
         switch tag {
         case 0:
             return ("Clear", "clearSolution")
@@ -334,23 +343,17 @@ class PlayPuzzleViewController: SudokuController {
     
     
     override func puzzleReady() {
-        let someCells:[PuzzleCell] = puzzle!.initialValues
-        for pCell in someCells {
-            let index = getTileIndexForRow(pCell.row, andColumn: pCell.column)
-            
-            let tile = board.tileAtIndex(index)
-            tile.value = TileValue(rawValue: pCell.value)!
+        for tile in givens {
             tile.userInteractionEnabled = false
             tile.labelColor = UIColor.blackColor()
         }
-        let startingNils = nilTiles
+        
         if startingNils.count != 0 {
             board.selectedTile = startingNils[0]
         }
         
         
-        for tile in nilTiles {
-            tile.labelColor = UIColor.redColor()
+        for tile in startingNils {
             tile.userInteractionEnabled = true
         }
         
@@ -368,7 +371,8 @@ class PlayPuzzleViewController: SudokuController {
         let nils = self.startingNils
         
         for tile in nils {
-             tile.value = .Nil
+            tile.value = .Nil
+            tile.labelColor = tile.defaultTextColor
         }
         
         numPad.refresh()
@@ -381,6 +385,7 @@ class PlayPuzzleViewController: SudokuController {
         for tile in tiles {
             tile.value = .Nil
             tile.solutionValue = nil
+            tile.labelColor = tile.defaultTextColor
         }
         
         startingNils = []
@@ -410,6 +415,7 @@ class PlayPuzzleViewController: SudokuController {
         animateSuppliedTile(tile)
         
         tile.userInteractionEnabled = false
+        tile.solutionValue = nil
     }
     
     func animateSuppliedTile(tile: Tile, wrong:Bool = false, delay: Double = 0, handler: (()->Void)? = nil) {
@@ -446,7 +452,7 @@ class PlayPuzzleViewController: SudokuController {
                     
                     UIView.animateWithDuration(0.5) { () in
                         tile.backgroundColor = wrong ? tile.wrongColor : tile.defaultBackgroundColor
-                        tile.labelColor = wrong ? UIColor.blackColor() : self.labelColor
+                        tile.labelColor = wrong ? tile.defaultTextColor : tile.chosenTextColor
                         tile.valueLabel.textColor = tile.labelColor
                     }
                     
@@ -695,7 +701,7 @@ class PlayPuzzleViewController: SudokuController {
     
     override func layoutAnimated(animated: Bool) {
         super.layoutAnimated(true)
-        configureButtons()
+        //configureButtons()
     }
     
     func bannerViewActionDidFinish(banner: ADBannerView!) {

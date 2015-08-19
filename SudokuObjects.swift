@@ -230,10 +230,8 @@ class Box: SudokuItem, Nester{
     private func prepareBoxes() {
         for nested in boxes {
             let box = nested as SudokuItem
-            box.backgroundColor = UIColor.whiteColor()
             box.layer.borderColor = UIColor.lightGrayColor().CGColor
             box.layer.borderWidth = 1.0
-            box.userInteractionEnabled = true
             box.translatesAutoresizingMaskIntoConstraints = false
         }
         
@@ -267,11 +265,13 @@ class Tile: SudokuItem {
     }
     var valueLabel = UILabel()
     var labelColor = UIColor.blackColor()
+    let defaultTextColor = UIColor.blackColor()
+    let chosenTextColor = UIColor.redColor()
     var selected = false
     var symbolSet: SymbolSet {
         get {
             let defaults = NSUserDefaults.standardUserDefaults()
-            let symType = defaults.integerForKey("symbolSet")
+            let symType = defaults.integerForKey(symbolSetKey)
             switch symType {
             case 0:
                 return .Standard
@@ -284,10 +284,11 @@ class Tile: SudokuItem {
 
     }
     
+    var backingCell: PuzzleCell!
     let defaultBackgroundColor = UIColor.whiteColor()
     let assignedBackgroundColor = UIColor(red: 0.0, green: 1.0, blue: 0, alpha: 0.3)
     let wrongColor = UIColor(red: 1.0, green: 0.0, blue: 0, alpha: 0.3)
-    let selectedColor = UIColor(red: 0.1, green: 0.1, blue: 0.9, alpha: 0.2)
+    var selectedColor = UIColor(red: 0.1, green: 0.1, blue: 0.9, alpha: 0.2)
     
     var solutionValue: Int?
 
@@ -310,12 +311,13 @@ class Tile: SudokuItem {
     
     override func layoutSubviews() {
         self.addSubview(valueLabel)
-        valueLabel.translatesAutoresizingMaskIntoConstraints = false
-        let labelCenterX = NSLayoutConstraint(item: valueLabel, attribute: .CenterX, relatedBy: .Equal, toItem: self, attribute: .CenterX, multiplier: 1, constant: 0)
-        let labelCenterY = NSLayoutConstraint(item: valueLabel, attribute: .CenterY, relatedBy: .Equal, toItem: self, attribute: .CenterY, multiplier: 1, constant: 0)
-        self.addConstraints([labelCenterX, labelCenterY])
+        valueLabel.frame = self.bounds
+        valueLabel.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
+        valueLabel.textAlignment = .Center
+        valueLabel.font = UIFont.boldSystemFontOfSize(UIFont.labelFontSize()+2)
         refreshLabel()
     }
+    
     
     func getValueText()->String {
         return self.value != .Nil ? symbolSet.getSymbolForTyleValue(value) : ""

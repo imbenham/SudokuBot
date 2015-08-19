@@ -512,11 +512,21 @@ enum PuzzleDifficulty: Equatable, Hashable {
     case Insane
     case Custom (Int)
     
+    var isCachable: Bool {
+        switch self{
+        case .Custom (let diff):
+            return false
+        default:
+            return true
+        }
+    }
+    
     var hashValue: Int {
         get {
             return self.toInt()
         }
     }
+    
     
     func toInt() -> Int {
         switch self{
@@ -530,6 +540,19 @@ enum PuzzleDifficulty: Equatable, Hashable {
             return 3
         case .Custom(let diff):
             return 4 + diff
+        }
+    }
+    
+    func cacheString() -> String {
+        switch self{
+        case .Easy:
+            return easyPuzzleKey
+        case .Medium:
+            return mediumPuzzleKey
+        case .Hard:
+            return hardPuzzleKey
+        default:
+            return insanePuzzleKey
         }
     }
     
@@ -573,26 +596,51 @@ class Matrix {
     }
     
     func cachePuzzleOfDifficulty(difficulty: PuzzleDifficulty) {
-        if ![PuzzleDifficulty.Easy, PuzzleDifficulty.Medium, PuzzleDifficulty.Hard, PuzzleDifficulty.Insane].contains(difficulty) {
+        if !difficulty.isCachable {
             return
         }
-        
         
         dispatch_barrier_async(GlobalBackgroundQueue) {
             let helperMatrix = Matrix()
             helperMatrix.generatePuzzleOfDifficulty(difficulty) {
-                (puzz, solution) in
-                puzz.solution = solution
-                let concurrentPuzzleQueue = dispatch_queue_create(
-                    "com.isaacbenham.SudokuCheat.puzzleQueue", DISPATCH_QUEUE_CONCURRENT)
-                dispatch_barrier_async(concurrentPuzzleQueue) { () in
-                    self.puzzleCache[difficulty]!.append(puzz)
+                (puzz) in
+                let defaults = NSUserDefaults.standardUserDefaults()
+                if defaults.objectForKey(difficulty.cacheString()) == nil {
+                    let someData = puzz.asData()
+                    defaults.setObject(someData, forKey: difficulty.cacheString())
+                    defaults.synchronize()
+                } else {
+                    dispatch_barrier_async(concurrentPuzzleQueue) { () in
+                        self.puzzleCache[difficulty]!.append(puzz)
+                    }
                 }
             }
         }
-        
-       
     }
+    
+    func fillCaches() {
+        dispatch_barrier_async(GlobalBackgroundQueue) {
+        let diffs = self.emptyCaches
+        for diff in diffs {
+            let helperMatrix = Matrix()
+            helperMatrix.generatePuzzleOfDifficulty(diff) {
+                (puzz) in
+                let defaults = NSUserDefaults.standardUserDefaults()
+                if defaults.objectForKey(diff.cacheString()) == nil {
+                    let someData = puzz.asData()
+                    defaults.setObject(someData, forKey: diff.cacheString())
+                    defaults.synchronize()
+                } else {
+                    dispatch_barrier_async(concurrentPuzzleQueue) { () in
+                        self.puzzleCache[diff]!.append(puzz)
+                    }
+                }
+            }
+            }
+        }
+    }
+    
+    
     
     
     func getCachedPuzzleOfDifficulty(difficulty: PuzzleDifficulty) -> Puzzle? {
@@ -626,7 +674,7 @@ class Matrix {
         solutions = []
     }
     
-    func generatePuzzleOfDifficulty(difficulty: PuzzleDifficulty, withCompletion completion: (Puzzle, [PuzzleCell]) -> ()) {
+    func generatePuzzleOfDifficulty(difficulty: PuzzleDifficulty, withCompletion completion: Puzzle -> ()) {
         var puzz: [PuzzleCell] = []
         let initialChoice = selectColumn()!
         
@@ -653,8 +701,9 @@ class Matrix {
 
         
         let aPuzzle = Puzzle(nonNilValues: puzz)
+        aPuzzle.solution = finished.Solution
 
-        completion(aPuzzle, finished.Solution)
+        completion(aPuzzle)
         
         rebuild()
     }
@@ -706,9 +755,9 @@ class Matrix {
         }
         
         
-        //let random = Int(arc4random_uniform((UInt32(allVals.count-1))))
+        let random = Int(arc4random_uniform((UInt32(allVals.count-1))))
         
-        let next = allVals.removeLast()
+        let next = allVals.removeAtIndex(random)
         
         if numSolutions > 1 {
             tried.append(lastRemoved)

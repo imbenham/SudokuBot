@@ -13,6 +13,35 @@ class HomeViewController: UIViewController, UITableViewDelegate, UITableViewData
     
    let tableView = UITableView(frame: CGRect.zeroRect, style: .Grouped)
     
+    var tvHeight:CGFloat {
+        get {
+            return view.frame.size.height * 5/8
+        }
+    }
+    
+    var tvWidth:CGFloat {
+        get {
+            return view.frame.size.width * 7/8
+        }
+    }
+    
+    var rowHeight:CGFloat {
+        get {
+            let sections = self.numberOfSectionsInTableView(tableView)
+            let totalHeight = tvHeight
+            var totalRows = 0
+            for section in 0...(sections-1) {
+                totalRows += self.tableView.numberOfRowsInSection(section)
+            }
+            
+            return totalHeight / (CGFloat(totalRows) * 1.5)
+        }
+    }
+    
+    var headerHeight:CGFloat {
+        return 0.5 * rowHeight
+    }
+    
     override func viewDidLoad() {
         view.backgroundColor = UIColor.orangeColor()
        
@@ -28,10 +57,10 @@ class HomeViewController: UIViewController, UITableViewDelegate, UITableViewData
         
         let tvCenterX = NSLayoutConstraint(item: tableView, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX, multiplier: 1, constant: 0)
         let tvCenterY = NSLayoutConstraint(item: tableView, attribute: .CenterY, relatedBy: .Equal, toItem: view, attribute: .CenterY, multiplier: 1, constant: offset)
-        let tvWidth = NSLayoutConstraint(item: tableView, attribute: .Width, relatedBy: .Equal, toItem: view, attribute: .Width, multiplier: 7/8, constant: 0)
-        let tvHeight = NSLayoutConstraint(item: tableView, attribute: .Height, relatedBy: .Equal, toItem: view, attribute: .Height, multiplier: 5/8, constant: 0)
+        let width = NSLayoutConstraint(item: tableView, attribute: .Width, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: tvWidth)
+        let height = NSLayoutConstraint(item: tableView, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: 0)
         
-        view.addConstraints([tvCenterX, tvCenterY, tvWidth, tvHeight])
+        view.addConstraints([tvCenterX, tvCenterY, width, height])
         
     }
     
@@ -82,7 +111,11 @@ class HomeViewController: UIViewController, UITableViewDelegate, UITableViewData
     }
     
     func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return 11.0
+        return headerHeight
+    }
+    
+    func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
+        return rowHeight
     }
     
     func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {

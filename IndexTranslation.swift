@@ -228,6 +228,9 @@ var GlobalBackgroundQueue: dispatch_queue_t {
     return dispatch_get_global_queue(Int(QOS_CLASS_BACKGROUND.rawValue), 0)
 }
 
+let concurrentPuzzleQueue = dispatch_queue_create(
+    "com.isaacbenham.SudokuCheat.puzzleQueue", DISPATCH_QUEUE_CONCURRENT)
+
 extension UIButton {
     convenience init(tag: Int) {
         self.init()
@@ -241,6 +244,15 @@ extension UIView {
         self.tag = tag
     }
 }
+
+// user default constants
+let symbolSetKey = "symbolSet"
+let timedKey = "timed"
+let easyPuzzleKey = "Easy"
+let mediumPuzzleKey = "Medium"
+let hardPuzzleKey = "Hard"
+let insanePuzzleKey = "Insane"
+
 
 enum SymbolSet {
     case Standard, Critters, Flags
@@ -271,6 +283,18 @@ enum SymbolSet {
             return dict[value]!
         }
     }
-
 }
+extension UIView {
+    
+    func removeConstraints() {
+        if let superView = self.superview {
+            self.removeFromSuperview()
+            superView.addSubview(self)
+        }
+    }
+}
+
+
+
+
 
