@@ -31,7 +31,7 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
     var activateInterface: (()->())!
     var bannerView = ADBannerView(adType: .Banner)
     var bannerPin: NSLayoutConstraint?
-    private var bannerLayoutComplete = false
+    var bannerLayoutComplete = false
     var longFetchLabel = UILabel()
     let containerView = UIView(tag: 4)
    
@@ -122,15 +122,49 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         view.addSubview(numPad)
         board.addSubview(spinner)
         longFetchLabel.hidden = true
-        bannerView.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         longFetchLabel.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         board.addSubview(longFetchLabel)
-        
         setUpBoard()
         setUpButtons()
+        
+        if self.canDisplayBannerAds  && !bannerLayoutComplete {
+            if bannerView.superview == nil {
+                view.addSubview(bannerView)
+                
+            }
+            bannerView.delegate = self
+            
+            bannerView.translatesAutoresizingMaskIntoConstraints = false
+            
+            originalContentView.removeConstraints()
+            originalContentView.translatesAutoresizingMaskIntoConstraints = false
+            
+            
+            bannerPin = NSLayoutConstraint(item: bannerView, attribute: .Top, relatedBy: .Equal, toItem: bottomLayoutGuide, attribute: .Top, multiplier: 1, constant: 0)
+            bannerPin!.priority = 1000
+            let bannerLeft = NSLayoutConstraint(item: bannerView, attribute: .Leading, relatedBy: .Equal, toItem:view, attribute: .Leading, multiplier: 1, constant: 0)
+            let bannerRight = NSLayoutConstraint(item: bannerView, attribute: .Trailing, relatedBy: .Equal, toItem: view, attribute: .Trailing, multiplier: 1, constant: 0)
+            
+            
+            let contentBottom = NSLayoutConstraint(item: originalContentView, attribute: .Bottom, relatedBy: .Equal, toItem: bannerView, attribute: .Top, multiplier: 1, constant: 0)
+            contentBottom.priority = 1000
+            let contentLeft = NSLayoutConstraint(item: originalContentView, attribute: .Leading, relatedBy: .Equal, toItem: view, attribute: .Leading, multiplier: 1, constant: 0)
+            let contentRight = NSLayoutConstraint(item: originalContentView, attribute: .Trailing, relatedBy: .Equal, toItem: view, attribute: .Trailing, multiplier: 1, constant: 0)
+            let contentTop = NSLayoutConstraint(item: originalContentView, attribute: .Top, relatedBy: .Equal, toItem: view, attribute: .Top, multiplier: 1, constant: 0)
+            view.addConstraints([contentBottom, contentLeft, contentRight, contentTop, bannerPin!, bannerLeft, bannerRight])
+            
+            bannerLayoutComplete = true
+            
+            board.removeConstraints()
+            setUpBoard()
+            containerView.removeConstraints()
+            setUpButtons()
+            
+        }
+        
         longFetchLabel.layer.backgroundColor = UIColor.blackColor().CGColor
         longFetchLabel.textColor = UIColor.whiteColor()
-        longFetchLabel.layer.cornerRadius = 10.0
+        //longFetchLabel.layer.cornerRadius = 10.0
         longFetchLabel.textAlignment = .Center
         longFetchLabel.numberOfLines = 2
         longFetchLabel.font = UIFont.systemFontOfSize(UIFont.labelFontSize())
@@ -145,7 +179,11 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
         
-        layoutAnimated(true)
+        if self.puzzle != nil && !canDisplayBannerAds {
+            //bannerView.delegate = self
+            canDisplayBannerAds = true
+        }
+
         activateInterface()
         
       
@@ -153,12 +191,7 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
-        if self.puzzle != nil && !canDisplayBannerAds {
-            bannerLayoutComplete = false
-            bannerView.delegate = self
-            canDisplayBannerAds = true
-            view.addSubview(bannerView)
-        }
+       
        
     }
     
@@ -169,23 +202,20 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
             bannerView.removeFromSuperview()
             bannerView.delegate = nil
             canDisplayBannerAds = false
+            bannerLayoutComplete = false
+            layoutAnimated(false)
         }
     }
     
     func wakeFromBackground() {
         activateInterface()
         
-        //layoutAnimated(true)
-        
         if self.puzzle != nil && !canDisplayBannerAds {
             bannerView.delegate = self
             bannerLayoutComplete = false
             canDisplayBannerAds = true
-            view.addSubview(bannerView)
-            
         }
         
-        layoutAnimated(true)
         
     }
     
@@ -196,7 +226,6 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
             bannerView.removeFromSuperview()
             bannerView.delegate = nil
             canDisplayBannerAds = false
-            layoutAnimated(false)
         }
     }
     
@@ -267,43 +296,6 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         
     }
     
-    override func viewWillLayoutSubviews() {
-        if self.canDisplayBannerAds  && !bannerLayoutComplete {
-            if bannerView.superview == nil {
-                view.addSubview(bannerView)
-
-            }
-            bannerView.delegate = self
-            
-            bannerView.translatesAutoresizingMaskIntoConstraints = false
-            
-            originalContentView.removeConstraints()
-            originalContentView.translatesAutoresizingMaskIntoConstraints = false
-            
-            
-            bannerPin = NSLayoutConstraint(item: bannerView, attribute: .Top, relatedBy: .Equal, toItem: view, attribute: .Bottom, multiplier: 1, constant: 0)
-            bannerPin?.priority = 1000
-            let bannerLeft = NSLayoutConstraint(item: bannerView, attribute: .Leading, relatedBy: .Equal, toItem:view, attribute: .Leading, multiplier: 1, constant: 0)
-            let bannerRight = NSLayoutConstraint(item: bannerView, attribute: .Trailing, relatedBy: .Equal, toItem: view, attribute: .Trailing, multiplier: 1, constant: 0)
-            
-            
-            let contentBottom = NSLayoutConstraint(item: originalContentView, attribute: .Bottom, relatedBy: .Equal, toItem: bannerView, attribute: .Top, multiplier: 1, constant: 0)
-            contentBottom.priority = 1000
-            let contentLeft = NSLayoutConstraint(item: originalContentView, attribute: .Leading, relatedBy: .Equal, toItem: view, attribute: .Leading, multiplier: 1, constant: 0)
-            let contentRight = NSLayoutConstraint(item: originalContentView, attribute: .Trailing, relatedBy: .Equal, toItem: view, attribute: .Trailing, multiplier: 1, constant: 0)
-            let contentTop = NSLayoutConstraint(item: originalContentView, attribute: .Top, relatedBy: .Equal, toItem: view, attribute: .Top, multiplier: 1, constant: 0)
-            view.addConstraints([contentBottom, contentLeft, contentRight, contentTop, bannerPin!, bannerLeft, bannerRight])
-            
-            bannerLayoutComplete = true
-            
-            board.removeConstraints()
-            setUpBoard()
-            containerView.removeConstraints()
-            setUpButtons()
-            
-        }
-       
-    }
     
     func tileAtIndex(_index: TileIndex) -> Tile {
         return board.getBoxAtIndex(_index.0).getTileAtIndex(_index.1)
@@ -477,7 +469,6 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
     }
     
     func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
-        
         print(error)
         layoutAnimated(true)
     }
@@ -511,19 +502,21 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
                     self.bannerPin?.constant = 0
                     self.view.layoutIfNeeded()
                 }
+
             }
+
         }
     }
     
     func bannerViewActionShouldBegin(banner: ADBannerView!, willLeaveApplication willLeave: Bool) -> Bool {
-        return true
+        if banner.bannerLoaded {
+            return true
+        } else {
+            activateInterface()
+            layoutAnimated(true)
+            return false
+        }
     }
-    
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        super.prepareForSegue(segue, sender: sender)
-        print("segue!")
-    }
-    
 }
 
 class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
@@ -629,6 +622,7 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
     }
     
     func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        
         switch section {
         case 0:
             return "Change Symbol Set"
@@ -650,6 +644,7 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         
         let cell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath) as UITableViewCell
+        cell.textLabel?.font = UIFont(name: "futura", size: UIFont.labelFontSize())
        
         switch indexPath.section {
         case 0:

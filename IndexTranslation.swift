@@ -292,6 +292,41 @@ extension UIView {
             superView.addSubview(self)
         }
     }
+    
+    
+    
+}
+
+class TableCell: UIView {
+    var labelVertInset: CGFloat = 0
+    var labelHorizontalInset: CGFloat = 0
+    var label: UILabel? {
+        didSet {
+            if let old = oldValue {
+                old.removeFromSuperview()
+            }
+            var rect = self.bounds
+            rect.origin.x += labelHorizontalInset
+            rect.origin.y += labelVertInset
+            rect.size.height -= 2*labelVertInset
+            label?.frame = rect
+            label?.font = UIFont(name: "futura", size: UIFont.labelFontSize())
+            label!.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
+            self.addSubview(label!)
+        }
+    }
+    
+    var section: Int?
+}
+
+extension UIViewController {
+    func sections() -> Int {
+        return 0
+    }
+    
+    func rowsForSection(section: Int) -> Int {
+        return 3
+    }
 }
 
 

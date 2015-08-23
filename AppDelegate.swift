@@ -50,18 +50,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         if defaults.objectForKey(insanePuzzleKey) == nil {
         let insaneData = NSKeyedArchiver.archivedDataWithRootObject(["givens":[731, 848, 687, 463, 353, 517, 829, 267, 583, 397, 875, 479, 418, 172, 155, 552, 656, 432, 786, 549, 794, 221, 816, 928, 989], "solution":[319, 258, 743, 623, 371, 454, 426, 692, 914, 344, 765, 215, 935, 576, 141, 993, 951, 534, 284, 977, 495, 611, 481, 338, 882, 727, 113, 242, 891, 188, 447, 598, 385, 525, 196, 124, 962, 322, 857, 639, 645, 759, 137, 778, 833, 712, 273, 236, 668, 169, 561, 299, 366, 674, 946, 864]])
         defaults.setObject(insaneData, forKey: insanePuzzleKey)
-
         }
         
         defaults.synchronize()
         
-        /*dispatch_async(GlobalBackgroundQueue) {
+        dispatch_async(GlobalBackgroundQueue) {
             let matrix = Matrix.sharedInstance
-            
-            for key in matrix.emptyCaches {
-                matrix.cachePuzzleOfDifficulty(key)
-            }
-        }*/
+            matrix.fillCaches()
+        }
+        let rootView = window?.rootViewController as? UINavigationController
+        rootView?.topViewController
         
         return true
     }
@@ -76,7 +74,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             puzzleController.goToBackground()
         }
         
-       dispatch_barrier_async(GlobalBackgroundQueue) {
+       dispatch_async(GlobalBackgroundQueue) {
             let matrix = Matrix.sharedInstance
             let diffs: [PuzzleDifficulty] = [.Easy, .Medium, .Hard, .Insane]
             let defaults = NSUserDefaults.standardUserDefaults()

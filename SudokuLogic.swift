@@ -514,7 +514,7 @@ enum PuzzleDifficulty: Equatable, Hashable {
     
     var isCachable: Bool {
         switch self{
-        case .Custom (let diff):
+        case .Custom (_):
             return false
         default:
             return true
@@ -578,7 +578,7 @@ class Matrix {
     private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 170, .Hard: 190, .Insane: 230]
     var allRows: [Int: LinkedNode<PuzzleNode>]?
     private var puzzleCache: [PuzzleDifficulty: [Puzzle]] = [.Easy:[], .Medium:[], .Hard: [], .Insane: []]
-    var emptyCaches: Set<PuzzleDifficulty> {
+    var getEmptyCaches: Set<PuzzleDifficulty> {
         get {
             var toReturn:Set<PuzzleDifficulty> = [.Easy, .Medium, .Hard, .Insane]
             for key in toReturn {
@@ -604,14 +604,15 @@ class Matrix {
             let helperMatrix = Matrix()
             helperMatrix.generatePuzzleOfDifficulty(difficulty) {
                 (puzz) in
-                let defaults = NSUserDefaults.standardUserDefaults()
-                if defaults.objectForKey(difficulty.cacheString()) == nil {
-                    let someData = puzz.asData()
-                    defaults.setObject(someData, forKey: difficulty.cacheString())
-                    defaults.synchronize()
-                } else {
-                    dispatch_barrier_async(concurrentPuzzleQueue) { () in
+                dispatch_barrier_async(concurrentPuzzleQueue) { () in
+                    let defaults = NSUserDefaults.standardUserDefaults()
+                    if defaults.objectForKey(difficulty.cacheString()) == nil {
+                        let someData = puzz.asData()
+                        defaults.setObject(someData, forKey: difficulty.cacheString())
+                        defaults.synchronize()
+                    } else {
                         self.puzzleCache[difficulty]!.append(puzz)
+                        
                     }
                 }
             }
@@ -619,20 +620,20 @@ class Matrix {
     }
     
     func fillCaches() {
-        dispatch_barrier_async(GlobalBackgroundQueue) {
-        let diffs = self.emptyCaches
+        dispatch_async(GlobalBackgroundQueue) {
+        let diffs = self.getEmptyCaches
         for diff in diffs {
             let helperMatrix = Matrix()
             helperMatrix.generatePuzzleOfDifficulty(diff) {
                 (puzz) in
-                let defaults = NSUserDefaults.standardUserDefaults()
-                if defaults.objectForKey(diff.cacheString()) == nil {
-                    let someData = puzz.asData()
-                    defaults.setObject(someData, forKey: diff.cacheString())
-                    defaults.synchronize()
-                } else {
-                    dispatch_barrier_async(concurrentPuzzleQueue) { () in
-                        self.puzzleCache[diff]!.append(puzz)
+                dispatch_barrier_async(concurrentPuzzleQueue) { () in
+                    let defaults = NSUserDefaults.standardUserDefaults()
+                    if defaults.objectForKey(diff.cacheString()) == nil {
+                        let someData = puzz.asData()
+                        defaults.setObject(someData, forKey: diff.cacheString())
+                        defaults.synchronize()
+                    } else {
+                    self.puzzleCache[diff]!.append(puzz)
                     }
                 }
             }

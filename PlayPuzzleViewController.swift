@@ -151,9 +151,9 @@ class PlayPuzzleViewController: SudokuController {
             button.frame = containerView.bounds
         }
         
-        if canDisplayBannerAds {
+       /* if canDisplayBannerAds {
             layoutAnimated(true)
-        }
+        }*/
         
     }
     
@@ -487,6 +487,10 @@ class PlayPuzzleViewController: SudokuController {
                 wrongTile.userInteractionEnabled = false
             }
             self.switchButton()
+            self.board.userInteractionEnabled = false
+            for tile in self.tiles {
+                tile.userInteractionEnabled = false
+            }
         }
        
         for nilTile in nilTiles {
@@ -595,6 +599,9 @@ class PlayPuzzleViewController: SudokuController {
             replayCurrent()
             switchButton()
             activateInterface()
+            for tile in nilTiles {
+                tile.userInteractionEnabled = true
+            }
         } else {
             clearAll()
             self.difficulty = difficulty
@@ -621,6 +628,10 @@ class PlayPuzzleViewController: SudokuController {
         
         if let theTimer = timer {
             theTimer.invalidate()
+        }
+        
+        for tile in tiles {
+            tile.userInteractionEnabled = false
         }
         
         let alertController = UIAlertController(title: "Puzzle Solved", message: "Well done!", preferredStyle: .Alert)
@@ -699,10 +710,6 @@ class PlayPuzzleViewController: SudokuController {
     }
     
     
-    override func layoutAnimated(animated: Bool) {
-        super.layoutAnimated(true)
-        //configureButtons()
-    }
     
     func bannerViewActionDidFinish(banner: ADBannerView!) {
         activateInterface()

@@ -25,26 +25,26 @@ class CheatViewController: SudokuController {
         solveButton.setTitle("Solve", forState: .Normal)
         solveButton.layer.cornerRadius = 5.0
         solveButton.addTarget(self, action: "solvePuzzle", forControlEvents: .TouchUpInside)
+        solveButton.layer.borderColor = UIColor.blackColor().CGColor
+        solveButton.layer.borderWidth = 2.0
         originalContentView.addSubview(clearButton)
         clearButton.backgroundColor = UIColor.whiteColor()
         clearButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
         clearButton.setTitle("Clear", forState: .Normal)
         clearButton.layer.cornerRadius = 5.0
         clearButton.addTarget(self, action: "clearAll", forControlEvents: .TouchUpInside)
+        clearButton.layer.borderColor = UIColor.blackColor().CGColor
+        clearButton.layer.borderWidth = 2.0
         
         let defaults = NSUserDefaults.standardUserDefaults()
         defaults.setInteger(0, forKey: "symbolSet")
         
-    }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
         solveButton.translatesAutoresizingMaskIntoConstraints = false
         clearButton.translatesAutoresizingMaskIntoConstraints = false
         
-        let solveRightEdge = NSLayoutConstraint(item: solveButton, attribute: .Trailing, relatedBy: .Equal, toItem: self.board, attribute: .Trailing, multiplier: 1, constant: 0)
-        let solveBottomPin = NSLayoutConstraint(item: solveButton, attribute: .Bottom, relatedBy: .Equal, toItem: self.bottomLayoutGuide, attribute: .Top, multiplier: 1, constant: -8)
-        let buttonWidth = NSLayoutConstraint(item: solveButton, attribute: .Width, relatedBy: .Equal, toItem: self.board, attribute: .Width, multiplier: 1/3, constant: 0)
+        let solveRightEdge = NSLayoutConstraint(item: solveButton, attribute: .Trailing, relatedBy: .Equal, toItem: board, attribute: .Trailing, multiplier: 1, constant: 0)
+        let solveBottomPin = NSLayoutConstraint(item: solveButton, attribute: .Bottom, relatedBy: .Equal, toItem: bottomLayoutGuide, attribute: .Top, multiplier: 1, constant: -8)
+        let buttonWidth = NSLayoutConstraint(item: solveButton, attribute: .Width, relatedBy: .Equal, toItem: board, attribute: .Width, multiplier: 1/3, constant: 0)
         let buttonHeight = NSLayoutConstraint(item: solveButton, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: 40)
         
         let clearWidth = NSLayoutConstraint(item: clearButton, attribute: .Width, relatedBy: .Equal, toItem: self.board, attribute: .Width, multiplier: 1/3, constant: 0)
@@ -55,15 +55,25 @@ class CheatViewController: SudokuController {
         
         let constraints = [solveRightEdge, solveBottomPin, buttonWidth, buttonHeight, clearWidth, clearHeight, clearBottomPin, clearLeftEdge]
         view.addConstraints(constraints)
+
+        
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         
     }
     
     override func viewDidAppear(animated: Bool) {
         if !shown {
-            let instructionAlert = UIAlertController(title: "Welcome to the dark side.", message: "Enter any valid puzzle and your phone will magically solve it for you. With magic.", preferredStyle: .Alert)
+            let instructionAlert = UIAlertController(title: "Welcome to the dark side.", message: "Enter any valid puzzle and SudokuBot will magically solve it for you. With magic.", preferredStyle: .Alert)
             let dismiss = UIAlertAction(title: "OK", style: .Cancel, handler: nil)
             instructionAlert.addAction(dismiss)
-            self.presentViewController(instructionAlert, animated:true, completion: nil)
+            self.presentViewController(instructionAlert, animated: true) { () in
+                self.bannerLayoutComplete = false
+                self.bannerView.delegate = self
+                self.canDisplayBannerAds = true
+            }
             
             shown = true
         }
@@ -100,7 +110,7 @@ class CheatViewController: SudokuController {
             }
             board.selectedTile = nil
         } else {
-            let alertController = UIAlertController(title: "Invalid Puzzle", message: "Your phone can't help you because the puzzle you've tried to solve has more or less than one solution. It's not THAT magical.", preferredStyle: .Alert)
+            let alertController = UIAlertController(title: "Invalid Puzzle", message: "SudokuBot can't help you because the puzzle you've tried to solve has more or less than one solution. It's not THAT magical.", preferredStyle: .Alert)
             
             let OKAction = UIAlertAction(title: "OK", style: .Default) { (_) in
                 self.dismissViewControllerAnimated(true) {
