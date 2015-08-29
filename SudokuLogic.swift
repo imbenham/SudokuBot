@@ -551,10 +551,28 @@ enum PuzzleDifficulty: Equatable, Hashable {
             return mediumPuzzleKey
         case .Hard:
             return hardPuzzleKey
-        default:
+        case .Insane:
             return insanePuzzleKey
+        default:
+            return "caching unavailable"
         }
     }
+    
+    func notificationString() -> String {
+        switch self{
+        case .Easy:
+            return easyPuzzleReady
+        case .Medium:
+            return mediumPuzzleReady
+        case .Hard:
+            return hardPuzzleReady
+        case .Insane:
+            return insanePuzzleReady
+        default:
+            return customPuzzleReady
+        }
+    }
+
     
 }
 
@@ -568,6 +586,8 @@ class Matrix {
     
     static let sharedInstance: Matrix = Matrix()
     
+    var operationQueue: NSOperationQueue?
+    
     var rowsAndColumns = LinkedList<PuzzleNode>()
     typealias Choice = (Chosen: LinkedNode<PuzzleNode>, Columns:[LinkedNode<PuzzleNode>], Rows:[LinkedNode<PuzzleNode>], Root:Int)
     private var currentSolution = [Choice]()
@@ -575,7 +595,8 @@ class Matrix {
     typealias Solution = [LinkedNode<PuzzleNode>]
     private var solutions = [Solution]()
     private var solutionDict: [PuzzleCell: LinkedNode<PuzzleNode>]?
-    private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 170, .Hard: 190, .Insane: 230]
+    private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 170, .Hard: 190, .Insane: 230] //easy = 130
+    private var thresholds: [PuzzleDifficulty: Int] = [.Easy : 32, .Medium: 27, .Hard: 23, .Insane: 18]
     var allRows: [Int: LinkedNode<PuzzleNode>]?
     private var puzzleCache: [PuzzleDifficulty: [Puzzle]] = [.Easy:[], .Medium:[], .Hard: [], .Insane: []]
     var getEmptyCaches: Set<PuzzleDifficulty> {
@@ -590,61 +611,37 @@ class Matrix {
         }
     }
     
-    
     init() {
         constructMatrix()
     }
     
-    func cachePuzzleOfDifficulty(difficulty: PuzzleDifficulty) {
-        if !difficulty.isCachable {
-            return
+    func fillCaches() {
+        
+        
+        let diffs = self.getEmptyCaches
+        var operations: [NSOperation] = []
+        for diff in diffs {
+            let operation = NSBlockOperation() {
+                self.generatePuzzleOfDifficulty(diff)
+            }
+            operation.qualityOfService = .Utility
+            operation.queuePriority = .Normal
+            if operations.isEmpty {
+                operations.append(operation)
+            } else {
+                operation.addDependency(operations.last!)
+                operations.append(operation)
+            }
+            
         }
         
-        dispatch_barrier_async(GlobalBackgroundQueue) {
-            let helperMatrix = Matrix()
-            helperMatrix.generatePuzzleOfDifficulty(difficulty) {
-                (puzz) in
-                dispatch_barrier_async(concurrentPuzzleQueue) { () in
-                    let defaults = NSUserDefaults.standardUserDefaults()
-                    if defaults.objectForKey(difficulty.cacheString()) == nil {
-                        let someData = puzz.asData()
-                        defaults.setObject(someData, forKey: difficulty.cacheString())
-                        defaults.synchronize()
-                    } else {
-                        self.puzzleCache[difficulty]!.append(puzz)
-                        
-                    }
-                }
-            }
-        }
+        operationQueue?.addOperations(operations, waitUntilFinished: false)
+
     }
-    
-    func fillCaches() {
-        dispatch_async(GlobalBackgroundQueue) {
-        let diffs = self.getEmptyCaches
-        for diff in diffs {
-            let helperMatrix = Matrix()
-            helperMatrix.generatePuzzleOfDifficulty(diff) {
-                (puzz) in
-                dispatch_barrier_async(concurrentPuzzleQueue) { () in
-                    let defaults = NSUserDefaults.standardUserDefaults()
-                    if defaults.objectForKey(diff.cacheString()) == nil {
-                        let someData = puzz.asData()
-                        defaults.setObject(someData, forKey: diff.cacheString())
-                        defaults.synchronize()
-                    } else {
-                    self.puzzleCache[diff]!.append(puzz)
-                    }
-                }
-            }
-            }
-        }
-    }
-    
-    
     
     
     func getCachedPuzzleOfDifficulty(difficulty: PuzzleDifficulty) -> Puzzle? {
+        
         if let puzzList = puzzleCache[difficulty] {
             if !puzzList.isEmpty {
                 return puzzleCache[difficulty]!.removeLast()
@@ -662,7 +659,7 @@ class Matrix {
             return rawDiffDict[difficulty]!
         }
     }
-    private func rebuild() {
+   func rebuild() {
         while currentSolution.count != 0 {
             let lastChoice:Choice = currentSolution.removeLast()
             reinsertLast(lastChoice)
@@ -675,39 +672,52 @@ class Matrix {
         solutions = []
     }
     
-    func generatePuzzleOfDifficulty(difficulty: PuzzleDifficulty, withCompletion completion: Puzzle -> ()) {
+    func generatePuzzleOfDifficulty(difficulty: PuzzleDifficulty, shouldCache: Bool = true) {
         var puzz: [PuzzleCell] = []
-        let initialChoice = selectColumn()!
         
-        if !findFirstSolution(initialChoice, root: initialChoice.vertOrder) {
-            // throw an error
+        dispatch_barrier_async(concurrentBackupQueue) {
+            let initialChoice = self.selectColumn()!
+            
+            if !self.findFirstSolution(initialChoice, root: initialChoice.vertOrder) {
+                // throw an error
+            }
+            
+            let sol = self.solutions[0]
+            
+            puzz = cellsFromConstraints(sol)
+            
+            self.solutionDict = cellNodeDictFromNodes(sol)
+            
+            let last = puzz.removeLast()
+            
+            // get a list of minimal givens that need to be left in the grid for a valid puzzle and a list of all the values that are taken out
+            self.rebuild()
+            let filtered = self.minValuesForPuzzle(puzz, withLastRemoved: last, forTargetDifficulty: difficulty)
+            self.rebuild()
+            // add removed values from the second list back into the first list until a puzzle of the desired difficulty level is achieved
+            let finished = self.puzzleOfSpecifedDifficulty(difficulty, withGivens: filtered.Givens, andSolution: filtered.Solution)
+            puzz = finished.Givens
+            
+            let aPuzzle = Puzzle(nonNilValues: puzz)
+            aPuzzle.solution = finished.Solution
+            
+            if shouldCache {
+                if var cache = self.puzzleCache[difficulty] {
+                    cache.append(aPuzzle)
+                    self.puzzleCache[difficulty] = cache
+                    let notificationCenter = NSNotificationCenter.defaultCenter()
+                    notificationCenter.postNotificationName(cachedNotification, object: self, userInfo: [difficulty.cacheString():cache.count])
+
+                }
+            } else {
+                let notificationCenter = NSNotificationCenter.defaultCenter()
+                notificationCenter.postNotificationName(difficulty.notificationString(), object: self, userInfo: ["puzzle": aPuzzle])
+            }
+            
+            self.rebuild()
+
         }
-        
-        let sol = solutions[0]
-        
-        puzz = cellsFromConstraints(sol)
-        
-        solutionDict = cellNodeDictFromNodes(sol)
-        
-        let last = puzz.removeLast()
-        
-        // get a list of minimal givens that need to be left in the grid for a valid puzzle and a list of all the values that are taken out
-        rebuild()
-        let filtered = minValuesForPuzzle(puzz, withLastRemoved: last)
-        rebuild()
-        // add removed values from the second list back into the first list until a puzzle of the desired difficulty level is achieved
-        let finished = puzzleOfSpecifedDifficulty(difficulty, withGivens: filtered.Givens, andSolution: filtered.Solution)
-        
-        puzz = finished.Givens
-
-        
-        let aPuzzle = Puzzle(nonNilValues: puzz)
-        aPuzzle.solution = finished.Solution
-
-        completion(aPuzzle)
-        
-        rebuild()
-    }
+            }
 
     private func puzzleOfSpecifedDifficulty(difficulty:PuzzleDifficulty, var withGivens givens:[PuzzleCell], var andSolution solution:[PuzzleCell]) -> (Givens: [PuzzleCell], Solution:[PuzzleCell]) {
         
@@ -731,7 +741,7 @@ class Matrix {
         
     }
     
-    private func minValuesForPuzzle(var allVals:[PuzzleCell], withLastRemoved lastRemoved:PuzzleCell, var andTried tried:[PuzzleCell]=[], var andSolution solution:[PuzzleCell]=[]) -> (Givens:[PuzzleCell], Solution:[PuzzleCell]) {
+    private func minValuesForPuzzle(var allVals:[PuzzleCell], withLastRemoved lastRemoved:PuzzleCell, var andTried tried:[PuzzleCell]=[], var andSolution solution:[PuzzleCell]=[], forTargetDifficulty targetDifficulty:PuzzleDifficulty) -> (Givens:[PuzzleCell], Solution:[PuzzleCell]) {
         
         rebuild()
         
@@ -745,6 +755,17 @@ class Matrix {
         solveForRows(rowList, elims:true)
         
         let numSolutions = countPuzzleSolutions()
+
+        if numSolutions == 1 {
+            if let threshold = thresholds[targetDifficulty] {
+                if tried.count >= threshold {
+                    solution += allVals
+                    solution.append(lastRemoved)
+                    return (tried, solution)
+                }
+
+            }
+        }
         
         if allVals.count == 0 {
             if numSolutions == 1 {
@@ -762,10 +783,10 @@ class Matrix {
         
         if numSolutions > 1 {
             tried.append(lastRemoved)
-            return minValuesForPuzzle(allVals, withLastRemoved: next, andTried: tried, andSolution: solution)
+            return minValuesForPuzzle(allVals, withLastRemoved: next, andTried: tried, andSolution: solution, forTargetDifficulty: targetDifficulty)
         } else {
             solution.append(lastRemoved)
-            return minValuesForPuzzle(allVals, withLastRemoved: next, andTried: tried, andSolution: solution)
+            return minValuesForPuzzle(allVals, withLastRemoved: next, andTried: tried, andSolution: solution, forTargetDifficulty: targetDifficulty)
         }
         
     }

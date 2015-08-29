@@ -34,6 +34,7 @@ class SudokuNumberPad: UIView {
             }
         }
     }
+    
     var symbolSet: SymbolSet {
         get {
             let defaults = NSUserDefaults.standardUserDefaults()
@@ -54,6 +55,7 @@ class SudokuNumberPad: UIView {
     var currentTitleColor = UIColor.whiteColor()
     var delegate: NumPadDelegate?
     var buttonHeight:CGFloat = 0.0
+    let noteModeColor = UIColor.blackColor()//UIColor(red: 1.0, green: 1.0, blue: 0, alpha: 0.3)
     
     override init(frame: CGRect) {
         buttons = [one, two, three, four, five, six, seven, eight, nine]
@@ -78,7 +80,7 @@ class SudokuNumberPad: UIView {
             buttonHeight = radius
             button.layer.cornerRadius = radius
             button.layer.borderColor = UIColor.blackColor().CGColor
-            button.layer.borderWidth = 2.0
+            button.layer.borderWidth = 3.0
             button.tag = index+1
            button.addTarget(self, action: "buttonTapped:", forControlEvents: .TouchUpInside)
         
@@ -123,6 +125,11 @@ class SudokuNumberPad: UIView {
     func buttonTapped(sender: UIButton) {
         let val = sender.tag
         if let del = self.delegate {
+            if del.noteMode() {
+                del.noteValueChanged(val)
+                noteModeRefreshButton(sender)
+                return
+            }
             del.valueSelected(val)
         }
     }
@@ -131,6 +138,7 @@ class SudokuNumberPad: UIView {
         if self.delegate == nil {
             return
         }
+        
         if let existingValue = self.delegate!.currentValue() {
             if let nowCurrent = current {
                 if nowCurrent == existingValue {
@@ -143,10 +151,67 @@ class SudokuNumberPad: UIView {
                 current = nil
             }
         }
+        
+        if !delegate!.noteMode() {
+            var allButtons = buttons
+            if let cur = current {
+                allButtons.removeAtIndex(cur.tag-1)
+            }
+            for button in allButtons {
+                button.backgroundColor = defaultColor
+                button.setTitleColor(defaultTitleColor, forState: .Normal)
+            }
+        } else {
+           configureForNoteMode()
+        }
     }
+    
+    func configureForNoteMode() {
+        if let del = delegate {
+            if !del.noteMode() {
+                return
+            }
+        }
+         var allButtons = buttons
+        if let vals = delegate!.noteValues() {
+            for val in vals {
+                let button = buttonWithTag(val)!
+                button.backgroundColor = noteModeColor
+                button.setTitleColor(currentTitleColor, forState: .Normal)
+                allButtons.removeAtIndex(allButtons.indexOf(button)!)
+            }
+        }
+        for button in allButtons {
+            button.backgroundColor = defaultColor
+            button.setTitleColor(defaultTitleColor, forState: .Normal)
+
+        }
+    }
+
+
+    func noteModeRefreshButton(button: UIButton) {
+        if let vals = delegate?.noteValues() {
+            button.backgroundColor = vals.contains(button.tag) ? noteModeColor : defaultColor
+            let color =  vals.contains(button.tag) ? currentTitleColor : defaultTitleColor
+            button.setTitleColor(color, forState: .Normal)
+        }
+    }
+    
+    func buttonWithTag(tag:Int) -> UIButton? {
+        for button in buttons {
+            if button.tag == tag {
+                return button
+            }
+        }
+        return nil
+    }
+    
 }
 
 protocol NumPadDelegate {
     func valueSelected(value: Int)
-    func currentValue() -> Int? 
+    func noteValueChanged(value: Int)
+    func currentValue() -> Int?
+    func noteValues() -> [Int]?
+    func noteMode() -> Bool
 }

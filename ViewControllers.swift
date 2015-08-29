@@ -20,7 +20,7 @@ extension UINavigationController {
 }
 
 
-class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
+class SudokuController: UIViewController, NumPadDelegate {
     
     var startingNils: [Tile] = []
     var givens: [Tile] = []
@@ -29,14 +29,35 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
     
     var inactivateInterface: (()->())!
     var activateInterface: (()->())!
-    var bannerView = ADBannerView(adType: .Banner)
+    var bannerView: ADBannerView {
+        get {
+            let delegate: AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+            return delegate.bannerView
+        }
+    }
     var bannerPin: NSLayoutConstraint?
     var bannerLayoutComplete = false
     var longFetchLabel = UILabel()
     let containerView = UIView(tag: 4)
-   
-   
-   
+    var selectedTile: Tile? {
+        didSet {
+            if let theTile = selectedTile {
+                if !theTile.selected {
+                    theTile.selected = true
+                }
+            }
+            
+            if let old = oldValue {
+                if old != selectedTile {
+                    if old.selected != false {
+                        old.selected = false
+                    }
+                }
+            }
+        }
+    }
+    
+    
     
     private var _puzzle: Puzzle?
     var puzzle: Puzzle? {
@@ -128,11 +149,7 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         setUpButtons()
         
         if self.canDisplayBannerAds  && !bannerLayoutComplete {
-            if bannerView.superview == nil {
-                view.addSubview(bannerView)
-                
-            }
-            bannerView.delegate = self
+            view.addSubview(bannerView)
             
             bannerView.translatesAutoresizingMaskIntoConstraints = false
             
@@ -164,7 +181,6 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         
         longFetchLabel.layer.backgroundColor = UIColor.blackColor().CGColor
         longFetchLabel.textColor = UIColor.whiteColor()
-        //longFetchLabel.layer.cornerRadius = 10.0
         longFetchLabel.textAlignment = .Center
         longFetchLabel.numberOfLines = 2
         longFetchLabel.font = UIFont.systemFontOfSize(UIFont.labelFontSize())
@@ -180,7 +196,6 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         super.viewDidAppear(animated)
         
         if self.puzzle != nil && !canDisplayBannerAds {
-            //bannerView.delegate = self
             canDisplayBannerAds = true
         }
 
@@ -191,7 +206,11 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
-       
+        if let selected = selectedTile  {
+            if selected.symbolSet != .Standard {
+                selected.noteMode = false
+            }
+        }
        
     }
     
@@ -200,18 +219,20 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         
         if canDisplayBannerAds {
             bannerView.removeFromSuperview()
-            bannerView.delegate = nil
             canDisplayBannerAds = false
             bannerLayoutComplete = false
             layoutAnimated(false)
         }
+       
+
     }
+    
+   
     
     func wakeFromBackground() {
         activateInterface()
         
         if self.puzzle != nil && !canDisplayBannerAds {
-            bannerView.delegate = self
             bannerLayoutComplete = false
             canDisplayBannerAds = true
         }
@@ -224,7 +245,6 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         
         if canDisplayBannerAds {
             bannerView.removeFromSuperview()
-            bannerView.delegate = nil
             canDisplayBannerAds = false
         }
     }
@@ -314,14 +334,14 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         let middleTile = board.tileAtIndex((5,4))
         let placeHolderColor = middleTile.selectedColor
         middleTile.selectedColor = UIColor.blackColor()
-        board.selectedTile = middleTile
+        selectedTile = middleTile
         
         board.userInteractionEnabled = false
         
         spinner.startAnimating()
         let handler: (Puzzle -> ()) = {
             puzz -> () in
-            dispatch_sync(GlobalMainQueue){
+            dispatch_async(GlobalMainQueue){
                 self.spinner.stopAnimating()
                 middleTile.selectedColor = placeHolderColor
                 self._puzzle = puzz
@@ -347,52 +367,15 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
                     self.navigationController?.navigationBarHidden = false
                     self.longFetchLabel.hidden = true
                 }
+                
                 self.puzzleReady()
-                dispatch_async(GlobalBackgroundQueue) {
-                    Matrix.sharedInstance.fillCaches()
-                }
             }
         }
-            
-        dispatch_barrier_async(concurrentPuzzleQueue) {
-            let matrix = Matrix.sharedInstance
-            
-            if !self.difficulty.isCachable {
-                dispatch_sync(GlobalMainQueue) {
-                    UIView.animateWithDuration(0.25) {
-                        self.longFetchLabel.hidden = false
-                        self.longFetchLabel.frame = CGRectMake(0,0, self.board.frame.width, self.board.frame.height * 0.2)
-                    }
-                }
-                matrix.generatePuzzleOfDifficulty(self.difficulty) { puzz -> () in
-                    handler(puzz)
-                }
-            } else {
-                if let puzz = matrix.getCachedPuzzleOfDifficulty(self.difficulty) {
-                    handler(puzz)
-                    
-                } else {
-                    let defaults = NSUserDefaults.standardUserDefaults()
-                    let key = self.difficulty.cacheString()
-                    if let dict = defaults.objectForKey(key), puzz = Puzzle.fromData((dict as! NSData)) {
-                        handler(puzz)
-                        defaults.removeObjectForKey(key)
-                    } else {
-                        dispatch_sync(GlobalMainQueue) {
-                            UIView.animateWithDuration(0.25) {
-                                self.longFetchLabel.hidden = false
-                                self.longFetchLabel.frame = CGRectMake(0,0, self.board.frame.width, self.board.frame.height * 0.2)
-                            }
-                        }
-                        matrix.generatePuzzleOfDifficulty(self.difficulty) { puzz -> () in
-                            handler(puzz)
-                        }
-                    }
-                }
-            }
-            
-        }
+        
+        PuzzleStore.sharedInstance.getPuzzleForController(self, withCompletionHandler: handler)
     }
+
+    
     
     func replayCurrent() {
         if _puzzle == nil {
@@ -431,14 +414,15 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         }
         bannerView.userInteractionEnabled = true
         if nilTiles.count > 0 {
-            board.selectedTile = nilTiles[0]
+            selectedTile = nilTiles[0]
         }
+        
     }
     
     
     // NumPadDelegate methods
     func valueSelected(value: Int) {
-        if let selected = board.selectedTile {
+        if let selected = selectedTile {
             if selected.value.rawValue == value {
                 selected.value = TileValue(rawValue: 0)!
             } else {
@@ -450,8 +434,22 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
         numPad.refresh()
     }
     
+    func noteValueChanged(value: Int) {
+        if let selected = selectedTile {
+            let tv = TileValue(rawValue: value)!
+            if selected.noteValues.contains(tv) {
+                selected.removeNoteValue(tv)
+            } else {
+                selected.addNoteValue(tv)
+            }
+        }
+    }
+    
     func currentValue() -> Int? {
-        if let sel = self.board.selectedTile {
+        if selectedTile?.noteMode == true {
+            return nil
+        }
+        if let sel = selectedTile {
            let val = sel.value.rawValue
             if val == 0 {
                 return nil
@@ -459,6 +457,30 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
             return val
         }
         return nil
+    }
+    
+    func noteValues() -> [Int]? {
+        let selected = selectedTile
+        if selected == nil {
+            return nil
+        }
+        if selected?.noteMode == false {
+            return nil
+        } else {
+            var vals:[Int] = []
+            for tv in selected!.noteValues {
+                vals.append(tv.rawValue)
+            }
+            return vals
+        }
+    }
+    
+    func noteMode() -> Bool {
+        if let selected = selectedTile {
+            return selected.noteMode
+        }
+        
+        return false
     }
     
     // banner view delegate
@@ -516,6 +538,23 @@ class SudokuController: UIViewController, NumPadDelegate, ADBannerViewDelegate {
             layoutAnimated(true)
             return false
         }
+    }
+    
+    // user input handlers 
+    
+    func tileTapped(sender: AnyObject) {
+        if let tile = (sender as! UIGestureRecognizer).view as? Tile {
+            if tile != selectedTile {
+                selectedTile?.selected = false
+                tile.selected = !tile.selected
+                selectedTile = tile
+            }
+            numPad.refresh()
+        }
+    }
+    
+    func longPress(sender: AnyObject) {
+        
     }
 }
 
@@ -690,7 +729,7 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
         defaults.synchronize()
         
         presentingViewController!.dismissViewControllerAnimated(true) {
-          
+            
         }
 
     }

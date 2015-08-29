@@ -9,6 +9,7 @@
 import Foundation
 import iAd
 
+
 class PlayPuzzleViewController: SudokuController {
     
    
@@ -18,9 +19,22 @@ class PlayPuzzleViewController: SudokuController {
     let playAgainButton: UIButton = UIButton(tag: 3)
     var containerWidth: NSLayoutConstraint!
     var containerHeight: NSLayoutConstraint!
-    //var labelColor = UIColor.blackColor()
     var containerSubviews: (front: UIView, back: UIView)!
-   
+    
+    struct Token {
+      static var onceToken: dispatch_once_t = 0
+    }
+    
+    class var token:dispatch_once_t {
+        get {
+            return Token.onceToken
+        }
+        set {
+            Token.onceToken = newValue
+        }
+    }
+    
+    
     
     var timed: Bool {
         get {
@@ -141,7 +155,7 @@ class PlayPuzzleViewController: SudokuController {
         containerView.backgroundColor = UIColor.clearColor()
         containerView.clipsToBounds = true
         containerView.layer.cornerRadius = containerView.frame.size.height/2
-        containerView.layer.borderWidth = 2.0
+        containerView.layer.borderWidth = 3.0
         
         configureButtons()
         
@@ -150,10 +164,6 @@ class PlayPuzzleViewController: SudokuController {
         for button in nestedButtons {
             button.frame = containerView.bounds
         }
-        
-       /* if canDisplayBannerAds {
-            layoutAnimated(true)
-        }*/
         
     }
     
@@ -240,7 +250,7 @@ class PlayPuzzleViewController: SudokuController {
                 let buttonRadius:CGFloat = tag == 1 || tag == 3 ? npHeight/2 : 5.0
                 button.layer.cornerRadius = buttonRadius
                 button.layer.borderColor = UIColor.blackColor().CGColor
-                button.layer.borderWidth = 2.0
+                button.layer.borderWidth = 3.0
             }
             
         }
@@ -263,7 +273,7 @@ class PlayPuzzleViewController: SudokuController {
             if tag == 2 || tag == 0 {
                 button.layer.cornerRadius = 5.0
                 button.layer.borderColor = UIColor.blackColor().CGColor
-                button.layer.borderWidth = 2.0
+                button.layer.borderWidth = 3.0
             } else {
                 button.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
             }
@@ -349,7 +359,7 @@ class PlayPuzzleViewController: SudokuController {
         }
         
         if startingNils.count != 0 {
-            board.selectedTile = startingNils[0]
+           selectedTile = startingNils[0]
         }
         
         
@@ -364,7 +374,43 @@ class PlayPuzzleViewController: SudokuController {
         navigationItem.title = timed ? "00:00" : ""
         timeElapsed = 0
         
-        super.puzzleReady()
+         super.puzzleReady()
+        
+        dispatch_once(&PlayPuzzleViewController.token) {
+            
+            let instructionAlert = UIAlertController(title: "Note on notes:", message: "When working with standard symbols (1-9), long-press on a tile in order to turn note taking mode on and record possible values for the tile.  Note taking is unavailable for the more exotic character sets (which you can find by selecting 'Options').", preferredStyle: UIAlertControllerStyle.Alert)
+            
+            let ok = UIAlertAction(title: "OK", style: .Cancel, handler: nil)
+            instructionAlert.addAction(ok)
+            
+            self.presentViewController(instructionAlert, animated: true, completion: nil)
+        }
+        
+       
+    }
+    
+    
+    // handler overrides
+    
+    
+    override func longPress(sender: AnyObject?) {
+        let press = sender as! UILongPressGestureRecognizer
+        if press.state == .Began {
+            if let tile = (sender as! UIGestureRecognizer).view as? Tile {
+                if tile.symbolSet != .Standard {
+                    return
+                }
+                if tile != selectedTile {
+                    selectedTile?.noteMode = false
+                    selectedTile?.selected = false
+                    tile.noteMode = true
+                    selectedTile = tile
+                } else {
+                    tile.noteMode = !tile.noteMode
+                }
+                numPad.refresh()
+            }
+        }
     }
     
     func clearSolution() {
@@ -401,8 +447,6 @@ class PlayPuzzleViewController: SudokuController {
         let wrongs = wrongTiles
         let wrongsCount = wrongs.count
         
-        
-        
         if nilsCount < 2 && wrongsCount == 0 {
             let alert = UIAlertView(title: "Try harder.", message: "I think you can do this...", delegate: self, cancelButtonTitle: "OK")
             alert.show()
@@ -420,9 +464,9 @@ class PlayPuzzleViewController: SudokuController {
     
     func animateSuppliedTile(tile: Tile, wrong:Bool = false, delay: Double = 0, handler: (()->Void)? = nil) {
         
-        let lastSelected = board.selectedTile
+        let lastSelected = selectedTile
         
-        board.selectedTile = nil
+        selectedTile = nil
         
         let label = tile.valueLabel
         
@@ -460,7 +504,7 @@ class PlayPuzzleViewController: SudokuController {
                         let nils = self.nilTiles
                         let nilsCount = nils.count
                         let toSelect:Tile? = nilsCount > 0 ? nils[0] : nil
-                        self.board.selectedTile = lastSelected?.value == .Nil ? lastSelected : toSelect
+                        self.selectedTile = lastSelected?.value == .Nil ? lastSelected : toSelect
                         if let completionHandler = handler {
                             completionHandler()
                         }
@@ -505,9 +549,7 @@ class PlayPuzzleViewController: SudokuController {
                     animateSuppliedTile(nilTile)
                 }
             }
-
         }
-        
     }
     
     func showOptions(sender: AnyObject) {
@@ -515,7 +557,11 @@ class PlayPuzzleViewController: SudokuController {
         let optionSheet = self.storyboard!.instantiateViewControllerWithIdentifier("options") as! PuzzleOptionsViewController
         optionSheet.modalTransitionStyle = .FlipHorizontal
         optionSheet.timedStatus = timed
-        self.presentViewController(optionSheet, animated: true, completion: nil)
+        self.presentViewController(optionSheet, animated: true) {
+            if let selected = self.selectedTile {
+                selected.noteMode = false
+            }
+        }
     }
     
     func showHelpMenu(sender: AnyObject) {
@@ -630,8 +676,11 @@ class PlayPuzzleViewController: SudokuController {
             theTimer.invalidate()
         }
         
+        numPad.userInteractionEnabled = false
+        
         for tile in tiles {
             tile.userInteractionEnabled = false
+            tile.backgroundColor = tile.defaultBackgroundColor
         }
         
         let alertController = UIAlertController(title: "Puzzle Solved", message: "Well done!", preferredStyle: .Alert)
@@ -664,9 +713,59 @@ class PlayPuzzleViewController: SudokuController {
         }
         alertController.addAction(OKAction)
         
-        self.presentViewController(alertController, animated: true, completion: nil)
+        
+        let indices = [4,2,6,5,3,1,8,0,7]
+        var boxes:[Box] = []
+        
+        for index in indices {
+            let aBox = board.boxes[index] as! Box
+            boxes.append(aBox)
+        }
+        
+        boxes = boxes.reverse()
+        
+        func flashBoxAnimationsWithBoxes(var boxes: [Box]) {
+            let tiles = boxes[0].boxes as! [Tile]
+            UIView.animateWithDuration(0.15, animations: {
+                for tile in tiles {
+                    tile.backgroundColor = tile.assignedBackgroundColor
+                }
+                }) { finished in
+                    boxes.removeAtIndex(0)
+                    if finished {
+                        UIView.animateWithDuration(0.15, animations: {
+                            for tile in tiles {
+                                tile.backgroundColor = tile.defaultBackgroundColor
+                            }
+                        }) { finished in
+                            if finished {
+                                if boxes.isEmpty {
+                                    UIView.animateWithDuration(0.15, animations: {
+                                        for tile in self.tiles {
+                                            tile.backgroundColor = tile.assignedBackgroundColor
+                                        }
+                                        }) { finished in
+                                            if finished {
+                                                self.presentViewController(alertController, animated: true, completion: nil)
+                                            }
+                                    }
+                                
+                                } else {
+                                    flashBoxAnimationsWithBoxes(boxes)
+                                }
+
+                            }
+                        }
+                    }
+            }
+        }
+        
+        flashBoxAnimationsWithBoxes(boxes)
+        
+        
     }
 
+    
     
     // Timer handlers
     

@@ -17,6 +17,7 @@ class HomeViewController: UIViewController {
     let defaultColor = UIColor.whiteColor().CGColor
     let tableBGColor = UIColor.blackColor().CGColor
     let mascotImage = UIImageView(image: (UIImage(named: "SudokuBot_RobotFace")))
+    let toolbar = UIToolbar()
     
     var selectedCell: TableCell? {
         willSet {
@@ -95,7 +96,7 @@ class HomeViewController: UIViewController {
         
         
         tableWidth = view.frame.size.width * (7/8)
-        tableHeight = view.frame.size.height * (5/8)
+        tableHeight = view.frame.size.height * (5/8) 
         
         
         //let offset = navigationController != nil ? navigationController!.navigationBar.frame.size.height/2 : 0
@@ -103,14 +104,14 @@ class HomeViewController: UIViewController {
         let tvCenterX = NSLayoutConstraint(item: table, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX, multiplier: 1, constant: 0)
         //let tvCenterY = NSLayoutConstraint(item: table, attribute: .CenterY, relatedBy: .Equal, toItem: view, attribute: .CenterY, multiplier: 1, constant: offset)
         let width = NSLayoutConstraint(item: table, attribute: .Width, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: tableWidth)
-        let height = NSLayoutConstraint(item: table, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: tableHeight)
+        let height = NSLayoutConstraint(item: table, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: tableHeight+2)
         height.priority = 999
         
         view.addConstraints([tvCenterX, width, height])
         
         let offset = navigationController != nil ? navigationController!.navigationBar.frame.size.height/4 : view.frame.size.height * 1/5
         
-        let mascotCenterX = NSLayoutConstraint(item: mascotImage, attribute: .CenterX, relatedBy: .Equal, toItem: table, attribute: .CenterX, multiplier: 1, constant: 0)
+       let mascotCenterX = NSLayoutConstraint(item: mascotImage, attribute: .CenterX, relatedBy: .Equal, toItem: table, attribute: .CenterX, multiplier: 1, constant: 0)
         let mascotHeight = NSLayoutConstraint(item: mascotImage, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: offset*8)
         let mascotWidth = NSLayoutConstraint(item: mascotImage, attribute: .Width, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: offset*8)
         let mascotTop = NSLayoutConstraint(item: mascotImage, attribute: .Top, relatedBy: .Equal, toItem: topLayoutGuide, attribute: .Bottom,
@@ -144,6 +145,35 @@ class HomeViewController: UIViewController {
             }
             view.addConstraints(constraints)
         }
+        
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(toolbar)
+        
+        let tbCenterX = NSLayoutConstraint(item: toolbar, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX, multiplier: 1, constant: 0)
+        let tbWidth = NSLayoutConstraint(item: toolbar, attribute: .Width, relatedBy: .Equal, toItem: view, attribute: .Width, multiplier: 1, constant: 0)
+        let tbBottomPin = NSLayoutConstraint(item: toolbar, attribute: .Bottom, relatedBy: .Equal, toItem: bottomLayoutGuide, attribute: .Top, multiplier: 1, constant: 0)
+        view.addConstraints([tbCenterX, tbWidth, tbBottomPin])
+        
+        let button = UIButton(type: .Custom)
+        button.tintColor = UIColor.clearColor()
+        //let dimension = toolbar.frame.size.height * 0.9
+        button.frame = CGRect(x: 0, y: 0, width: 40, height: 40)
+        let image = UIImage(named: "ContactButton")
+        button.setImage(image, forState: .Normal)
+        button.addTarget(self, action: "contactButtonTapped:", forControlEvents: UIControlEvents.TouchUpInside)
+        let contactButton = UIBarButtonItem(customView: button)
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.FlexibleSpace, target: nil, action: nil)
+        let fixedSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.FixedSpace, target: nil, action: nil)
+        fixedSpace.width = 5.0
+        
+        toolbar.items = [flexSpace, contactButton, fixedSpace]
+    }
+    
+    
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        toolbar.barTintColor = UIColor.blackColor()
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -156,7 +186,7 @@ class HomeViewController: UIViewController {
             
             let subBG = UIView(frame: view.bounds)
             subBG.backgroundColor = UIColor.blackColor()
-            let grid = UIImageView(image: UIImage(named: "SudokuBot_Grid_VowelsOmitted"))
+            let grid = UIImageView(image: UIImage(named: "SudokuBot_Grid_Solid_LR_Splash_VowelsOmitted"))
             view.addSubview(subBG)
             subBG.addSubview(grid)
             
@@ -168,7 +198,7 @@ class HomeViewController: UIViewController {
             
             subBG.addConstraints([gridX, gridY, height, width])
             
-            let fullGrid = UIImageView(image: UIImage(named: "SudokuBot_Grid_Letters"))
+            let fullGrid = UIImageView(image: UIImage(named: "SudokuBot_Grid_Solid_LR_Splash"))
             fullGrid.alpha = 0.0
             fullGrid.translatesAutoresizingMaskIntoConstraints = false
             subBG.addSubview(fullGrid)
@@ -197,10 +227,11 @@ class HomeViewController: UIViewController {
                     }
             }
         } else {
-            UIView.animateWithDuration(0.25) {
+            self.navigationItem.titleView?.alpha = 0.0
+            UIView.animateWithDuration(0.1) {
                 self.navigationItem.title = "Select a puzzle"
+                self.navigationItem.titleView?.alpha = 1.0
             }
-
         }
     }
     
@@ -209,12 +240,6 @@ class HomeViewController: UIViewController {
             let header = headerForSection(section)
             
             header.label?.textColor = UIColor.whiteColor()
-            
-            
-            for row in 0...rowsForSection(section)-1 {
-                let cell = cellForRow(row, inSection: section)
-                print(cell.bounds.size.height)
-            }
         }
     }
     
@@ -388,5 +413,23 @@ class HomeViewController: UIViewController {
         optionSheet.modalTransitionStyle = .FlipHorizontal
         optionSheet.timedStatus = timed
         self.presentViewController(optionSheet, animated: true, completion: nil)
+    }
+    
+    func contactButtonTapped(sender: AnyObject?) {
+        let contactAlert = UIAlertController(title: "Send Feedback", message: "SudokuBot loves email!  Would you like to send feedback or a request for support to SudokuBot?  Select Yes to launch mail app.", preferredStyle: .Alert)
+        let cancelAction = UIAlertAction(title: "No, thanks", style: .Cancel, handler: nil)
+        let mailAction = UIAlertAction(title: "Yes", style: .Default) { (action) in
+            self.openMail()
+        }
+        contactAlert.addAction(cancelAction)
+        contactAlert.addAction(mailAction)
+        
+        self.presentViewController(contactAlert, animated: true, completion: nil)
+        
+        
+    }
+    
+    func openMail() {
+        UIApplication.sharedApplication().openURL(NSURL(string: "mailto:supp0rt.5ud0ku.b0t@gmail.com")!)
     }
 }

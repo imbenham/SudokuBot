@@ -9,6 +9,11 @@
 import UIKit
 
 class SudokuItem: UIView {
+    weak var controller: SudokuController? {
+        didSet {
+            didSetController()
+        }
+    }
     var parentSquare: Nester?
     var defaultIndex = 0
     
@@ -18,7 +23,15 @@ class SudokuItem: UIView {
     }
 
     required init(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        super.init(coder: aDecoder)
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+    }
+    
+    func didSetController() {
+        
     }
 
 }
@@ -56,27 +69,9 @@ extension SudokuItem: Nestable {
 }
 
 
-class SudokuBoard: UIView, Nester {
+class SudokuBoard: SudokuItem, Nester {
     
-    weak var controller: SudokuController?
     var boxes: [SudokuItem] = []
-    var selectedTile: Tile? {
-        willSet(newSelectedTile) {
-            if let sel = selectedTile {
-                sel.selected = false
-                sel.refreshBackground()
-            }
-            if let nowSelected = newSelectedTile {
-                nowSelected.selected = true
-                nowSelected.refreshBackground()
-            }
-        }
-        didSet {
-            if let contrl = self.controller {
-                contrl.boardSelectedTileChanged()
-            }
-        }
-    }
     
     
 
@@ -102,6 +97,11 @@ class SudokuBoard: UIView, Nester {
         self.prepareBoxes()
     }
     
+    override func didSetController() {
+        for box in boxes {
+           box.controller = self.controller
+        }
+    }
     
     func makeRow(row: Row)-> [SudokuItem] {
         switch row {
@@ -141,12 +141,6 @@ class SudokuBoard: UIView, Nester {
         self.addConstraints(constraints)
     }
     
-    func tileTapped(sender: UIGestureRecognizer) {
-        
-        if let tapped = sender.view as? Tile {
-            self.selectedTile = tapped
-        }
-    }
     
     func view() -> UIView {
         return self
@@ -180,13 +174,7 @@ class Box: SudokuItem, Nester{
     convenience init (index withIndex: Int, withParent parent: SudokuBoard){
         self.init(index: withIndex)
         self.parentSquare = parent
-        
-        for aBox in self.boxes {
-            let tapRecognizer = UITapGestureRecognizer(target: parent, action: "tileTapped:")
-            aBox.addGestureRecognizer(tapRecognizer)
-        }
-        
-
+        controller = parent.controller
     }
 
     
@@ -202,6 +190,17 @@ class Box: SudokuItem, Nester{
     
     override func layoutSubviews() {
         self.prepareBoxes()
+    }
+    
+    override func didSetController() {
+        for box in boxes {
+            box.controller = self.controller
+            let tapRecognizer = UITapGestureRecognizer(target: controller, action: "tileTapped:")
+            box.addGestureRecognizer(tapRecognizer)
+            let longPressRecognizer = UILongPressGestureRecognizer(target: controller, action: "longPress:")
+            tapRecognizer.requireGestureRecognizerToFail(longPressRecognizer)
+            box.addGestureRecognizer(longPressRecognizer)
+        }
     }
     
     func makeRow(row: Row)-> [SudokuItem] {
@@ -228,6 +227,7 @@ class Box: SudokuItem, Nester{
     }
     
     private func prepareBoxes() {
+        
         for nested in boxes {
             let box = nested as SudokuItem
             box.layer.borderColor = UIColor.lightGrayColor().CGColor
@@ -260,6 +260,9 @@ class Tile: SudokuItem {
     
     var value: TileValue = TileValue.Nil {
         didSet {
+            if value != .Nil {
+                noteValues = []
+            }
             refreshLabel()
         }
     }
@@ -267,7 +270,14 @@ class Tile: SudokuItem {
     var labelColor = UIColor.blackColor()
     let defaultTextColor = UIColor.blackColor()
     let chosenTextColor = UIColor.redColor()
-    var selected = false
+    var selected = false {
+        didSet {
+            if !selected {
+                noteMode = false
+            }
+            refreshLabel()
+        }
+    }
     var symbolSet: SymbolSet {
         get {
             let defaults = NSUserDefaults.standardUserDefaults()
@@ -284,16 +294,44 @@ class Tile: SudokuItem {
 
     }
     
+    let noteLabels: [TableCell]
+    let noteModeColor = UIColor(red: 1.0, green: 1.0, blue: 0, alpha: 0.3)
     var backingCell: PuzzleCell!
     let defaultBackgroundColor = UIColor.whiteColor()
     let assignedBackgroundColor = UIColor(red: 0.0, green: 1.0, blue: 0, alpha: 0.3)
     let wrongColor = UIColor(red: 1.0, green: 0.0, blue: 0, alpha: 0.3)
     var selectedColor = UIColor(red: 0.1, green: 0.1, blue: 0.9, alpha: 0.2)
+    let noteBackground = UIView()
+    var noteMode = false {
+        didSet {
+            if noteMode == true {
+                if value != .Nil {
+                    noteValues.append(value)
+                }
+                self.selected = true
+                
+            } else {
+                if noteValues.count > 0 {
+                    value = .Nil
+                }
+            }
+        }
+    }
+    var noteValues: [TileValue] = [] 
     
     var solutionValue: Int?
 
     override init (index: Int) {
+        var labels: [TableCell] = []
+        while labels.count < 9 {
+            let tc = TableCell()
+            tc.label = UILabel()
+            tc.label?.textAlignment = .Center
+            labels.append(tc)
+        }
+        noteLabels = labels
         super.init(index: index)
+        
         
     }
     
@@ -304,6 +342,14 @@ class Tile: SudokuItem {
     
     
     required init(coder aDecoder: NSCoder) {
+        var labels: [TableCell] = []
+        while labels.count < 9 {
+            let tc = TableCell()
+            tc.label = UILabel()
+            tc.label?.textAlignment = .Center
+            labels.append(tc)
+        }
+        noteLabels = labels
         super.init(coder: aDecoder)
     }
     
@@ -315,6 +361,17 @@ class Tile: SudokuItem {
         valueLabel.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         valueLabel.textAlignment = .Center
         valueLabel.font = UIFont.boldSystemFontOfSize(UIFont.labelFontSize()+2)
+       
+        noteBackground.frame = self.bounds
+        addSubview(noteBackground)
+        noteBackground.backgroundColor = UIColor.clearColor()
+        for label in noteLabels {
+            label.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
+            label.backgroundColor = UIColor.clearColor()
+            noteBackground.addSubview(label)
+        }
+        layoutNoteViews()
+        
         refreshLabel()
     }
     
@@ -322,24 +379,91 @@ class Tile: SudokuItem {
     func getValueText()->String {
         return self.value != .Nil ? symbolSet.getSymbolForTyleValue(value) : ""
     }
-    
-    func view() -> UIView {
-        return self
-    }
+ 
     
     func refreshLabel() {
         valueLabel.textColor = labelColor
-        valueLabel.text = self.getValueText()
+        valueLabel.text = noteMode ? "" : self.getValueText()
         refreshBackground()
+        configureNoteViews()
     }
     
     func refreshBackground() {
+        if noteMode {
+            if selected {
+                self.backgroundColor = noteModeColor
+                for lv in noteLabels {
+                    lv.layer.borderWidth = 0.25
+                }
+                return
+            }
+        }
+        
         if value != .Nil && solutionValue != nil {
             backgroundColor = selected ? selectedColor : assignedBackgroundColor
         } else {
             backgroundColor = selected ? selectedColor : defaultBackgroundColor
         }
+        
+        for lv in noteLabels {
+            lv.layer.borderWidth = 0.0
+        }
+    }
+    
+    func removeNoteValue(value: TileValue) {
+        let index = noteValues.indexOf(value)!
+        noteValues.removeAtIndex(index)
+        configureNoteViews()
+    }
+    
+    func addNoteValue(value: TileValue) {
+        noteValues.append(value)
+        configureNoteViews()
+    }
+    
+    func layoutNoteViews() {
 
+        for index in 0...8 {
+            let noteLabel = noteLabels[index]
+            var rect = self.noteBackground.bounds
+            rect.size.width *= 1/3
+            rect.size.height *= 1/3
+            
+            if index > 2 {
+                if index < 6 {
+                    rect.origin.y = noteLabels[0].frame.size.height
+                } else {
+                    rect.origin.y = noteLabels[0].frame.size.height*2
+                }
+            }
+            
+            if index == 1 || index == 4 || index == 7 {
+                rect.origin.x = noteLabels[0].frame.size.width
+            } else if index == 2 || index == 5 || index == 8 {
+                rect.origin.x = noteLabels[0].frame.size.width*2
+            }
+            
+            noteLabel.frame = rect
+            
+            noteLabel.layer.borderColor = selectedColor.CGColor
+            let fontHeight = noteLabel.frame.size.height * 9/10
+            noteLabel.label?.font = UIFont(name: "futura", size: fontHeight)
+            noteLabel.label?.textColor = UIColor.darkGrayColor()
+           
+        }
+    }
+    
+    func configureNoteViews() {
+        let numNotes = noteValues.count
+        for index in 0...noteLabels.count-1 {
+            let noteLabel = noteLabels[index]
+            if symbolSet != .Standard {
+                noteLabel.label?.text = ""
+            } else {
+                noteLabel.label?.text = index < numNotes ? symbolSet.getSymbolForTyleValue(noteValues[index]) : ""
+            }
+            
+        }
     }
 }
 

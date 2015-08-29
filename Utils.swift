@@ -231,6 +231,8 @@ var GlobalBackgroundQueue: dispatch_queue_t {
 let concurrentPuzzleQueue = dispatch_queue_create(
     "com.isaacbenham.SudokuCheat.puzzleQueue", DISPATCH_QUEUE_CONCURRENT)
 
+let concurrentBackupQueue = dispatch_queue_create("com.isaacbenham.SudokuCheat.backupQueue", DISPATCH_QUEUE_CONCURRENT)
+
 extension UIButton {
     convenience init(tag: Int) {
         self.init()
@@ -252,6 +254,14 @@ let easyPuzzleKey = "Easy"
 let mediumPuzzleKey = "Medium"
 let hardPuzzleKey = "Hard"
 let insanePuzzleKey = "Insane"
+
+let easyPuzzleReady = "easyPuzzleReady"
+let mediumPuzzleReady = "mediumPuzzleReady"
+let hardPuzzleReady = "hardPuzzleReady"
+let insanePuzzleReady = "insanePuzzleReady"
+let customPuzzleReady = "customPuzzleReady"
+
+let cachedNotification = "puzzleCached"
 
 
 enum SymbolSet {
@@ -298,8 +308,17 @@ extension UIView {
 }
 
 class TableCell: UIView {
-    var labelVertInset: CGFloat = 0
-    var labelHorizontalInset: CGFloat = 0
+    var labelVertInset: CGFloat = 0 {
+        didSet {
+            label?.frame.origin.y = labelVertInset
+            label?.frame.size.height = self.frame.size.height - (2*labelVertInset)
+        }
+    }
+    var labelHorizontalInset: CGFloat = 0 {
+        didSet {
+            label?.frame.origin.x = labelHorizontalInset
+        }
+    }
     var label: UILabel? {
         didSet {
             if let old = oldValue {
@@ -316,6 +335,15 @@ class TableCell: UIView {
         }
     }
     
+    override var frame:CGRect {
+        
+        didSet {
+            var labelFrame = bounds
+            labelFrame.inset(dx: labelHorizontalInset, dy: labelVertInset)
+            label?.frame = labelFrame
+        }
+    }
+    
     var section: Int?
 }
 
@@ -328,7 +356,6 @@ extension UIViewController {
         return 3
     }
 }
-
 
 
 

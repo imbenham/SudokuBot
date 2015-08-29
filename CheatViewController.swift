@@ -12,7 +12,21 @@ class CheatViewController: SudokuController {
     
     let solveButton: UIButton = UIButton()
     let clearButton: UIButton = UIButton()
-    var shown = false
+    var solved = false
+    
+    struct Token {
+        static var onceToken: dispatch_once_t = 0
+    }
+    
+    class var token:dispatch_once_t {
+        get {
+        return Token.onceToken
+        }
+        set {
+            Token.onceToken = newValue
+        }
+    }
+
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,6 +69,32 @@ class CheatViewController: SudokuController {
         
         let constraints = [solveRightEdge, solveBottomPin, buttonWidth, buttonHeight, clearWidth, clearHeight, clearBottomPin, clearLeftEdge]
         view.addConstraints(constraints)
+        
+        inactivateInterface = {
+            self.solveButton.userInteractionEnabled = false
+            self.solveButton.alpha = 0.5
+            self.clearButton.userInteractionEnabled = false
+            self.numPad.userInteractionEnabled  = false
+            for tile in self.tiles {
+                tile.userInteractionEnabled = false
+            }
+            
+        }
+        
+        activateInterface = {
+            if !self.solved {
+                self.solveButton.userInteractionEnabled = true
+                self.solveButton.alpha = 1.0
+            }
+           
+            for tile in self.tiles {
+                tile.userInteractionEnabled = true
+            }
+            
+            self.clearButton.userInteractionEnabled = true
+            self.numPad.userInteractionEnabled = true
+            self.numPad.refresh()
+        }
 
         
     }
@@ -65,19 +105,19 @@ class CheatViewController: SudokuController {
     }
     
     override func viewDidAppear(animated: Bool) {
-        if !shown {
+        
+        dispatch_once(&PlayPuzzleViewController.token) {
             let instructionAlert = UIAlertController(title: "Welcome to the dark side.", message: "Enter any valid puzzle and SudokuBot will magically solve it for you. With magic.", preferredStyle: .Alert)
             let dismiss = UIAlertAction(title: "OK", style: .Cancel, handler: nil)
             instructionAlert.addAction(dismiss)
             self.presentViewController(instructionAlert, animated: true) { () in
                 self.bannerLayoutComplete = false
-                self.bannerView.delegate = self
                 self.canDisplayBannerAds = true
             }
             
-            shown = true
+            
         }
-        
+
     }
     
     override func didReceiveMemoryWarning() {
@@ -86,36 +126,41 @@ class CheatViewController: SudokuController {
     }
     
     func clearAll() {
-        // alert view?
+        solved = false
         let tiles = self.tiles
         for tile in tiles {
+            tile.labelColor = UIColor.blackColor()
             tile.value = .Nil
             tile.refreshLabel()
         }
-        board.selectedTile = nilTiles[0]
+        selectedTile = nilTiles[0]
+        activateInterface()
     }
     
     func solvePuzzle() {
-        
-        for tile in nilTiles {
-            tile.labelColor = UIColor.redColor()
-        }
-
+        inactivateInterface()
         let valuatedTiles = nonNilTiles
         let cells: [PuzzleCell] = cellsFromTiles(valuatedTiles)
         if let solution = Matrix.sharedInstance.solutionForValidPuzzle(cells) {
             for cell in solution {
                 let tIndex = getTileIndexForRow(cell.row, andColumn: cell.column)
-                board.tileAtIndex(tIndex).value = TileValue(rawValue: cell.value)!
+                let tile = board.tileAtIndex(tIndex)
+                tile.labelColor = UIColor.redColor()
+                tile.value = TileValue(rawValue: cell.value)!
             }
-            board.selectedTile = nil
+            selectedTile = nil
+            solved = true
+            activateInterface()
+
         } else {
             let alertController = UIAlertController(title: "Invalid Puzzle", message: "SudokuBot can't help you because the puzzle you've tried to solve has more or less than one solution. It's not THAT magical.", preferredStyle: .Alert)
             
             let OKAction = UIAlertAction(title: "OK", style: .Default) { (_) in
                 self.dismissViewControllerAnimated(true) {
                     ()->() in
+                   
                 }
+                 self.activateInterface()
             }
             alertController.addAction(OKAction)
             

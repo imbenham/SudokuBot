@@ -7,20 +7,22 @@
 //
 
 import UIKit
+import iAd
 
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
 
     var window: UIWindow?
-
-
+    let bannerView = ADBannerView(adType: .Banner)
+  
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
         
-      
-        Parse.setApplicationId("TmrIKmoqwo7PIwSdm0OYkm9fanTEPndy9txFuEhL",
-            clientKey: "b9ZYfrsZlQjJNaPdmqbVa2hhUvXXqTeUwsGG0Xo7")
+        window?.frame = UIScreen.mainScreen().bounds
+        
+        bannerView.delegate = self
+        
         
         let defaults = NSUserDefaults.standardUserDefaults()
         let number:Int = 0
@@ -54,10 +56,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         defaults.synchronize()
         
-        dispatch_async(GlobalBackgroundQueue) {
+        let operationQueue = PuzzleStore.sharedInstance.operationQueue
+        let matrixInitialization = NSBlockOperation() {
             let matrix = Matrix.sharedInstance
-            matrix.fillCaches()
+            matrix.operationQueue = operationQueue
         }
+        
+        matrixInitialization.completionBlock = {
+            PuzzleStore.sharedInstance.populatePuzzleCache(.Easy)
+        }
+        
+        
+        matrixInitialization.qualityOfService = .Utility
+        matrixInitialization.queuePriority = .High
+        
+        
+        operationQueue.addOperations([matrixInitialization], waitUntilFinished: false)
+        
+        
         let rootView = window?.rootViewController as? UINavigationController
         rootView?.topViewController
         
@@ -75,6 +91,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
        dispatch_async(GlobalBackgroundQueue) {
+    
             let matrix = Matrix.sharedInstance
             let diffs: [PuzzleDifficulty] = [.Easy, .Medium, .Hard, .Insane]
             let defaults = NSUserDefaults.standardUserDefaults()
@@ -85,13 +102,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                         defaults.setObject(someData, forKey: diff.cacheString())
                         defaults.synchronize()
                     } else {
-                        matrix.cachePuzzleOfDifficulty(diff)
+                        matrix.fillCaches()
                     }
 
                 }
             }
     
         }
+        
+        
 
         
     }
@@ -118,6 +137,48 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationWillTerminate(application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        
+    }
+    
+    // banner view delegate methods
+    
+    // banner view delegate
+    
+    func bannerViewDidLoadAd(banner: ADBannerView!) {
+        let rootView = window!.rootViewController as! UINavigationController
+        if let puzzleController = rootView.topViewController as? SudokuController {
+            puzzleController.bannerViewDidLoadAd(banner)
+        }
+
+    }
+    
+    func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
+        let rootView = window!.rootViewController as! UINavigationController
+        if let puzzleController = rootView.topViewController as? SudokuController {
+            puzzleController.bannerViewDidLoadAd(banner)
+        }
+    }
+    
+    
+   func bannerViewActionShouldBegin(banner: ADBannerView!, willLeaveApplication willLeave: Bool) -> Bool {
+        let rootView = window!.rootViewController as! UINavigationController
+        if let puzzleController = rootView.topViewController as? PlayPuzzleViewController {
+            return puzzleController.bannerViewActionShouldBegin(banner, willLeaveApplication: willLeave)
+        } else {
+            if let sudokuContrl = rootView.topViewController as? SudokuController {
+                return sudokuContrl.bannerViewActionShouldBegin(banner, willLeaveApplication: willLeave)
+            }
+    }
+        return false
+    }
+    
+    
+    
+    func bannerViewActionDidFinish(banner: ADBannerView!) {
+        let rootView = window!.rootViewController as! UINavigationController
+        if let puzzleController = rootView.topViewController as? PlayPuzzleViewController {
+            puzzleController.bannerViewActionDidFinish(banner)
+        }
         
     }
 

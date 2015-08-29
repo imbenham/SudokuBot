@@ -3,34 +3,37 @@
     {
       "size" : "29x29",
       "idiom" : "iphone",
-      "filename" : "SudokuBot_AppIcon_29pt.png",
+      "filename" : "SudokuBot_Grid_LR_Glossy_29pt_2X.png",
       "scale" : "2x"
     },
     {
-      "idiom" : "iphone",
       "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "SudokuBot_Grid_LR_Glossy_29pt_3x.png",
       "scale" : "3x"
     },
     {
       "size" : "40x40",
       "idiom" : "iphone",
-      "filename" : "SudokuBot_AppIcon_DarkTop_40pt.png",
+      "filename" : "SudokuBot_Grid_LR_Glossy_40pt_2X.png",
       "scale" : "2x"
     },
     {
-      "idiom" : "iphone",
       "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "SudokuBot_Grid_LR_Glossy_40pt_3X.png",
       "scale" : "3x"
     },
     {
       "size" : "60x60",
       "idiom" : "iphone",
-      "filename" : "SudokuBot_AppIcon_DarkTop_60pt.png",
+      "filename" : "SudokuBot_Grid_LR_Glossy_60pt_2X.png",
       "scale" : "2x"
     },
     {
-      "idiom" : "iphone",
       "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "SudokuBot_Grid_LR_Glossy_60pt_3X.png",
       "scale" : "3x"
     }
   ],
