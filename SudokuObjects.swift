@@ -23,7 +23,7 @@ class SudokuItem: UIView {
     }
 
     required init(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
+        super.init(coder: aDecoder)!
     }
     
     override init(frame: CGRect) {
@@ -197,7 +197,7 @@ class Box: SudokuItem, Nester{
             box.controller = self.controller
             let tapRecognizer = UITapGestureRecognizer(target: controller, action: "tileTapped:")
             box.addGestureRecognizer(tapRecognizer)
-            let longPressRecognizer = UILongPressGestureRecognizer(target: controller, action: "longPress:")
+            let longPressRecognizer = UILongPressGestureRecognizer(target: controller, action: "toggleNoteMode:")
             tapRecognizer.requireGestureRecognizerToFail(longPressRecognizer)
             box.addGestureRecognizer(longPressRecognizer)
         }
@@ -295,7 +295,7 @@ class Tile: SudokuItem {
     }
     
     let noteLabels: [TableCell]
-    let noteModeColor = UIColor(red: 1.0, green: 1.0, blue: 0, alpha: 0.3)
+    let noteModeColor = UIColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 0.3)
     var backingCell: PuzzleCell!
     let defaultBackgroundColor = UIColor.whiteColor()
     let assignedBackgroundColor = UIColor(red: 0.0, green: 1.0, blue: 0, alpha: 0.3)
@@ -315,6 +315,8 @@ class Tile: SudokuItem {
                     value = .Nil
                 }
             }
+            refreshBackground()
+            controller?.refreshNoteButton()
         }
     }
     var noteValues: [TileValue] = [] 
@@ -474,27 +476,27 @@ class Tile: SudokuItem {
         var constraints = [NSLayoutConstraint]()
         
         for box in square.makeRow(.One) {
-            constraints.extend(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Top, .Height]))
+            constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Top, .Height]))
         }
         
         for box in square.makeRow(.Three) {
-            constraints.extend(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Bottom, .Height]))
+            constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Bottom, .Height]))
         }
         
         for box in square.makeColumn(.One) {
-            constraints.extend(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Leading, .Width]))
+            constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Leading, .Width]))
         }
         
         for box in square.makeColumn(.Three) {
-            constraints.extend(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Trailing, .Width]))
+            constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Trailing, .Width]))
         }
         
         for box in square.makeRow(.Two) {
-            constraints.extend(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Top, .Bottom]))
+            constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Top, .Bottom]))
         }
         
        for box in square.makeColumn(.Two) {
-            constraints.extend(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Leading, .Trailing]))
+            constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Leading, .Trailing]))
             
         }
         

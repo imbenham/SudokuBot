@@ -8,6 +8,7 @@
 
 import Foundation
 
+let iPhone4 =  UIScreen.mainScreen().bounds.size.height < 568
 
 // row/column -> TileIndex ((Box: 0-8, Tile: 0-8))
 func getBox(column: Int, row: Int) -> Int {
@@ -212,7 +213,7 @@ var GlobalMainQueue: dispatch_queue_t {
     return dispatch_get_main_queue()
 }
 
-var GlobalUserInteractiveQueue: dispatch_queue_t {
+/*var GlobalUserInteractiveQueue: dispatch_queue_t {
     return dispatch_get_global_queue(Int(QOS_CLASS_USER_INTERACTIVE.rawValue), 0)
 }
 
@@ -222,7 +223,7 @@ var GlobalUserInitiatedQueue: dispatch_queue_t {
 
 var GlobalUtilityQueue: dispatch_queue_t {
     return dispatch_get_global_queue(Int(QOS_CLASS_UTILITY.rawValue), 0)
-}
+}*/
 
 var GlobalBackgroundQueue: dispatch_queue_t {
     return dispatch_get_global_queue(Int(QOS_CLASS_BACKGROUND.rawValue), 0)
@@ -231,7 +232,7 @@ var GlobalBackgroundQueue: dispatch_queue_t {
 let concurrentPuzzleQueue = dispatch_queue_create(
     "com.isaacbenham.SudokuCheat.puzzleQueue", DISPATCH_QUEUE_CONCURRENT)
 
-let concurrentBackupQueue = dispatch_queue_create("com.isaacbenham.SudokuCheat.backupQueue", DISPATCH_QUEUE_CONCURRENT)
+//let concurrentBackupQueue = dispatch_queue_create("com.isaacbenham.SudokuCheat.backupQueue", DISPATCH_QUEUE_CONCURRENT)
 
 extension UIButton {
     convenience init(tag: Int) {
@@ -263,6 +264,13 @@ let customPuzzleReady = "customPuzzleReady"
 
 let cachedNotification = "puzzleCached"
 
+let easyCacheFilePath = (NSFileManager.defaultManager().URLsForDirectory(.LibraryDirectory, inDomains: .UserDomainMask)[0] as NSURL).URLByAppendingPathComponent("easy/puzzle_cache.plist")
+
+let mediumCacheFilePath = (NSFileManager.defaultManager().URLsForDirectory(.LibraryDirectory, inDomains: .UserDomainMask)[0] as NSURL).URLByAppendingPathComponent("medium/puzzle_cache.plist")
+
+let hardCacheFilePath = (NSFileManager.defaultManager().URLsForDirectory(.LibraryDirectory, inDomains: .UserDomainMask)[0] as NSURL).URLByAppendingPathComponent("hard/puzzle_cache.plist")
+
+let insaneCacheFilePath = (NSFileManager.defaultManager().URLsForDirectory(.LibraryDirectory, inDomains: .UserDomainMask)[0] as NSURL).URLByAppendingPathComponent("insane/puzzle_cache.plist")
 
 enum SymbolSet {
     case Standard, Critters, Flags
@@ -294,6 +302,8 @@ enum SymbolSet {
         }
     }
 }
+
+let cachableDifficulties: [PuzzleDifficulty] = [.Easy, .Medium, .Hard, .Insane]
 extension UIView {
     
     func removeConstraints() {
@@ -306,6 +316,7 @@ extension UIView {
     
     
 }
+
 
 class TableCell: UIView {
     var labelVertInset: CGFloat = 0 {
@@ -339,7 +350,7 @@ class TableCell: UIView {
         
         didSet {
             var labelFrame = bounds
-            labelFrame.inset(dx: labelHorizontalInset, dy: labelVertInset)
+            labelFrame.insetInPlace(dx: labelHorizontalInset, dy: labelVertInset)
             label?.frame = labelFrame
         }
     }

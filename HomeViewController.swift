@@ -16,7 +16,7 @@ class HomeViewController: UIViewController {
     let selectedColor = UIColor(red: 0.1, green: 0.1, blue: 0.9, alpha: 0.3).CGColor
     let defaultColor = UIColor.whiteColor().CGColor
     let tableBGColor = UIColor.blackColor().CGColor
-    let mascotImage = UIImageView(image: (UIImage(named: "SudokuBot_RobotFace")))
+    var mascotImage:UIImageView? = UIImageView(image: (UIImage(named: "SudokuBot_RobotFace")))
     let toolbar = UIToolbar()
     
     var selectedCell: TableCell? {
@@ -73,8 +73,12 @@ class HomeViewController: UIViewController {
     override func viewDidLoad() {
         view.backgroundColor = UIColor.orangeColor()
         view.addSubview(table)
-        view.addSubview(mascotImage)
-        mascotImage.translatesAutoresizingMaskIntoConstraints = false
+        if !iPhone4 {
+            view.addSubview(mascotImage!)
+            mascotImage!.translatesAutoresizingMaskIntoConstraints = false
+        } else {
+            mascotImage = nil
+        }
         table.userInteractionEnabled = true
         table.clipsToBounds = true
         table.layer.cornerRadius = 10.0
@@ -82,6 +86,8 @@ class HomeViewController: UIViewController {
         table.layer.borderWidth = 5.0
         table.layer.backgroundColor = UIColor.blackColor().CGColor
         table.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(toolbar)
         for section in 0...sections()-1 {
             let header = headerForSection(section)
             table.addSubview(header)
@@ -92,33 +98,44 @@ class HomeViewController: UIViewController {
                 cell.translatesAutoresizingMaskIntoConstraints = false
             }
         }
-
-        
         
         tableWidth = view.frame.size.width * (7/8)
-        tableHeight = view.frame.size.height * (5/8) 
         
-        
-        //let offset = navigationController != nil ? navigationController!.navigationBar.frame.size.height/2 : 0
-        
-        let tvCenterX = NSLayoutConstraint(item: table, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX, multiplier: 1, constant: 0)
-        //let tvCenterY = NSLayoutConstraint(item: table, attribute: .CenterY, relatedBy: .Equal, toItem: view, attribute: .CenterY, multiplier: 1, constant: offset)
-        let width = NSLayoutConstraint(item: table, attribute: .Width, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: tableWidth)
-        let height = NSLayoutConstraint(item: table, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: tableHeight+2)
-        height.priority = 999
-        
-        view.addConstraints([tvCenterX, width, height])
-        
-        let offset = navigationController != nil ? navigationController!.navigationBar.frame.size.height/4 : view.frame.size.height * 1/5
-        
-       let mascotCenterX = NSLayoutConstraint(item: mascotImage, attribute: .CenterX, relatedBy: .Equal, toItem: table, attribute: .CenterX, multiplier: 1, constant: 0)
-        let mascotHeight = NSLayoutConstraint(item: mascotImage, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: offset*8)
-        let mascotWidth = NSLayoutConstraint(item: mascotImage, attribute: .Width, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: offset*8)
-        let mascotTop = NSLayoutConstraint(item: mascotImage, attribute: .Top, relatedBy: .Equal, toItem: topLayoutGuide, attribute: .Bottom,
-            multiplier: 1, constant: 10)
-        let mascotBottom = NSLayoutConstraint(item: mascotImage, attribute: .Bottom, relatedBy: .Equal, toItem: table, attribute: .Top, multiplier: 1, constant: 0)
-        
-        view.addConstraints([mascotCenterX, mascotHeight, mascotWidth, mascotTop, mascotBottom])
+        if !iPhone4 {
+            tableHeight = view.frame.size.height * (5/8)
+            
+            
+            //let offset = navigationController != nil ? navigationController!.navigationBar.frame.size.height/2 : 0
+            
+            let tvCenterX = NSLayoutConstraint(item: table, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX, multiplier: 1, constant: 0)
+            //let tvCenterY = NSLayoutConstraint(item: table, attribute: .CenterY, relatedBy: .Equal, toItem: view, attribute: .CenterY, multiplier: 1, constant: offset)
+            let width = NSLayoutConstraint(item: table, attribute: .Width, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: tableWidth)
+            let height = NSLayoutConstraint(item: table, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: tableHeight+2)
+            height.priority = 999
+            
+            view.addConstraints([tvCenterX, width, height])
+
+            let offset = navigationController != nil ? navigationController!.navigationBar.frame.size.height/4 : view.frame.size.height * 1/5
+            
+            let mascotCenterX = NSLayoutConstraint(item: mascotImage!, attribute: .CenterX, relatedBy: .Equal, toItem: table, attribute: .CenterX, multiplier: 1, constant: 0)
+            let mascotHeight = NSLayoutConstraint(item: mascotImage!, attribute: .Height, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: offset*8)
+            let mascotWidth = NSLayoutConstraint(item: mascotImage!, attribute: .Width, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: offset*8)
+            let mascotTop = NSLayoutConstraint(item: mascotImage!, attribute: .Top, relatedBy: .Equal, toItem: topLayoutGuide, attribute: .Bottom,
+                multiplier: 1, constant: 10)
+            let mascotBottom = NSLayoutConstraint(item: mascotImage!, attribute: .Bottom, relatedBy: .Equal, toItem: table, attribute: .Top, multiplier: 1, constant: 0)
+            
+            view.addConstraints([mascotCenterX, mascotHeight, mascotWidth, mascotTop, mascotBottom])
+
+        } else {
+            let tvTopX = NSLayoutConstraint(item: table, attribute: .Top, relatedBy: .Equal, toItem: topLayoutGuide, attribute: .Bottom, multiplier: 1, constant: 8)
+            //let tvCenterY = NSLayoutConstraint(item: table, attribute: .CenterY, relatedBy: .Equal, toItem: view, attribute: .CenterY, multiplier: 1, constant: offset)
+            let tvCenterX = NSLayoutConstraint(item: table, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX, multiplier: 1, constant: 0)
+            let width = NSLayoutConstraint(item: table, attribute: .Width, relatedBy: .Equal, toItem: nil, attribute: .NotAnAttribute, multiplier: 1, constant: tableWidth)
+            let bottom = NSLayoutConstraint(item: table, attribute: .Bottom, relatedBy: .Equal, toItem: toolbar, attribute: .Top, multiplier: 1, constant: -8)
+            bottom.priority = 999
+            
+            view.addConstraints([tvTopX, width, bottom, tvCenterX])
+        }
         
         let sects = sections()
         
@@ -145,9 +162,6 @@ class HomeViewController: UIViewController {
             }
             view.addConstraints(constraints)
         }
-        
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(toolbar)
         
         let tbCenterX = NSLayoutConstraint(item: toolbar, attribute: .CenterX, relatedBy: .Equal, toItem: view, attribute: .CenterX, multiplier: 1, constant: 0)
         let tbWidth = NSLayoutConstraint(item: toolbar, attribute: .Width, relatedBy: .Equal, toItem: view, attribute: .Width, multiplier: 1, constant: 0)
@@ -227,20 +241,28 @@ class HomeViewController: UIViewController {
                     }
             }
         } else {
-            self.navigationItem.titleView?.alpha = 0.0
-            UIView.animateWithDuration(0.1) {
-                self.navigationItem.title = "Select a puzzle"
-                self.navigationItem.titleView?.alpha = 1.0
-            }
+            navigationItem.title = "Menu"
+            navigationItem
         }
     }
     
     override func viewDidAppear(animated: Bool) {
+        
+        
         for section in 0...sections()-1 {
             let header = headerForSection(section)
             
             header.label?.textColor = UIColor.whiteColor()
         }
+        
+        UIView.animateWithDuration(0.25, delay: 0.5, options: UIViewAnimationOptions.TransitionFlipFromTop, animations: {
+        // self.navigationItem.titleView?.hidden = false
+            }, completion: nil)
+    }
+    
+    override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.navigationItem.title = ""
     }
     
     func getSidePinsForRowOrHeaderItem(item: UIView) -> [NSLayoutConstraint] {

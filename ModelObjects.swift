@@ -7,16 +7,17 @@
 //
 
 import Foundation
+
+
+
+
 struct PuzzleCell: Hashable {
-    // PFSubclassing
-   
+ 
     
-    
-    
-    let row: Int
-    let column: Int
+    let row: Int!
+    let column: Int!
     var value: Int
-    //@NSManaged var puzzle: Puzzle
+  
     
     init(row: Int, column:Int, value:Int = 0) {
         self.row = row
@@ -24,16 +25,22 @@ struct PuzzleCell: Hashable {
         self.value = value
     }
     
-    
-    
     // hashable conformance
     
     var hashValue: Int {
-        let rowString = String(row)
-        let columnString = String(column)
-        let valString = String(value)
+       
+       return Int("\(row)\(column)\(value)")!
+    
+    }
+    
+    func asDict() -> NSDictionary {
+        let dict = NSMutableDictionary()
         
-        return Int(rowString+columnString+valString)!
+        dict["row"] = row
+        dict["column"] = column
+        dict["value"] = value
+        
+        return dict
     }
     
 }
@@ -42,17 +49,59 @@ func == (lhs: PuzzleCell, rhs: PuzzleCell) -> Bool {
     return lhs.hashValue == rhs.hashValue
 }
 
-class Puzzle {
+
+
+class Puzzle: NSObject, NSCoding {
     
     
-    let initialValues: [PuzzleCell]
+    var initialValues: [PuzzleCell]!
     var solution: [PuzzleCell]!
     
     init(nonNilValues: [PuzzleCell]) {
         self.initialValues = nonNilValues
     }
     
-    func asData() -> NSData {
+    func encodeWithCoder(aCoder: NSCoder) {
+        
+        var givens = [NSDictionary]()
+        for cell in initialValues {
+            givens.append(cell.asDict())
+        }
+        
+        var sol = [NSDictionary]()
+        for cell in solution {
+            sol.append(cell.asDict())
+        }
+        
+        aCoder.encodeObject(givens, forKey: "givens")
+        
+        aCoder.encodeObject(sol, forKey: "solution")
+        
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init()
+        initialValues = []
+        solution = []
+        if let initials = aDecoder.decodeObjectForKey("givens") as? [[String: Int]], sol = aDecoder.decodeObjectForKey("solution") as? [[String: Int]] {
+            for dict in initials {
+                let cell = PuzzleCell(row: dict["row"]!, column: dict["column"]!, value: dict["value"]!)
+                initialValues.append(cell)
+            }
+            
+            for dict in sol {
+                let cell = PuzzleCell(row: dict["row"]!, column: dict["column"]!, value: dict["value"]!)
+                solution.append(cell)
+
+            }
+            
+        } else {
+            return nil
+        }
+      
+    }
+    
+    /*func asData() -> NSData {
         var givenList: [Int] = []
         for cell in initialValues {
             givenList.append(cell.hashValue)
@@ -105,7 +154,7 @@ class Puzzle {
             return puzz
         }
         return nil
-    }
+    }*/
 }
 
 

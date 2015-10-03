@@ -29,11 +29,19 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     var inactivateInterface: (()->())!
     var activateInterface: (()->())!
+
     var bannerView: ADBannerView {
         get {
             let delegate: AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-            return delegate.bannerView
+            if let bv = delegate.banner {
+                return bv
+            }
+            
+            delegate.banner = ADBannerView(adType: .Banner)
+            delegate.banner?.delegate = delegate
+            return delegate.banner!
         }
+        
     }
     var bannerPin: NSLayoutConstraint?
     var bannerLayoutComplete = false
@@ -54,19 +62,13 @@ class SudokuController: UIViewController, NumPadDelegate {
                     }
                 }
             }
+            
+            refreshNoteButton()
         }
     }
     
     
-    
-    private var _puzzle: Puzzle?
-    var puzzle: Puzzle? {
-        var puzzCopy: Puzzle!
-        dispatch_sync(concurrentPuzzleQueue){
-            puzzCopy = self._puzzle
-        }
-        return puzzCopy
-    }
+    var puzzle: Puzzle?
     
     var tiles: [Tile] {
         get {
@@ -74,7 +76,7 @@ class SudokuController: UIViewController, NumPadDelegate {
             let boxList = self.board.boxes as! [Box]
             for box in boxList {
                 let containedTiles = box.boxes as! [Tile]
-                mutableTiles.extend(containedTiles)
+                mutableTiles.appendContentsOf(containedTiles)
             }
             return mutableTiles
         }
@@ -125,10 +127,10 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     
-    private let spinner: UIActivityIndicatorView = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.WhiteLarge)
+    let spinner: UIActivityIndicatorView = UIActivityIndicatorView(activityIndicatorStyle: UIActivityIndicatorViewStyle.WhiteLarge)
     
     
-    required init(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         numPad = SudokuNumberPad(frame: CGRectZero)
         board = SudokuBoard(frame: CGRectZero)
         super.init(coder: aDecoder)
@@ -197,10 +199,10 @@ class SudokuController: UIViewController, NumPadDelegate {
         
         if self.puzzle != nil && !canDisplayBannerAds {
             canDisplayBannerAds = true
+            bannerView.userInteractionEnabled = true
         }
 
         activateInterface()
-        
       
     }
     
@@ -218,13 +220,13 @@ class SudokuController: UIViewController, NumPadDelegate {
         super.viewDidDisappear(animated)
         
         if canDisplayBannerAds {
-            bannerView.removeFromSuperview()
+            let delegate: AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+            delegate.banner = nil
             canDisplayBannerAds = false
             bannerLayoutComplete = false
             layoutAnimated(false)
         }
        
-
     }
     
    
@@ -246,6 +248,8 @@ class SudokuController: UIViewController, NumPadDelegate {
         if canDisplayBannerAds {
             bannerView.removeFromSuperview()
             canDisplayBannerAds = false
+            bannerLayoutComplete = false
+            layoutAnimated(false)
         }
     }
     
@@ -255,7 +259,7 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [NSObject : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+   override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String: AnyObject]?, context: UnsafeMutablePointer<Void>) {
         if let path = keyPath {
             if path == symbolSetKey {
                 numPad.refreshButtonText()
@@ -274,7 +278,6 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     func setUpBoard() {
-        
         
         board.translatesAutoresizingMaskIntoConstraints = false
         numPad.translatesAutoresizingMaskIntoConstraints = false
@@ -331,20 +334,23 @@ class SudokuController: UIViewController, NumPadDelegate {
             self.navigationController?.navigationBarHidden = true
             self.inactivateInterface()
         }
-        let middleTile = board.tileAtIndex((5,4))
-        let placeHolderColor = middleTile.selectedColor
-        middleTile.selectedColor = UIColor.blackColor()
-        selectedTile = middleTile
         
         board.userInteractionEnabled = false
-        
-        spinner.startAnimating()
+        let firstTile = board.tileAtIndex((1,1))
+        let placeHolderColor = firstTile.selectedColor
+        let middleTile = board.tileAtIndex((5,4))
+        if !spinner.isAnimating() {
+            middleTile.selectedColor = UIColor.blackColor()
+            selectedTile = middleTile
+            spinner.startAnimating()
+        }
         let handler: (Puzzle -> ()) = {
             puzz -> () in
             dispatch_async(GlobalMainQueue){
                 self.spinner.stopAnimating()
                 middleTile.selectedColor = placeHolderColor
-                self._puzzle = puzz
+                //self._puzzle = puzz
+                self.puzzle = puzz
                 self.startingNils = []
                 self.givens = []
                 for cell in puzz.solution {
@@ -378,7 +384,7 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     
     func replayCurrent() {
-        if _puzzle == nil {
+        if puzzle == nil {
             return
         }
         
@@ -409,10 +415,11 @@ class SudokuController: UIViewController, NumPadDelegate {
     func puzzleReady() {
         activateInterface()
         if !canDisplayBannerAds {
+            bannerView.userInteractionEnabled = true
             bannerLayoutComplete = false
             canDisplayBannerAds = true
         }
-        bannerView.userInteractionEnabled = true
+
         if nilTiles.count > 0 {
             selectedTile = nilTiles[0]
         }
@@ -486,12 +493,12 @@ class SudokuController: UIViewController, NumPadDelegate {
     // banner view delegate
     
     func bannerViewDidLoadAd(banner: ADBannerView!) {
-        print("test!")
+
         layoutAnimated(true)
     }
     
     func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
-        print(error)
+
         layoutAnimated(true)
     }
     
@@ -553,9 +560,14 @@ class SudokuController: UIViewController, NumPadDelegate {
         }
     }
     
-    func longPress(sender: AnyObject) {
+    func toggleNoteMode(sender: AnyObject) {
         
     }
+    
+    func refreshNoteButton() {
+        
+    }
+    
 }
 
 class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
@@ -591,7 +603,7 @@ class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITa
         }
     }
     
-    required init(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         
         super.init(coder: aDecoder)
         

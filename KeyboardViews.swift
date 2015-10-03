@@ -62,9 +62,9 @@ class SudokuNumberPad: UIView {
         super.init(frame: frame)
     }
 
-    required init(coder aDecoder: NSCoder) {
+    required init (coder aDecoder: NSCoder) {
         buttons = [one, two, three, four, five, six, seven, eight, nine]
-        super.init(coder: aDecoder)
+        super.init(coder: aDecoder)!
     }
     
     override func layoutSubviews() {

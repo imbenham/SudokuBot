@@ -512,6 +512,15 @@ enum PuzzleDifficulty: Equatable, Hashable {
     case Insane
     case Custom (Int)
     
+    static func fromCacheString(cacheString: String) -> PuzzleDifficulty {
+        let dict:[String: PuzzleDifficulty] = [PuzzleDifficulty.Easy.cacheString(): .Easy, PuzzleDifficulty.Medium.cacheString(): .Medium, PuzzleDifficulty.Hard.cacheString(): .Hard, PuzzleDifficulty.Insane.cacheString(): Insane]
+        if let diff = dict[cacheString] {
+            return diff
+        } else {
+            return Custom(0)
+        }
+    }
+    
     var isCachable: Bool {
         switch self{
         case .Custom (_):
@@ -573,7 +582,18 @@ enum PuzzleDifficulty: Equatable, Hashable {
         }
     }
 
-    
+    func cachePath() -> NSURL {
+        switch self{
+        case .Easy:
+            return easyCacheFilePath
+        case .Medium:
+            return mediumCacheFilePath
+        case .Hard:
+            return hardCacheFilePath
+        default:
+            return insaneCacheFilePath
+        }
+    }
 }
 
 func == (lhs:PuzzleDifficulty, rhs:PuzzleDifficulty) -> Bool{
@@ -586,70 +606,21 @@ class Matrix {
     
     static let sharedInstance: Matrix = Matrix()
     
-    var operationQueue: NSOperationQueue?
-    
-    var rowsAndColumns = LinkedList<PuzzleNode>()
+    var rowsAndColumns:LinkedList<PuzzleNode>? = LinkedList<PuzzleNode>()
     typealias Choice = (Chosen: LinkedNode<PuzzleNode>, Columns:[LinkedNode<PuzzleNode>], Rows:[LinkedNode<PuzzleNode>], Root:Int)
     private var currentSolution = [Choice]()
     private var eliminated = [Choice]()
     typealias Solution = [LinkedNode<PuzzleNode>]
     private var solutions = [Solution]()
     private var solutionDict: [PuzzleCell: LinkedNode<PuzzleNode>]?
-    private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 170, .Hard: 190, .Insane: 230] //easy = 130
-    private var thresholds: [PuzzleDifficulty: Int] = [.Easy : 32, .Medium: 27, .Hard: 23, .Insane: 18]
+    private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 160, .Hard: 190, .Insane: 230]
     var allRows: [Int: LinkedNode<PuzzleNode>]?
-    private var puzzleCache: [PuzzleDifficulty: [Puzzle]] = [.Easy:[], .Medium:[], .Hard: [], .Insane: []]
-    var getEmptyCaches: Set<PuzzleDifficulty> {
-        get {
-            var toReturn:Set<PuzzleDifficulty> = [.Easy, .Medium, .Hard, .Insane]
-            for key in toReturn {
-                if !puzzleCache[key]!.isEmpty {
-                    toReturn.remove(key)
-                }
-            }
-            return toReturn
-        }
-    }
+    
     
     init() {
         constructMatrix()
     }
     
-    func fillCaches() {
-        
-        
-        let diffs = self.getEmptyCaches
-        var operations: [NSOperation] = []
-        for diff in diffs {
-            let operation = NSBlockOperation() {
-                self.generatePuzzleOfDifficulty(diff)
-            }
-            operation.qualityOfService = .Utility
-            operation.queuePriority = .Normal
-            if operations.isEmpty {
-                operations.append(operation)
-            } else {
-                operation.addDependency(operations.last!)
-                operations.append(operation)
-            }
-            
-        }
-        
-        operationQueue?.addOperations(operations, waitUntilFinished: false)
-
-    }
-    
-    
-    func getCachedPuzzleOfDifficulty(difficulty: PuzzleDifficulty) -> Puzzle? {
-        
-        if let puzzList = puzzleCache[difficulty] {
-            if !puzzList.isEmpty {
-                return puzzleCache[difficulty]!.removeLast()
-            }
-            return nil
-        }
-        return nil
-    }
     
     func getRawDifficultyForPuzzle(difficulty: PuzzleDifficulty) -> Int {
         switch difficulty{
@@ -675,7 +646,8 @@ class Matrix {
     func generatePuzzleOfDifficulty(difficulty: PuzzleDifficulty, shouldCache: Bool = true) {
         var puzz: [PuzzleCell] = []
         
-        dispatch_barrier_async(concurrentBackupQueue) {
+        
+        dispatch_barrier_async(concurrentPuzzleQueue) {
             let initialChoice = self.selectColumn()!
             
             if !self.findFirstSolution(initialChoice, root: initialChoice.vertOrder) {
@@ -691,30 +663,31 @@ class Matrix {
             let last = puzz.removeLast()
             
             // get a list of minimal givens that need to be left in the grid for a valid puzzle and a list of all the values that are taken out
-            self.rebuild()
             let filtered = self.minValuesForPuzzle(puzz, withLastRemoved: last, forTargetDifficulty: difficulty)
+            
+            
             self.rebuild()
             // add removed values from the second list back into the first list until a puzzle of the desired difficulty level is achieved
             let finished = self.puzzleOfSpecifedDifficulty(difficulty, withGivens: filtered.Givens, andSolution: filtered.Solution)
             puzz = finished.Givens
-            
+
             let aPuzzle = Puzzle(nonNilValues: puzz)
             aPuzzle.solution = finished.Solution
             
+            
+            self.rebuild()
+            
             if shouldCache {
-                if var cache = self.puzzleCache[difficulty] {
-                    cache.append(aPuzzle)
-                    self.puzzleCache[difficulty] = cache
-                    let notificationCenter = NSNotificationCenter.defaultCenter()
-                    notificationCenter.postNotificationName(cachedNotification, object: self, userInfo: [difficulty.cacheString():cache.count])
+                   
+                let notificationCenter = NSNotificationCenter.defaultCenter()
+                notificationCenter.postNotificationName(cachedNotification, object: self, userInfo: ["difficulty": difficulty.cacheString(), "puzzle": aPuzzle])
 
-                }
             } else {
                 let notificationCenter = NSNotificationCenter.defaultCenter()
                 notificationCenter.postNotificationName(difficulty.notificationString(), object: self, userInfo: ["puzzle": aPuzzle])
             }
             
-            self.rebuild()
+            
 
         }
             }
@@ -732,7 +705,8 @@ class Matrix {
         
         
         if rawDiff > targetDiff {
-            let cellToAdd = solution.removeLast()
+            let random = Int(arc4random_uniform((UInt32(solution.count))))
+            let cellToAdd = solution.removeAtIndex(random)
             givens.append(cellToAdd)
             return puzzleOfSpecifedDifficulty(difficulty, withGivens: givens, andSolution: solution)
         }
@@ -748,24 +722,14 @@ class Matrix {
         var rowList:[LinkedNode<PuzzleNode>] = []
         let vals = allVals + tried
         for val in vals {
-            rowList.append(solutionDict![val]!)
+            let node = solutionDict![val]!
+            rowList.append(node)
         }
         
         
         solveForRows(rowList, elims:true)
         
         let numSolutions = countPuzzleSolutions()
-
-        if numSolutions == 1 {
-            if let threshold = thresholds[targetDifficulty] {
-                if tried.count >= threshold {
-                    solution += allVals
-                    solution.append(lastRemoved)
-                    return (tried, solution)
-                }
-
-            }
-        }
         
         if allVals.count == 0 {
             if numSolutions == 1 {
@@ -777,11 +741,11 @@ class Matrix {
         }
         
         
-        let random = Int(arc4random_uniform((UInt32(allVals.count-1))))
+        let random = Int(arc4random_uniform((UInt32(allVals.count))))
         
         let next = allVals.removeAtIndex(random)
         
-        if numSolutions > 1 {
+        if numSolutions != 1 {
             tried.append(lastRemoved)
             return minValuesForPuzzle(allVals, withLastRemoved: next, andTried: tried, andSolution: solution, forTargetDifficulty: targetDifficulty)
         } else {
@@ -834,7 +798,7 @@ class Matrix {
     
     private func solved() -> Bool {
         
-        if rowsAndColumns.lateralHead.key == nil {
+        if rowsAndColumns!.lateralHead.key == nil {
             return true
         }
         
@@ -925,7 +889,7 @@ class Matrix {
     private func reinsertLast(last: Choice) {
         
         for col in last.Columns.reverse() {
-            rowsAndColumns.insertLateralLink(col)
+            rowsAndColumns!.insertLateralLink(col)
         }
         
         for row in last.Rows.reverse()
@@ -936,8 +900,8 @@ class Matrix {
     }
     
     private func selectColumn() -> LinkedNode<PuzzleNode>? {
-        let latHeadOrder = rowsAndColumns.lateralHead.latOrder
-        var current:LinkedNode<PuzzleNode> = rowsAndColumns.lateralHead
+        let latHeadOrder = rowsAndColumns!.lateralHead.latOrder
+        var current:LinkedNode<PuzzleNode> = rowsAndColumns!.lateralHead
         var numRows = current.countColumn()
         var minColumn: LinkedNode<PuzzleNode>?
         if numRows == 1 {
@@ -965,7 +929,7 @@ class Matrix {
         
         var possibleChoices: [LinkedNode<PuzzleNode>] = []
         
-        current = rowsAndColumns.lateralHead
+        current = rowsAndColumns!.lateralHead
         if current.countColumn() == numRows {
             possibleChoices.append(current)
         }
@@ -977,7 +941,7 @@ class Matrix {
             current  = current.right!
         }
         
-        let random1 = Int(arc4random_uniform((UInt32(possibleChoices.count-1))))
+        let random1 = Int(arc4random_uniform((UInt32(possibleChoices.count))))
         current = possibleChoices[random1]
         
         let random2 = Int(arc4random_uniform(UInt32(numRows-1)))+1
@@ -999,7 +963,7 @@ class Matrix {
             solveForRow(row, root: row.vertOrder, elims: elims)
         }
         
-        return rowsAndColumns.verticalCount()
+        return rowsAndColumns!.verticalCount()
     }
     
     private func solveForRow(row: LinkedNode<PuzzleNode>, root: Int = 1, elims: Bool = false) {
@@ -1039,7 +1003,7 @@ class Matrix {
             rowsToRemove.append(current)
             current = current.down!
         }
-        rowsAndColumns.removeLateralLink(current)
+        rowsAndColumns!.removeLateralLink(current)
         return rowsToRemove
     }
     
@@ -1051,7 +1015,7 @@ class Matrix {
             current = current.right!
         }
         
-        rowsAndColumns.removeVerticalLink(current)
+        rowsAndColumns!.removeVerticalLink(current)
     }
     
     func insertRow(row: LinkedNode<PuzzleNode>) {
@@ -1061,7 +1025,7 @@ class Matrix {
             current.down!.up = current
             current = current.right!
         }
-        rowsAndColumns.insertVerticalLink(current)
+        rowsAndColumns!.insertVerticalLink(current)
     }
     
     private func resetSolution() {
@@ -1076,8 +1040,11 @@ class Matrix {
     
     // Constructing matrix
     private func constructMatrix() {
+        if rowsAndColumns == nil {
+            rowsAndColumns = LinkedList<PuzzleNode>()
+        }
         buildRowChoices()
-        self.allRows = rowsAndColumns.rows
+        allRows = rowsAndColumns!.rows
         buildCellConstraints()
         buildColumnConstraints()
         buildRowConstraints()
@@ -1090,7 +1057,7 @@ class Matrix {
         for columnIndex in 1...9 {
             for rowIndex in 1...9 {
                 let node = PuzzleNode(row: rowIndex, column: columnIndex)
-                rowsAndColumns.addLateralLink(node)
+                rowsAndColumns!.addLateralLink(node)
             }
         }
         
@@ -1100,7 +1067,7 @@ class Matrix {
         for aValue in 1...9 {
             for columnIndex in 1...9 {
                 let node = PuzzleNode(value: aValue, column: columnIndex)
-                rowsAndColumns.addLateralLink(node)
+                rowsAndColumns!.addLateralLink(node)
             }
         }
     }
@@ -1109,7 +1076,7 @@ class Matrix {
         for aValue in 1...9 {
             for rowIndex in 1...9 {
                 let node = PuzzleNode(value: aValue, row: rowIndex)
-                rowsAndColumns.addLateralLink(node)
+                rowsAndColumns!.addLateralLink(node)
             }
         }
     }
@@ -1118,7 +1085,7 @@ class Matrix {
         for aValue in 1...9 {
             for boxIndex in 1...9 {
                 let node = PuzzleNode(value: aValue, box: boxIndex)
-                rowsAndColumns.addLateralLink(node)
+                rowsAndColumns!.addLateralLink(node)
             }
         }
     }
@@ -1128,7 +1095,7 @@ class Matrix {
             for columnIndex in 1...9 {
                 for aValue in 1...9 {
                     let node = PuzzleNode(value: aValue, column: columnIndex, row: rowIndex, box: getBox(columnIndex, row: rowIndex))
-                    rowsAndColumns.addVerticalLink(node)
+                    rowsAndColumns!.addVerticalLink(node)
                 }
             }
         }
@@ -1136,8 +1103,8 @@ class Matrix {
     
     private func buildOutMatrix() {
         
-       var rowHead:LinkedNode<PuzzleNode>? = rowsAndColumns.verticalHead
-        var constHead:LinkedNode<PuzzleNode>? = rowsAndColumns.lateralHead
+       var rowHead:LinkedNode<PuzzleNode>? = rowsAndColumns!.verticalHead
+        var constHead:LinkedNode<PuzzleNode>? = rowsAndColumns!.lateralHead
         while rowHead != nil {
             if rowHead!.countRow() > 1 {
                 break
@@ -1150,22 +1117,22 @@ class Matrix {
                 if rowHead!.key! == constHead!.key! {
                     let newKey = PuzzleNode(node: constHead!.key!)
                     let newNode = LinkedNode(key: newKey)
-                    rowsAndColumns.addLateralLinkFromNode(rowHead!.getLateralTail(), toNewNode: newNode)
-                    rowsAndColumns.addVerticalLinkFromNode(constHead!.getVerticalTail(), toNewNode: newNode)
+                    rowsAndColumns!.addLateralLinkFromNode(rowHead!.getLateralTail(), toNewNode: newNode)
+                    rowsAndColumns!.addVerticalLinkFromNode(constHead!.getVerticalTail(), toNewNode: newNode)
                 }
                 constHead!.getVerticalTail().down = constHead!.getVerticalHead()
                 constHead = constHead!.right
             } // end second while loop
             rowHead!.getLateralTail().right = rowHead!.getLateralHead()
             rowHead = rowHead!.down
-            constHead = rowsAndColumns.lateralHead
+            constHead = rowsAndColumns!.lateralHead
             
         } // end first while loop
     }
     
     
     // matches given values against row choices -- move this to linked list class def 
-    // put all row heads in dictionary when created?
+
     private func findRowMatch(mRow: PuzzleNode) -> LinkedNode<PuzzleNode> {
     
         // if the node we're looking for is in the allRows dictionary, we can just look it up rather than traversing the row ladder
@@ -1175,9 +1142,9 @@ class Matrix {
             }
         }
         
-        var current = rowsAndColumns.verticalHead.up!
+        var current = rowsAndColumns!.verticalHead.up!
         
-        while current.vertOrder != rowsAndColumns.verticalHead.vertOrder {
+        while current.vertOrder != rowsAndColumns!.verticalHead.vertOrder {
             if current.key! == mRow {
                 return current
             }
