@@ -190,8 +190,6 @@ class SudokuController: UIViewController, NumPadDelegate {
         
         longFetchLabel.text = "SudokuBot is cooking up a custom puzzle just for you!  It will be ready in a sec."
         
-        // register to receive notifications when user defaults change
-        NSUserDefaults.standardUserDefaults().addObserver(self, forKeyPath: symbolSetKey, options: .New, context: nil)
     }
     
     override func viewDidAppear(animated: Bool) {
@@ -203,7 +201,9 @@ class SudokuController: UIViewController, NumPadDelegate {
         }
 
         activateInterface()
-      
+        
+        // register to receive notifications when user defaults change
+        NSUserDefaults.standardUserDefaults().addObserver(self, forKeyPath: symbolSetKey, options: .New, context: nil)
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -230,17 +230,10 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
    
-    
     func wakeFromBackground() {
-        activateInterface()
-        
-        if self.puzzle != nil && !canDisplayBannerAds {
-            bannerLayoutComplete = false
-            canDisplayBannerAds = true
-        }
-        
         
     }
+    
     
     func goToBackground() {
         inactivateInterface()

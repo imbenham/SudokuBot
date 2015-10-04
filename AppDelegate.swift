@@ -111,13 +111,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
         
         if let puzzleController = rootView?.topViewController as? SudokuController {
             puzzleController.goToBackground()
+            
+            let defaults = NSUserDefaults.standardUserDefaults()
+            let data = NSKeyedArchiver.archivedDataWithRootObject(puzzleController.puzzle!)
+            defaults.setObject(data, forKey: currentPuzzle)
+            puzzleController.puzzle = nil
+            for tile in puzzleController.startingNils {
+                if tile.value != .Nil {
+                     print("value: \(tile.value), note values: \(tile.noteValues.count)")
+                }
+               
+            }
+            rootView?.popViewControllerAnimated(false)
         }
         
         banner = nil
         
         PuzzleStore.sharedInstance.operationQueue.cancelAllOperations()
-        
-        
         
     }
 

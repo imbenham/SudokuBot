@@ -47,6 +47,20 @@ class PlayPuzzleViewController: SudokuController {
         }
     }
 
+    override func wakeFromBackground() {
+        let defaults = NSUserDefaults.standardUserDefaults()
+        if let currentPuzzleData = defaults.objectForKey(currentPuzzle) as? NSData {
+            let puzz = NSKeyedUnarchiver.unarchiveObjectWithData(currentPuzzleData) as! Puzzle
+            puzzle = puzz
+        }
+        
+        activateInterface()
+        
+        if self.puzzle != nil && !canDisplayBannerAds {
+            bannerLayoutComplete = false
+            canDisplayBannerAds = true
+        }
+    }
     
     func showButtons(sender: AnyObject) {
         if iPhone4 {

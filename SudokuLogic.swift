@@ -606,6 +606,7 @@ class Matrix {
     
     static let sharedInstance: Matrix = Matrix()
     
+    
     var rowsAndColumns:LinkedList<PuzzleNode>? = LinkedList<PuzzleNode>()
     typealias Choice = (Chosen: LinkedNode<PuzzleNode>, Columns:[LinkedNode<PuzzleNode>], Rows:[LinkedNode<PuzzleNode>], Root:Int)
     private var currentSolution = [Choice]()

@@ -20,7 +20,7 @@ class PuzzleStore: NSObject {
     
     private var puzzleCache: [PuzzleDifficulty: [Puzzle]] = [.Easy:[], .Medium:[], .Hard: [], .Insane: []]
     
-    var cacheLimit = 2
+    var cacheLimit = 1
     
     // accessing the cached puzzles
     

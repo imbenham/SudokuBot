@@ -262,6 +262,12 @@ let hardPuzzleReady = "hardPuzzleReady"
 let insanePuzzleReady = "insanePuzzleReady"
 let customPuzzleReady = "customPuzzleReady"
 
+let currentHardPuzzle = "currentHardPuzzle"
+let currentEasyPuzzle = "currentEasyPuzzle"
+let currentMediumPuzzle = "currentMediumPuzzle"
+let currentInsanePuzzle = "currentInsanePuzzle"
+let currentPuzzle = "currentPuzzle"
+
 let cachedNotification = "puzzleCached"
 
 let easyCacheFilePath = (NSFileManager.defaultManager().URLsForDirectory(.LibraryDirectory, inDomains: .UserDomainMask)[0] as NSURL).URLByAppendingPathComponent("easy/puzzle_cache.plist")
