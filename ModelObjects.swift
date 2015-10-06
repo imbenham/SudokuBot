@@ -25,6 +25,14 @@ struct PuzzleCell: Hashable {
         self.value = value
     }
     
+    init?(dict: [String: Int]) {
+        if let row = dict["row"], column = dict["column"], value = dict["value"] {
+            self.init(row:row, column:column, value:value)
+        } else {
+            return nil
+        }
+    }
+    
     // hashable conformance
     
     var hashValue: Int {

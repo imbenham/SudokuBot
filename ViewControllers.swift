@@ -26,6 +26,8 @@ class SudokuController: UIViewController, NumPadDelegate {
     var givens: [Tile] = []
     var board: SudokuBoard
     var numPad: SudokuNumberPad
+    var storedTime: Double = 0
+    
     
     var inactivateInterface: (()->())!
     var activateInterface: (()->())!
@@ -84,29 +86,18 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     var nilTiles: [Tile] {
         get {
-            var nilTiles = [Tile]()
-            for tile in tiles {
-                if tile.value == .Nil {
-                    nilTiles.append(tile)
-                }
-            }
-            return nilTiles
+            return tiles.filter({$0.value == .Nil})
         }
     }
     
     var nonNilTiles: [Tile] {
         get {
-            var nilTiles = [Tile]()
-            for tile in tiles {
-                if tile.value != .Nil {
-                    nilTiles.append(tile)
-                }
-            }
-            return nilTiles
+           
+            return tiles.filter({$0.value != .Nil})
         }
     }
     
-    var difficulty: PuzzleDifficulty = .Easy
+    var difficulty: PuzzleDifficulty = .Custom(150)
     
     var numPadHeight: CGFloat {
         get {
@@ -124,6 +115,21 @@ class SudokuController: UIViewController, NumPadDelegate {
             }
         }
         return wrong
+    }
+    
+    var annotatedTiles: [Tile] {
+        return nilTiles.filter({$0.noteValues.count > 0})
+    }
+    
+    var discoveredTiles: [Tile] {
+        return nonNilTiles.filter({$0.discovered})
+    }
+    
+    func tileWithBackingCell(cell: PuzzleCell) -> Tile {
+        let row = cell.row
+        let column = cell.column
+        let tI = getTileIndexForRow(row, andColumn: column)
+        return board.tileAtIndex(tI)
     }
     
     
@@ -337,12 +343,11 @@ class SudokuController: UIViewController, NumPadDelegate {
             selectedTile = middleTile
             spinner.startAnimating()
         }
-        let handler: (Puzzle -> ()) = {
-            puzz -> () in
+        let handler: ((Puzzle,[String:Any]?) -> ()) = {
+            puzz, dict -> () in
             dispatch_async(GlobalMainQueue){
                 self.spinner.stopAnimating()
                 middleTile.selectedColor = placeHolderColor
-                //self._puzzle = puzz
                 self.puzzle = puzz
                 self.startingNils = []
                 self.givens = []
@@ -366,6 +371,37 @@ class SudokuController: UIViewController, NumPadDelegate {
                     self.navigationController?.navigationBarHidden = false
                     self.longFetchLabel.hidden = true
                 }
+                
+                if let assignedCells = dict?["progress"] as? [PuzzleCell] {
+                    for cell in assignedCells {
+                        let tile = self.tileWithBackingCell(cell)
+                        tile.backingCell = cell
+                        tile.value = TileValue(rawValue: cell.value)!
+                    }
+                }
+                
+                if let annotatedDict = dict?["annotated"] as? [NSDictionary]  {
+                    for dict in annotatedDict {
+                        let cell = PuzzleCell(dict: (dict["cell"] as! [String: Int]))!
+                        let notes:[TileValue] = (dict["notes"] as! [Int]).map({TileValue(rawValue: $0)!})
+                        let tile = self.tileWithBackingCell(cell)
+                        tile.noteValues = notes
+                        tile.refreshLabel()
+                    }
+                }
+
+                
+                if let discoveredCells = dict?["discovered"] as? [PuzzleCell] {
+                    for cell in discoveredCells {
+                        let tile = self.tileWithBackingCell(cell)
+                        tile.discovered = true
+                    }
+                }
+                
+                if let time = dict?["time"] as? Double {
+                    self.storedTime = time
+                }
+
                 
                 self.puzzleReady()
             }

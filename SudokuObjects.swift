@@ -263,6 +263,16 @@ class Tile: SudokuItem {
             if value != .Nil {
                 noteValues = []
             }
+            backingCell.value = value.rawValue
+            refreshLabel()
+        }
+    }
+    var discovered = false {
+        didSet {
+            if discovered == true {
+                solutionValue = nil
+                userInteractionEnabled = false
+            }
             refreshLabel()
         }
     }
@@ -319,7 +329,7 @@ class Tile: SudokuItem {
             controller?.refreshNoteButton()
         }
     }
-    var noteValues: [TileValue] = [] 
+    var noteValues: [TileValue] = []
     
     var solutionValue: Int?
 
@@ -384,7 +394,12 @@ class Tile: SudokuItem {
  
     
     func refreshLabel() {
-        valueLabel.textColor = labelColor
+        if discovered {
+            valueLabel.textColor = chosenTextColor
+        } else {
+           valueLabel.textColor = labelColor
+        }
+        
         valueLabel.text = noteMode ? "" : self.getValueText()
         refreshBackground()
         configureNoteViews()
@@ -403,6 +418,8 @@ class Tile: SudokuItem {
         
         if value != .Nil && solutionValue != nil {
             backgroundColor = selected ? selectedColor : assignedBackgroundColor
+        } else if discovered {
+            backgroundColor = defaultBackgroundColor
         } else {
             backgroundColor = selected ? selectedColor : defaultBackgroundColor
         }

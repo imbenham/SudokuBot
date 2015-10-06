@@ -262,11 +262,11 @@ let hardPuzzleReady = "hardPuzzleReady"
 let insanePuzzleReady = "insanePuzzleReady"
 let customPuzzleReady = "customPuzzleReady"
 
-let currentHardPuzzle = "currentHardPuzzle"
-let currentEasyPuzzle = "currentEasyPuzzle"
-let currentMediumPuzzle = "currentMediumPuzzle"
-let currentInsanePuzzle = "currentInsanePuzzle"
-let currentPuzzle = "currentPuzzle"
+let currentHardPuzzleKey = "currentHardPuzzle"
+let currentEasyPuzzleKey = "currentEasyPuzzle"
+let currentMediumPuzzleKey = "currentMediumPuzzle"
+let currentInsanePuzzleKey = "currentInsanePuzzle"
+let currentPuzzleKey = "currentPuzzle"
 
 let cachedNotification = "puzzleCached"
 
@@ -320,6 +320,24 @@ extension UIView {
     }
     
     
+    
+}
+
+func dictionaryToSaveForController(controller: PlayPuzzleViewController) -> NSDictionary {
+    
+    let data = NSKeyedArchiver.archivedDataWithRootObject(controller.puzzle!)
+    
+    let assignedCells = controller.startingNils.filter({$0.value != .Nil}).map({$0.backingCell.asDict()})
+    
+    let annotatedCells = controller.annotatedTiles.map({NSDictionary(dictionary: ["cell": $0.backingCell.asDict(), "notes":$0.noteValues.map{$0.rawValue}], copyItems: true)})
+    
+    let time = controller.timeElapsed
+    
+    let discoveredCells = controller.discoveredTiles.map({$0.backingCell.asDict()})
+    
+    let difficulty = controller.difficulty.cacheString()
+    
+    return ["puzzle":data, "progress":assignedCells, "annotated":annotatedCells, "discovered":discoveredCells, "time":time, "difficulty":difficulty] as NSDictionary
     
 }
 

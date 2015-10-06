@@ -530,6 +530,21 @@ enum PuzzleDifficulty: Equatable, Hashable {
         }
     }
     
+    var currentKey: String? {
+        switch self {
+        case .Easy:
+            return currentEasyPuzzleKey
+        case .Medium:
+            return currentMediumPuzzleKey
+        case .Hard:
+            return currentHardPuzzleKey
+        case .Insane:
+            return currentInsanePuzzleKey
+        default:
+            return nil
+        }
+    }
+    
     var hashValue: Int {
         get {
             return self.toInt()
@@ -594,6 +609,7 @@ enum PuzzleDifficulty: Equatable, Hashable {
             return insaneCacheFilePath
         }
     }
+    
 }
 
 func == (lhs:PuzzleDifficulty, rhs:PuzzleDifficulty) -> Bool{
@@ -605,7 +621,6 @@ func == (lhs:PuzzleDifficulty, rhs:PuzzleDifficulty) -> Bool{
 class Matrix {
     
     static let sharedInstance: Matrix = Matrix()
-    
     
     var rowsAndColumns:LinkedList<PuzzleNode>? = LinkedList<PuzzleNode>()
     typealias Choice = (Chosen: LinkedNode<PuzzleNode>, Columns:[LinkedNode<PuzzleNode>], Rows:[LinkedNode<PuzzleNode>], Root:Int)

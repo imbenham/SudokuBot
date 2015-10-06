@@ -15,7 +15,7 @@ class PuzzleStore: NSObject {
     
     var puzzReadyNotificationString: String?
     
-    var completionHandler: (Puzzle -> ())?
+    var completionHandler: ((Puzzle, [String:Any]?) -> ())?
     
     
     private var puzzleCache: [PuzzleDifficulty: [Puzzle]] = [.Easy:[], .Medium:[], .Hard: [], .Insane: []]
@@ -80,10 +80,25 @@ class PuzzleStore: NSObject {
         return nil
     }
     
-    func getPuzzleForController(controller: SudokuController, withCompletionHandler handler: (Puzzle ->())) {
+    func getPuzzleForController(controller: SudokuController, withCompletionHandler handler: ((Puzzle, [String: Any]?) ->())) {
+        
+        let defaults = NSUserDefaults.standardUserDefaults()
+        if let key = controller.difficulty.currentKey, let dict = defaults.objectForKey(key) as? [String: AnyObject], puzzData = dict["puzzle"] as? NSData, assigned = dict["progress"] as? [[String:Int]], let annotatedDict = dict["annotated"] as? [NSDictionary], let discovered = dict["discovered"] as? [[String: Int]], let time = dict["time"] as? Double {
+            let currentPuzz = NSKeyedUnarchiver.unarchiveObjectWithData(puzzData) as! Puzzle
+            let assignedCells = assigned.map{PuzzleCell(dict: $0)!}
+            let discoveredCells = discovered.map{PuzzleCell(dict: $0)!}
+           
+            
+             defaults.removeObjectForKey(key)
+            
+            handler(currentPuzz,["progress":assignedCells, "discovered":discoveredCells, "annotated":annotatedDict, "time":time])
+            
+            return
+        }
+
      
             if let puzz = getCachedPuzzleOfDifficulty(controller.difficulty) {
-                handler(puzz)
+                handler(puzz,nil)
                 dispatch_async(concurrentPuzzleQueue) {
                     self.restockCaches()
                 }
@@ -151,7 +166,7 @@ class PuzzleStore: NSObject {
         let notificationCenter = NSNotificationCenter.defaultCenter()
         notificationCenter.removeObserver(self, name: puzzReadyNotificationString, object: nil)
         let puzz:Puzzle = notification.userInfo!["puzzle"] as! Puzzle
-        completionHandler?(puzz)
+        completionHandler?(puzz, nil)
         completionHandler = nil
         puzzReadyNotificationString = nil
         
