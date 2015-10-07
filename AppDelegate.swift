@@ -124,8 +124,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
         // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
         // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
 
-        let app = UIApplication.sharedApplication()
-        app.beginBackgroundTaskWithExpirationHandler {
+        dispatch_async(GlobalBackgroundQueue) {
             let store = PuzzleStore.sharedInstance
             let keys = store.cachesToRefresh
             
@@ -149,8 +148,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
             }
             
             store.clearCaches()
-        }
             
+        }
+        
         
     }
 
