@@ -111,13 +111,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
         
         if let puzzleController = rootView?.topViewController as? SudokuController {
             puzzleController.goToBackground()
+            
         }
         
         banner = nil
         
         PuzzleStore.sharedInstance.operationQueue.cancelAllOperations()
-        
-        
         
     }
 
@@ -125,7 +124,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
         // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
         // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
 
-        
         dispatch_async(GlobalBackgroundQueue) {
             let store = PuzzleStore.sharedInstance
             let keys = store.cachesToRefresh
@@ -150,8 +148,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
             }
             
             store.clearCaches()
-    
+            
         }
+        
         
     }
 
@@ -169,40 +168,66 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
                 }
             }
         
-            
             store.cachesToRefresh.removeAll()
         }
+        
         
     }
 
     func applicationDidBecomeActive(application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-        let rootView = window?.rootViewController as? UINavigationController
-        
-        if let puzzleController = rootView?.topViewController as? SudokuController {
-            puzzleController.wakeFromBackground()
-        }
-        
         
         dispatch_async(concurrentPuzzleQueue) {
             let store = PuzzleStore.sharedInstance
             if let empty = store.getEmptyCaches.first {
                 PuzzleStore.sharedInstance.populatePuzzleCache(empty)
             }
-            
-
         }
         
-        
+        let rootView = self.window?.rootViewController as? UINavigationController
+        if let puzzleController = rootView?.topViewController as? SudokuController {
+            puzzleController.wakeFromBackground()
+        }
     }
 
     func applicationWillTerminate(application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-    
+       
+        
+        let rootView = window?.rootViewController as? UINavigationController
+        
+        if let puzzleController = rootView?.topViewController as? PlayPuzzleViewController {
+            saveCurrentPuzzleForController(puzzleController)
+        }
+        
+
 
     }
     
-    // banner view delegate methods
+    func applicationDidReceiveMemoryWarning(application: UIApplication) {
+        
+        if UIApplication.sharedApplication().applicationState == UIApplicationState.Background {
+            let rootView = window?.rootViewController as? UINavigationController
+            
+            if let puzzleController = rootView?.topViewController as? PlayPuzzleViewController {
+                
+                saveCurrentPuzzleForController(puzzleController)
+                rootView?.popViewControllerAnimated(false)
+            }
+
+        }
+
+    }
+    
+    func saveCurrentPuzzleForController(controller: PlayPuzzleViewController) {
+        let defaults = NSUserDefaults.standardUserDefaults()
+        
+        let dictionaryToSave = dictionaryToSaveForController(controller)
+        
+        defaults.setObject(dictionaryToSave, forKey: currentPuzzleKey)
+
+    }
+    
     
     // banner view delegate
     

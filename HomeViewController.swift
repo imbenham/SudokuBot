@@ -18,6 +18,8 @@ class HomeViewController: UIViewController {
     let tableBGColor = UIColor.blackColor().CGColor
     var mascotImage:UIImageView? = UIImageView(image: (UIImage(named: "SudokuBot_RobotFace")))
     let toolbar = UIToolbar()
+    //let playSegue = "playSegue"
+    //let cheatSegue = "cheatSegue"
     
     var selectedCell: TableCell? {
         willSet {
@@ -248,6 +250,22 @@ class HomeViewController: UIViewController {
     
     override func viewDidAppear(animated: Bool) {
         
+        let defaults = NSUserDefaults.standardUserDefaults()
+        if defaults.objectForKey(currentPuzzleKey) != nil {
+            let alert = UIAlertController(title: "Resume puzzle?", message: "Your last puzzle was interrupted, but SudokuBot saved it for you.  Would you like to resume the saved puzzle?", preferredStyle: .Alert)
+            let yes = UIAlertAction(title: "Yes!", style: .Default) {
+                action in
+                self.performSegueWithIdentifier("playSegue", sender: action)
+            }
+            
+            let no = UIAlertAction(title: "No.", style: .Default, handler: nil)
+            
+            alert.addAction(yes)
+            alert.addAction(no)
+            
+            self.presentViewController(alert, animated: true, completion: nil)
+            
+        }
         
         for section in 0...sections()-1 {
             let header = headerForSection(section)
@@ -408,20 +426,78 @@ class HomeViewController: UIViewController {
     
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         
+        
         if segue.identifier == "playSegue" {
-            let difficulty = (sender as! UIView).tag
+            
             let vc = segue.destinationViewController as! SudokuController
             
-            switch difficulty{
-            case 0:
-                vc.difficulty = .Easy
-            case 1:
-                vc.difficulty = .Medium
-            case 2:
-                vc.difficulty = .Hard
-            default:
-                vc.difficulty = .Insane
+            if sender is UIAlertAction {
+                let defaults = NSUserDefaults.standardUserDefaults()
+                
+                if let dict = defaults.objectForKey(currentPuzzleKey) as? [String: AnyObject], puzzData = dict["puzzle"] as? NSData, assigned = dict["progress"] as? [[String:Int]], let annotatedDict = dict["annotated"] as? [NSDictionary], let discovered = dict["discovered"] as? [[String: Int]], let time = dict["time"] as? Double, let difficulty = dict["difficulty"] as? String {
+                    let currentPuzz = NSKeyedUnarchiver.unarchiveObjectWithData(puzzData) as! Puzzle
+                    vc.puzzle = currentPuzz
+                    
+                    for cell in currentPuzz.solution {
+                        let tile = vc.tileWithBackingCell(cell)
+                        tile.backingCell = cell
+                        tile.solutionValue = cell.value
+                        vc.startingNils.append(tile)
+                    }
+                    for cell in currentPuzz.initialValues {
+                        let tile = vc.tileWithBackingCell(cell)
+                        tile.backingCell = cell
+                        tile.value = TileValue(rawValue: cell.value)!
+                        vc.givens.append(tile)
+                        
+                    }
+
+                    
+                    let assignedCells = assigned.map{PuzzleCell(dict: $0)!}
+                    for cell in assignedCells {
+                        let tile = vc.tileWithBackingCell(cell)
+                        tile.backingCell = cell
+                        tile.value = TileValue(rawValue: cell.value)!
+                    }
+                    
+                    for dict in annotatedDict {
+                        let cell = PuzzleCell(dict: (dict["cell"] as! [String: Int]))!
+                        let notes:[TileValue] = (dict["notes"] as! [Int]).map({TileValue(rawValue: $0)!})
+                        let tile = vc.tileWithBackingCell(cell)
+                        tile.noteValues = notes
+                        tile.refreshLabel()
+                    }
+                    
+                    let discoveredCells = discovered.map{PuzzleCell(dict: $0)!}
+                    for cell in discoveredCells {
+                        let tile = vc.tileWithBackingCell(cell)
+                        tile.discovered = true
+                    }
+
+                    
+                    vc.storedTime = time
+                    
+                    vc.difficulty = PuzzleDifficulty.fromCacheString(difficulty)
+
+                    defaults.removeObjectForKey(currentPuzzleKey)
+                }
+               
+            } else {
+                let difficulty = (sender as! UIView).tag
+                
+                switch difficulty {
+                case 0:
+                    vc.difficulty = .Easy
+                case 1:
+                    vc.difficulty = .Medium
+                case 2:
+                    vc.difficulty = .Hard
+                default:
+                    vc.difficulty = .Insane
+                }
+                
             }
+            
         }
         
     }

@@ -29,10 +29,9 @@ class PlayPuzzleViewController: SudokuController {
         }
     }
     
+    var timeElapsed: Double = 0
     private var timer: NSTimer?
     private let formatter = NSDateFormatter()
-    
-    private var timeElapsed: Double = 0
     
     struct Token {
         static var onceToken: dispatch_once_t = 0
@@ -47,6 +46,22 @@ class PlayPuzzleViewController: SudokuController {
         }
     }
 
+    override func wakeFromBackground() {
+        if puzzle == nil {
+            let defaults = NSUserDefaults.standardUserDefaults()
+            if let currentPuzzleData = defaults.objectForKey(currentPuzzleKey) as? NSData {
+                let puzz = NSKeyedUnarchiver.unarchiveObjectWithData(currentPuzzleData) as! Puzzle
+                puzzle = puzz
+            }
+        }
+        
+        activateInterface()
+        
+        if self.puzzle != nil && !canDisplayBannerAds {
+            bannerLayoutComplete = false
+            canDisplayBannerAds = true
+        }
+    }
     
     func showButtons(sender: AnyObject) {
         if iPhone4 {
@@ -59,8 +74,6 @@ class PlayPuzzleViewController: SudokuController {
             UIView.animateWithDuration(0.5) {
                 self.hintButton.hidden = false
                 self.optionsButton.hidden = false
-                //self.optionsButton.alpha = 0.9
-                //self.hintButton.alpha = 0.9
             }
             
             optionsButton.userInteractionEnabled = true
@@ -264,6 +277,19 @@ class PlayPuzzleViewController: SudokuController {
     override func viewWillDisappear(animated: Bool) {
         super.viewWillDisappear(animated)
         inactivateInterface()
+        
+        let gameOver = self.nilTiles.count == 0
+        if !gameOver {
+            if self.navigationController!.viewControllers.indexOf(self) == nil {
+                
+                if let key = difficulty.currentKey {
+                    let defaults = NSUserDefaults.standardUserDefaults()
+                    let dictionaryToSave = dictionaryToSaveForController(self)
+                    defaults.setObject(dictionaryToSave, forKey: key)
+                }
+                
+            }
+        }
         
     }
    
@@ -723,13 +749,11 @@ class PlayPuzzleViewController: SudokuController {
         
         let tile = wrongsCount > 0 ? wrongs[0] : nils[Int(arc4random_uniform((UInt32(nils.count))))]
        
-        animateSuppliedTile(tile)
+        animateDiscoveredTile(tile)
         
-        tile.userInteractionEnabled = false
-        tile.solutionValue = nil
     }
     
-    func animateSuppliedTile(tile: Tile, wrong:Bool = false, delay: Double = 0, handler: (()->Void)? = nil) {
+    func animateDiscoveredTile(tile: Tile, wrong:Bool = false, delay: Double = 0, handler: (()->Void)? = nil) {
         
         let lastSelected = selectedTile
         
@@ -762,9 +786,10 @@ class PlayPuzzleViewController: SudokuController {
                 UIView.animateWithDuration(0.5, delay: 0.0, options: UIViewAnimationOptions.CurveEaseInOut, animations: colorBlock) { (finished) in
                     
                     UIView.animateWithDuration(0.5) { () in
-                        tile.backgroundColor = wrong ? tile.wrongColor : tile.defaultBackgroundColor
-                        tile.labelColor = wrong ? tile.defaultTextColor : tile.chosenTextColor
-                        tile.valueLabel.textColor = tile.labelColor
+                        //tile.backgroundColor = wrong ? tile.wrongColor : tile.defaultBackgroundColor
+                        //tile.labelColor = wrong ? tile.defaultTextColor : tile.chosenTextColor
+                        //tile.valueLabel.textColor = tile.labelColor
+                        tile.discovered = true
                     }
                     
                     if finished {
@@ -794,7 +819,7 @@ class PlayPuzzleViewController: SudokuController {
         
         let completion: (()->()) = {
             for wrongTile in self.wrongTiles {
-                self.animateSuppliedTile(wrongTile, wrong: true)
+                self.animateDiscoveredTile(wrongTile, wrong: true)
                 wrongTile.userInteractionEnabled = false
             }
             self.switchButton()
@@ -807,14 +832,14 @@ class PlayPuzzleViewController: SudokuController {
        
         for nilTile in nilTiles {
             if lastTile == nil {
-                animateSuppliedTile(nilTile, handler: completion)
+                animateDiscoveredTile(nilTile, handler: completion)
                 
             } else {
                 if nilTile == lastTile {
-                    animateSuppliedTile(nilTile, handler: completion)
+                    animateDiscoveredTile(nilTile, handler: completion)
                     
                 } else {
-                    animateSuppliedTile(nilTile)
+                    animateDiscoveredTile(nilTile)
                 }
             }
         }
@@ -1039,9 +1064,9 @@ class PlayPuzzleViewController: SudokuController {
     
     func timerFiredMethod(timer: NSTimer) {
         
-        let start = (timer.userInfo as! [String: CFTimeInterval])["start"]
-        let elapsed = CACurrentMediaTime() - start!
-        timeElapsed = elapsed
+        let start = (timer.userInfo as! [String: CFTimeInterval])["start"]! //- storedTime
+        let elapsed = CACurrentMediaTime() - start
+        timeElapsed = elapsed + storedTime
         
         let overAnHour = elapsed >= 3600
         
@@ -1050,7 +1075,7 @@ class PlayPuzzleViewController: SudokuController {
             
         
         let zeroDate = formatter.dateFromString(dateString)
-        let endDate = zeroDate?.dateByAddingTimeInterval(elapsed)
+        let endDate = zeroDate?.dateByAddingTimeInterval(elapsed+storedTime)
         
         
         let timeString = formatter.stringFromDate(endDate!)
