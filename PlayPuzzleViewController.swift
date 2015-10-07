@@ -281,7 +281,6 @@ class PlayPuzzleViewController: SudokuController {
         let gameOver = self.nilTiles.count == 0
         if !gameOver {
             if self.navigationController!.viewControllers.indexOf(self) == nil {
-                print("back!")
                 
                 if let key = difficulty.currentKey {
                     let defaults = NSUserDefaults.standardUserDefaults()
@@ -1065,9 +1064,9 @@ class PlayPuzzleViewController: SudokuController {
     
     func timerFiredMethod(timer: NSTimer) {
         
-        let start = (timer.userInfo as! [String: CFTimeInterval])["start"]! - storedTime
+        let start = (timer.userInfo as! [String: CFTimeInterval])["start"]! //- storedTime
         let elapsed = CACurrentMediaTime() - start
-        timeElapsed = elapsed
+        timeElapsed = elapsed + storedTime
         
         let overAnHour = elapsed >= 3600
         
@@ -1076,7 +1075,7 @@ class PlayPuzzleViewController: SudokuController {
             
         
         let zeroDate = formatter.dateFromString(dateString)
-        let endDate = zeroDate?.dateByAddingTimeInterval(elapsed)
+        let endDate = zeroDate?.dateByAddingTimeInterval(elapsed+storedTime)
         
         
         let timeString = formatter.stringFromDate(endDate!)
@@ -1086,7 +1085,7 @@ class PlayPuzzleViewController: SudokuController {
     }
     
     func restartTimer() {
-        let startFrom = CACurrentMediaTime() + storedTime - timeElapsed
+        let startFrom = CACurrentMediaTime() - timeElapsed
         let timerInfo = ["start": startFrom]
         
         timer = NSTimer(timeInterval: 1.0, target: self, selector: Selector("timerFiredMethod:"), userInfo: timerInfo, repeats: true)
