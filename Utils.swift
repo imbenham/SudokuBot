@@ -290,7 +290,7 @@ enum SymbolSet {
             let dict:[Int:String] = [1:"🐥", 2:"🙈", 3:"🐼", 4:"🐰", 5:"🐷", 6:"🐘", 7:"🐢", 8:"🐙", 9:"🐌"]
             return dict[value.rawValue]!
         case Flags:
-            let dict = [1:"🇨🇭", 2:"🇸🇪", 3:"🇨🇱", 4:"🇨🇦", 5:"🇯🇵", 6:"🇹🇷", 7:"🇫🇮", 8:"🇰🇷", 9:"🇲🇽"]
+            let dict = [1:"🇨🇭", 2:"🇿🇦", 3:"🇨🇱", 4:"🇨🇦", 5:"🇯🇵", 6:"🇹🇷", 7:"🇫🇮", 8:"🇰🇷", 9:"🇲🇽"]
             return dict[value.rawValue]!
         }
     }
@@ -307,6 +307,22 @@ enum SymbolSet {
             return dict[value]!
         }
     }
+}
+
+extension TileValue {
+    func getSymbolForTyleValueforSet(symSet: SymbolSet) -> String {
+        switch symSet {
+        case .Standard:
+            return String(self.rawValue)
+        case .Critters:
+            let dict:[Int:String] = [1:"🐥", 2:"🙈", 3:"🐼", 4:"🐰", 5:"🐷", 6:"🐘", 7:"🐢", 8:"🐙", 9:"🐌"]
+            return dict[self.rawValue]!
+        case .Flags:
+            let dict = [1:"🇨🇭", 2:"🇿🇦", 3:"🇨🇱", 4:"🇨🇦", 5:"🇯🇵", 6:"🇹🇷", 7:"🇫🇮", 8:"🇰🇷", 9:"🇲🇽"]
+            return dict[self.rawValue]!
+        }
+    }
+    
 }
 
 let cachableDifficulties: [PuzzleDifficulty] = [.Easy, .Medium, .Hard, .Insane]
