@@ -58,7 +58,6 @@ func == (lhs: PuzzleCell, rhs: PuzzleCell) -> Bool {
 }
 
 
-
 class Puzzle: NSObject, NSCoding {
     
     
