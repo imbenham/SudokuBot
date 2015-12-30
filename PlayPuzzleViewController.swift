@@ -941,9 +941,11 @@ class PlayPuzzleViewController: SudokuController {
             for tile in nilTiles {
                 tile.userInteractionEnabled = true
             }
+
         } else {
             clearAll()
             self.difficulty = difficulty
+           
             fetchPuzzle()
         }
     }

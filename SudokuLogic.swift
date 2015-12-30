@@ -629,7 +629,7 @@ class Matrix {
     typealias Solution = [LinkedNode<PuzzleNode>]
     private var solutions = [Solution]()
     private var solutionDict: [PuzzleCell: LinkedNode<PuzzleNode>]?
-    private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 160, .Hard: 190, .Insane: 230]
+    private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 160, .Hard: 190, .Insane: 240]
     var allRows: [Int: LinkedNode<PuzzleNode>]?
     
     
@@ -659,7 +659,7 @@ class Matrix {
         solutions = []
     }
     
-    func generatePuzzleOfDifficulty(difficulty: PuzzleDifficulty, shouldCache: Bool = true) {
+    func generatePuzzleOfDifficulty(difficulty: PuzzleDifficulty) {
         var puzz: [PuzzleCell] = []
         
         
@@ -679,96 +679,72 @@ class Matrix {
             let last = puzz.removeLast()
             
             // get a list of minimal givens that need to be left in the grid for a valid puzzle and a list of all the values that are taken out
-            let filtered = self.minValuesForPuzzle(puzz, withLastRemoved: last, forTargetDifficulty: difficulty)
+            let filtered = self.puzzleOfSpecifiedDifficulty(puzz, withLastRemoved: last, forTargetDifficulty: difficulty)
             
             
-            self.rebuild()
+            //self.rebuild()
             // add removed values from the second list back into the first list until a puzzle of the desired difficulty level is achieved
-            let finished = self.puzzleOfSpecifedDifficulty(difficulty, withGivens: filtered.Givens, andSolution: filtered.Solution)
-            puzz = finished.Givens
+           // let finished = self.puzzleOfSpecifedDifficulty(difficulty, withGivens: filtered.Givens, andSolution: filtered.Solution)
+            puzz = filtered.Givens
 
             let aPuzzle = Puzzle(nonNilValues: puzz)
-            aPuzzle.solution = finished.Solution
+            aPuzzle.solution = filtered.Solution
             
             
             self.rebuild()
             
-            if shouldCache {
-                   
-                let notificationCenter = NSNotificationCenter.defaultCenter()
-                notificationCenter.postNotificationName(cachedNotification, object: self, userInfo: ["difficulty": difficulty.cacheString(), "puzzle": aPuzzle])
-
-            } else {
-                let notificationCenter = NSNotificationCenter.defaultCenter()
-                notificationCenter.postNotificationName(difficulty.notificationString(), object: self, userInfo: ["puzzle": aPuzzle])
-            }
-            
-            
+            let notificationCenter = NSNotificationCenter.defaultCenter()
+            notificationCenter.postNotificationName(difficulty.notificationString(), object: self, userInfo: ["puzzle": aPuzzle])
 
         }
             }
 
-    private func puzzleOfSpecifedDifficulty(difficulty:PuzzleDifficulty, var withGivens givens:[PuzzleCell], var andSolution solution:[PuzzleCell]) -> (Givens: [PuzzleCell], Solution:[PuzzleCell]) {
-        
-        let targetDiff = getRawDifficultyForPuzzle(difficulty)
-        
-        var rowList: [LinkedNode<PuzzleNode>] = []
-        for val in givens {
-            rowList.append(solutionDict![val]!)
-        }
-        
-        let rawDiff = solveForRows(rowList)
-        
-        
-        if rawDiff > targetDiff {
-            let random = Int(arc4random_uniform((UInt32(solution.count))))
-            let cellToAdd = solution.removeAtIndex(random)
-            givens.append(cellToAdd)
-            return puzzleOfSpecifedDifficulty(difficulty, withGivens: givens, andSolution: solution)
-        }
-        
-        return (givens, solution)
-        
-    }
-    
-    private func minValuesForPuzzle(var allVals:[PuzzleCell], withLastRemoved lastRemoved:PuzzleCell, var andTried tried:[PuzzleCell]=[], var andSolution solution:[PuzzleCell]=[], forTargetDifficulty targetDifficulty:PuzzleDifficulty) -> (Givens:[PuzzleCell], Solution:[PuzzleCell]) {
+    private func puzzleOfSpecifiedDifficulty(var allVals:[PuzzleCell], withLastRemoved lastRemoved:PuzzleCell, var andTried tried:[PuzzleCell]=[], var andSolution solution:[PuzzleCell]=[], forTargetDifficulty targetDifficulty:PuzzleDifficulty) -> (Givens:[PuzzleCell], Solution:[PuzzleCell]) {
         
         rebuild()
         
-        var rowList:[LinkedNode<PuzzleNode>] = []
+        let targetDiff = getRawDifficultyForPuzzle(targetDifficulty)
+        
+        //var rowList:[LinkedNode<PuzzleNode>] = []
         let vals = allVals + tried
-        for val in vals {
-            let node = solutionDict![val]!
-            rowList.append(node)
-        }
+        let rowList: [LinkedNode<PuzzleNode>] = vals.map({solutionDict![$0]!})
         
-        
-        solveForRows(rowList, elims:true)
+        let rawDiff = solveForRows(rowList, elims:true)
         
         let numSolutions = countPuzzleSolutions()
         
-        if allVals.count == 0 {
-            if numSolutions == 1 {
-                solution.append(lastRemoved)
-                return (tried, solution)
+        if numSolutions != 1 {
+            if allVals.isEmpty {
+                tried.append(lastRemoved)
+                return (tried+allVals, solution)
             }
+            
+            let random = Int(arc4random_uniform((UInt32(allVals.count))))
+            
+            let next = allVals.removeAtIndex(random)
+            
             tried.append(lastRemoved)
-            return (tried, solution)
+            return puzzleOfSpecifiedDifficulty(allVals, withLastRemoved: next, andTried: tried, andSolution: solution, forTargetDifficulty: targetDifficulty)
         }
         
-        
-        let random = Int(arc4random_uniform((UInt32(allVals.count))))
-        
-        let next = allVals.removeAtIndex(random)
-        
-        if numSolutions != 1 {
-            tried.append(lastRemoved)
-            return minValuesForPuzzle(allVals, withLastRemoved: next, andTried: tried, andSolution: solution, forTargetDifficulty: targetDifficulty)
+        if rawDiff < targetDiff {
+            
+            if allVals.isEmpty {
+                tried.append(lastRemoved)
+                return (tried+allVals, solution)
+            }
+            
+            let random = Int(arc4random_uniform((UInt32(allVals.count))))
+            
+            let next = allVals.removeAtIndex(random)
+            
+            solution.append(lastRemoved)
+            return puzzleOfSpecifiedDifficulty(allVals, withLastRemoved: next, andTried: tried, andSolution: solution, forTargetDifficulty: targetDifficulty)
+            
         } else {
             solution.append(lastRemoved)
-            return minValuesForPuzzle(allVals, withLastRemoved: next, andTried: tried, andSolution: solution, forTargetDifficulty: targetDifficulty)
+            return (tried+allVals, solution)
         }
-        
     }
     
     func solutionForValidPuzzle(puzzle: [PuzzleCell]) -> [PuzzleCell]? {
@@ -1147,7 +1123,7 @@ class Matrix {
     }
     
     
-    // matches given values against row choices -- move this to linked list class def 
+    // matches given values against row choices -- move this to linked list class def? 
 
     private func findRowMatch(mRow: PuzzleNode) -> LinkedNode<PuzzleNode> {
     

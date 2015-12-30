@@ -343,13 +343,15 @@ class Tile: SudokuItem {
         }
         noteLabels = labels
         super.init(index: index)
-        
-        
+    
     }
     
     convenience init (index: Int, withParent parent: Nester) {
         self.init(index: index)
         self.parentSquare = parent
+       // let tileIndex: TileIndex = (parent.index, self.index)
+        let cells = cellsFromTiles([self])
+        self.backingCell = cells[0]
     }
     
     
