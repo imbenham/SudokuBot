@@ -229,7 +229,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
     }
     
     
-    // banner view delegate
     
     func bannerViewDidLoadAd(banner: ADBannerView!) {
         let rootView = window!.rootViewController as! UINavigationController
