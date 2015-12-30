@@ -18,92 +18,16 @@ class PuzzleStore: NSObject {
     var completionHandler: ((Puzzle, [String:Any]?) -> ())?
     
     
-    private var puzzleCache: [PuzzleDifficulty: [Puzzle]] = [.Easy:[], .Medium:[], .Hard: [], .Insane: []]
+      // accessing the cached puzzles
     
-    var cacheLimit = 1
-    
-    // accessing the cached puzzles
-    
-    var getEmptyCaches: Set<PuzzleDifficulty> {
-        get {
-            var toReturn:Set<PuzzleDifficulty> = [.Easy, .Medium, .Hard, .Insane]
-            for key in toReturn {
-                if !puzzleCache[key]!.isEmpty {
-                    toReturn.remove(key)
-                }
-            }
-            return toReturn
-        }
-    }
-    
-    var cachesToRefresh: Set<PuzzleDifficulty> = []
-    
-    func cachesWithLessThan(numItems: Int)->[PuzzleDifficulty] {
-        let diffs: [PuzzleDifficulty] = [.Easy, .Medium, .Hard, .Insane]
-        var lowDiffs: [PuzzleDifficulty] = []
-        
-        for diff in diffs {
-            let cache = puzzleCache[diff]!
-            if cache.count < numItems {
-                lowDiffs.append(diff)
-            }
-        }
-        return lowDiffs
-    }
-    
-    func cachePuzzle(puzzle: Puzzle, ofDifficulty difficulty: PuzzleDifficulty) {
-        puzzleCache[difficulty]!.append(puzzle)
-        cachesToRefresh.insert(difficulty)
-    }
-    
-    
-    func cacheForDifficulty(difficulty: PuzzleDifficulty) -> [Puzzle] {
-        return puzzleCache[difficulty]!
-    }
-    
-    
-    func clearCaches() {
-        for diff in cachableDifficulties {
-            puzzleCache[diff]! = []
-        }
-    }
-    
-    func getCachedPuzzleOfDifficulty(difficulty: PuzzleDifficulty) -> Puzzle? {
-        
-        if let puzzList = puzzleCache[difficulty] {
-            if !puzzList.isEmpty {
-                let puzz = puzzleCache[difficulty]!.removeLast()
-                return puzz
-            }
-            return nil
-        }
-        return nil
-    }
     
     func getPuzzleForController(controller: SudokuController, withCompletionHandler handler: ((Puzzle, [String: Any]?) ->())) {
         
-        let defaults = NSUserDefaults.standardUserDefaults()
-        if let key = controller.difficulty.currentKey, let dict = defaults.objectForKey(key) as? [String: AnyObject], puzzData = dict["puzzle"] as? NSData, assigned = dict["progress"] as? [[String:Int]], let annotatedDict = dict["annotated"] as? [NSDictionary], let discovered = dict["discovered"] as? [[String: Int]], let time = dict["time"] as? Double {
-            let currentPuzz = NSKeyedUnarchiver.unarchiveObjectWithData(puzzData) as! Puzzle
-            let assignedCells = assigned.map{PuzzleCell(dict: $0)!}
-            let discoveredCells = discovered.map{PuzzleCell(dict: $0)!}
-           
-            
-             defaults.removeObjectForKey(key)
-            
-            handler(currentPuzz,["progress":assignedCells, "discovered":discoveredCells, "annotated":annotatedDict, "time":time])
-            
+        
+        if let saved = savedPuzzleForDifficulty(controller.difficulty) {
+            handler(saved.0, saved.1)
             return
-        }
-
-     
-            if let puzz = getCachedPuzzleOfDifficulty(controller.difficulty) {
-                handler(puzz,nil)
-                dispatch_async(concurrentPuzzleQueue) {
-                    self.restockCaches()
-                }
-                
-            } else {
+        } else {
                 dispatch_async (concurrentPuzzleQueue) {
                     
                 dispatch_async(GlobalMainQueue) {
@@ -122,7 +46,7 @@ class PuzzleStore: NSObject {
                 notificationCenter.addObserver(self, selector: Selector("puzzleReady:"), name: self.puzzReadyNotificationString, object: matrix)
                 
                 let block: () ->() = {
-                    matrix.generatePuzzleOfDifficulty(controller.difficulty, shouldCache:false)
+                    matrix.generatePuzzleOfDifficulty(controller.difficulty)
                 }
                 
                 let operation = NSBlockOperation(block: block)
@@ -134,33 +58,23 @@ class PuzzleStore: NSObject {
 
     }
     
-    func restockCaches() {
-        dispatch_async(concurrentPuzzleQueue) {
-            let lowCaches = self.cachesWithLessThan(self.cacheLimit)
-            
-            if let next = lowCaches.first {
-                self.populatePuzzleCache(next)
-            }
+    func savedPuzzleForDifficulty(difficulty: PuzzleDifficulty) -> (Puzzle, [String:Any]?)? {
+        let defaults = NSUserDefaults.standardUserDefaults()
+        guard let key = difficulty.currentKey, let dict = defaults.objectForKey(key) as? [String: AnyObject], puzzData = dict["puzzle"] as? NSData, assigned = dict["progress"] as? [[String:Int]], let annotatedDict = dict["annotated"] as? [NSDictionary], let discovered = dict["discovered"] as? [[String: Int]], let time = dict["time"] as? Double  else {
+            return nil
         }
+        let currentPuzz = NSKeyedUnarchiver.unarchiveObjectWithData(puzzData) as! Puzzle
+        let assignedCells = assigned.map{PuzzleCell(dict: $0)!}
+        let discoveredCells = discovered.map{PuzzleCell(dict: $0)!}
         
-    }
+        defaults.removeObjectForKey(key)
+        
+        let puzzInfo:[String:Any] = ["progress": assignedCells, "discovered":discoveredCells, "annotated":annotatedDict, "time":time]
+        
+        return (currentPuzz, puzzInfo)
 
-    func populatePuzzleCache(difficulty:PuzzleDifficulty) {
-
-       let matrix = Matrix.sharedInstance
-        let operation = NSBlockOperation(){
-            matrix.generatePuzzleOfDifficulty(difficulty)
-        }
-        operation.qualityOfService = .Background
-        operation.queuePriority = .Low
-        
-        let notificationCenter = NSNotificationCenter.defaultCenter()
-        
-        notificationCenter.addObserver(self, selector: Selector("puzzleReadyToCache:"), name: cachedNotification, object: matrix)
-        
-        operationQueue.addOperation(operation)
-        
     }
+    
     
     func puzzleReady(notification: NSNotification) {
         let notificationCenter = NSNotificationCenter.defaultCenter()
@@ -170,25 +84,6 @@ class PuzzleStore: NSObject {
         completionHandler = nil
         puzzReadyNotificationString = nil
         
-        restockCaches()
     }
     
-    func puzzleReadyToCache(notification: NSNotification) {
-        
-        let info = notification.userInfo!
-        
-        let puzz = info["puzzle"] as! Puzzle
-        let difficulty = PuzzleDifficulty.fromCacheString((info["difficulty"] as! String))
-        
-        puzzleCache[difficulty]!.append(puzz)
-        
-        
-        let emptyCaches = getEmptyCaches
-        let notificationCenter = NSNotificationCenter.defaultCenter()
-        notificationCenter.removeObserver(self, name: cachedNotification, object: nil)
-        if let next = emptyCaches.first {
-            populatePuzzleCache(next)
-            return
-        }
-    }
 }

@@ -237,7 +237,7 @@ class SudokuController: UIViewController, NumPadDelegate {
     
    
     func wakeFromBackground() {
-        
+        activateInterface()
     }
     
     
@@ -326,6 +326,10 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     // puzzle fetching
     func fetchPuzzle() {
+        
+        for tile in tiles {
+            tile.discovered = false
+        }
         
         bannerView.userInteractionEnabled = false
        
@@ -417,19 +421,23 @@ class SudokuController: UIViewController, NumPadDelegate {
             return
         }
         
+        
         UIView.animateWithDuration(0.5) {
             for tile in self.startingNils {
-                tile.value = TileValue.Nil
                 if tile.solutionValue == nil {
                     tile.solutionValue = tile.backingCell.value
                     tile.userInteractionEnabled = true
                 }
+                tile.value = TileValue.Nil
             }
         }
         
-        for tile in self.givens {
+        
+
+        for tile in givens {
             tile.userInteractionEnabled = false
         }
+    
     }
     
     // Board tile selected handler

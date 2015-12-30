@@ -147,6 +147,8 @@ class CheatViewController: SudokuController {
         // Dispose of any resources that can be recreated.
     }
     
+    
+    
     func clearAll() {
         solved = false
         let tiles = self.tiles
