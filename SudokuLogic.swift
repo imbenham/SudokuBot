@@ -9,10 +9,10 @@
 import UIKit
 
 
-class LinkedList<T:Equatable where T:HashGenerator> {
+class LinkedList<T:Equatable> {
     private var verticalHead: LinkedNode<T>
     private var lateralHead: LinkedNode<T>
-    var rows: [Int : LinkedNode<T>] {
+    /*var rows: [Int : LinkedNode<T>] {
         get {
             var rowDict:[Int : LinkedNode<T>] = [:]
             
@@ -32,7 +32,7 @@ class LinkedList<T:Equatable where T:HashGenerator> {
             }
             return rowDict
         }
-    }
+    }*/
 
     
     init() {
@@ -426,7 +426,6 @@ struct PuzzleNode: HashGenerator {
     var row:Int?
     var box:Int?
     
-    
      init(value: Int, column: Int, row: Int, box: Int) {
         self.value = value
         self.column = column
@@ -630,7 +629,7 @@ class Matrix {
     private var solutions = [Solution]()
     private var solutionDict: [PuzzleCell: LinkedNode<PuzzleNode>]?
     private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 160, .Hard: 190, .Insane: 240]
-    var allRows: [Int: LinkedNode<PuzzleNode>]?
+    //var allRows: [Int: LinkedNode<PuzzleNode>]?
     
     
     init() {
@@ -761,12 +760,12 @@ class Matrix {
     }
     
     
-    private func getRowsFromCells(cells: [PuzzleCell]) -> [LinkedNode<PuzzleNode>] {
+   private func getRowsFromCells(cells: [PuzzleCell]) -> [LinkedNode<PuzzleNode>] {
         
         var rowsToSolve = [LinkedNode<PuzzleNode>]()
         
         for cell in cells {
-            let solvedRow = allRows![cell.hashValue]!
+            let solvedRow = findRowMatchForCell(cell)
             rowsToSolve.append(solvedRow)
         }
         
@@ -1036,7 +1035,7 @@ class Matrix {
             rowsAndColumns = LinkedList<PuzzleNode>()
         }
         buildRowChoices()
-        allRows = rowsAndColumns!.rows
+        //allRows = rowsAndColumns!.rows
         buildCellConstraints()
         buildColumnConstraints()
         buildRowConstraints()
@@ -1128,16 +1127,28 @@ class Matrix {
     private func findRowMatch(mRow: PuzzleNode) -> LinkedNode<PuzzleNode> {
     
         // if the node we're looking for is in the allRows dictionary, we can just look it up rather than traversing the row ladder
-        if let hash = mRow.getHash(), rows = allRows {
+        /*if let hash = mRow.getHash(), rows = allRows {
             if let row = rows[hash] {
                 return row
             }
-        }
+        }*/
         
         var current = rowsAndColumns!.verticalHead.up!
         
         while current.vertOrder != rowsAndColumns!.verticalHead.vertOrder {
             if current.key! == mRow {
+                return current
+            }
+            current = current.up!
+        }
+        return current
+    }
+    
+    private func findRowMatchForCell(cell: PuzzleCell) -> LinkedNode<PuzzleNode> {
+        var current = rowsAndColumns!.verticalHead.up!
+        
+        while current.vertOrder != rowsAndColumns!.verticalHead.vertOrder {
+            if current.key!.getHash()! == cell.hashValue {
                 return current
             }
             current = current.up!
