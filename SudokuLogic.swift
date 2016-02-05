@@ -9,30 +9,28 @@
 import UIKit
 
 
-class LinkedList<T:Equatable> {
     private var verticalHead: LinkedNode<T>
     private var lateralHead: LinkedNode<T>
-    /*var rows: [Int : LinkedNode<T>] {
-        get {
-            var rowDict:[Int : LinkedNode<T>] = [:]
-            
-            var current:LinkedNode<T>? = verticalHead
+    lazy var rows: [Int : LinkedNode<T>] = {
+        var rowDict:[Int : LinkedNode<T>] = [:]
+        
+        var current:LinkedNode<T>? = self.verticalHead
+        if let hash = current?.key?.getHash() {
+            rowDict[hash] = current!
+        }
+        current = current?.down
+        while current != nil {
+            if current!.key == self.verticalHead.key {
+                break
+            }
             if let hash = current?.key?.getHash() {
                 rowDict[hash] = current!
             }
-            current = current?.down
-            while current != nil {
-                if current!.key == verticalHead.key {
-                    break
-                }
-                if let hash = current?.key?.getHash() {
-                    rowDict[hash] = current!
-                }
-                current = current!.down
-            }
-            return rowDict
+            current = current!.down
         }
-    }*/
+        return rowDict
+        
+    }()
 
     
     init() {
@@ -47,47 +45,44 @@ class LinkedList<T:Equatable> {
     func addLateralLink(key: T) {
         if self.lateralHead.key == nil {
             lateralHead.key = key
+            lateralHead.left = lateralHead
+            lateralHead.right = lateralHead
             return
         }
         
-        var current: LinkedNode<T>? = lateralHead
+        var current = lateralHead.right
         
-        while current != nil {
-            if current!.right == nil {
+        WhileLoop: while current != nil {
+            if current!.right!.key == lateralHead.key! {
                 let newLink = LinkedNode<T>()
                 newLink.key = key
                 newLink.left = current
-                current!.getLateralHead().left = newLink
+                newLink.right = lateralHead
+                
+                lateralHead.left = newLink
                 current!.right = newLink
+                
                 newLink.latOrder = current!.latOrder+1
-                newLink.right = newLink.getLateralHead()
-                break
-            } else if current!.right!.latOrder == 0 {
-                let newLink = LinkedNode<T>()
-                newLink.key = key
-                newLink.left = current
-                current!.getLateralHead().left = newLink
-                current!.right = newLink
-                newLink.latOrder = current!.latOrder+1
-                newLink.right = newLink.getLateralHead()
-                break
-
+                break WhileLoop
             }
             current = current?.right
         }
         
     }
+
     
     func addVerticalLink(key: T) {
         if verticalHead.key == nil {
             verticalHead.key = key
+            verticalHead.down = verticalHead
+            verticalHead.up = verticalHead
             return
         }
         
-        var current: LinkedNode<T>? = verticalHead
+        var current = verticalHead.down
         
-        while current != nil {
-            if current!.down == nil {
+        WhileLoop: while current != nil {
+            if current!.down!.key == verticalHead.key! {
                 let newLink = LinkedNode<T>()
                 newLink.key = key
                 newLink.up = current
@@ -95,21 +90,10 @@ class LinkedList<T:Equatable> {
                 current!.down = newLink
                 newLink.vertOrder = current!.vertOrder+1
                 newLink.down = newLink.getVerticalHead()
-                break
-            } else if current!.down!.vertOrder == 0 {
-                let newLink = LinkedNode<T>()
-                newLink.key = key
-                newLink.up = current
-                current!.getVerticalHead().up = newLink
-                current!.down = newLink
-                newLink.vertOrder = current!.vertOrder+1
-                newLink.down = newLink.getVerticalHead()
-                break
             }
             current = current?.down
         }
     }
-    
     
     func addLateralLinkFromNode(node: LinkedNode<T>, toNewNode newNode: LinkedNode<T>) {
         newNode.latOrder = node.latOrder+1
@@ -117,9 +101,7 @@ class LinkedList<T:Equatable> {
         newNode.left = node
         node.right = newNode
         var current = newNode.right
-        while current != nil {
             if current!.latOrder == 0 {
-                break
             }
             current!.latOrder += 1
             current = current!.down
@@ -134,9 +116,7 @@ class LinkedList<T:Equatable> {
         node.down = newNode
         
         var current = newNode.down
-        while current != nil {
             if current!.vertOrder == 0 {
-                break
             }
             current!.vertOrder += 1
             current = current!.down
@@ -147,9 +127,7 @@ class LinkedList<T:Equatable> {
     func verticalCount() -> Int {
         var current:LinkedNode<T>? = verticalHead.down
         var count = 1
-        while current != nil {
             if current!.key == verticalHead.key {
-                break
             }
             count++
             current = current!.down
@@ -161,9 +139,7 @@ class LinkedList<T:Equatable> {
     func lateralCount() -> Int {
         var current:LinkedNode<T>? = lateralHead.right
         var count = 1
-        while current != nil {
             if current!.latOrder == lateralHead.latOrder {
-                break
             }
             count++
             current = current!.right
