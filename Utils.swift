@@ -145,8 +145,8 @@ func getRowIndexFromTileIndex(tileIndex: TileIndex) -> Int {
 
 // Nodes <-> Cells
 
-func cellsFromConstraints(constraints: [LinkedNode<PuzzleNode>]) -> [PuzzleCell] {
-    var puzzleNodes: [PuzzleNode] = []
+func cellsFromConstraints(constraints: [LinkedNode<PuzzleKey>]) -> [PuzzleCell] {
+    var puzzleNodes: [PuzzleKey] = []
     for node in constraints {
         if node.key != nil {
             puzzleNodes.append(node.key!)
@@ -154,24 +154,24 @@ func cellsFromConstraints(constraints: [LinkedNode<PuzzleNode>]) -> [PuzzleCell]
     }
     var cells: [PuzzleCell] = []
     for node in puzzleNodes {
-        let cell = PuzzleCell(row: node.row!, column: node.column!, value: node.value!)
+        let cell = node.cell!
         cells.append(cell)
     }
     return cells
 }
 
-func cellNodeDictFromNodes(nodes: [LinkedNode<PuzzleNode>]) -> [PuzzleCell: LinkedNode<PuzzleNode>]{
-    var dict: [PuzzleCell: LinkedNode<PuzzleNode>] = [:]
+func cellNodeDictFromNodes(nodes: [LinkedNode<PuzzleKey>]) -> [PuzzleCell: LinkedNode<PuzzleKey>]{
+    var dict: [PuzzleCell: LinkedNode<PuzzleKey>] = [:]
     for node in nodes {
-        let cell = PuzzleCell(row: node.key!.row!, column: node.key!.column!, value: node.key!.value!)
+        let cell = node.key!.cell!
         dict[cell] = node
     }
     return dict
 }
 
-func tileForConstraint(node: PuzzleNode, tiles:[Tile]) -> Tile? {
-    if let cRow = node.row {
-        if let cCol = node.column {
+func tileForConstraint(node: PuzzleKey, tiles:[Tile]) -> Tile? {
+    if let cRow = node.cell?.row {
+        if let cCol = node.cell?.column {
             for t in tiles {
                 if t.getColumnIndex() == cCol && t.getRowIndex() == cRow {
                     return t
@@ -183,10 +183,10 @@ func tileForConstraint(node: PuzzleNode, tiles:[Tile]) -> Tile? {
 }
 
 
-func translateCellsToConstraintList(cells:[PuzzleCell])->[PuzzleNode] {
-    var matrixRowArray = [PuzzleNode]()
+func translateCellsToConstraintList(cells:[PuzzleCell])->[PuzzleKey] {
+    var matrixRowArray = [PuzzleKey]()
     for cell in cells {
-        let mRow:PuzzleNode = PuzzleNode(cell: cell)
+        let mRow:PuzzleKey = PuzzleKey(cell: cell)
         matrixRowArray.append(mRow)
     }
     return matrixRowArray

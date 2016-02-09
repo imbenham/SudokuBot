@@ -36,19 +36,22 @@ func == (lhs: ColumnHeader, rhs: ColumnHeader) -> Bool {
 extension ColumnHeader: Equatable{}
 
 func == (lhs: ColumnHeader, var rhs: PuzzleCell) -> Bool {
-  
-    var lhsProps = [lhs.row, lhs.column, lhs.value, lhs.box]
-    var rhsProps = [rhs.row, rhs.column, rhs.value, rhs.box]
+    
+    let nonboxConstraint = lhs.box == 0
+    var lhsProps = nonboxConstraint ? [lhs.row, lhs.column, lhs.value] : [lhs.row, lhs.column, lhs.value, lhs.box]
+    var rhsProps = nonboxConstraint ? [rhs.row, rhs.column, rhs.value] : [rhs.row, rhs.column, rhs.value, rhs.box]
     var count = 0
     
-    while count < 2 && !lhsProps.isEmpty {
+    while count < 2 && !((lhsProps.count + count) < 2)  {
         let cH = lhsProps.removeFirst()
         let pC = rhsProps.removeFirst()
         if cH == pC { count += 1}
     }
     
-    
     return count == 2
+}
+func == (lhs: PuzzleCell, rhs: ColumnHeader) -> Bool {
+    return rhs == lhs
 }
 
 
@@ -98,11 +101,13 @@ struct PuzzleCell: Hashable {
         self.value = value
     }
     
+
     init(cell:PuzzleCell) {
         self.row = cell.row
         self.column = cell.column
         self.value = cell.value
     }
+    
     
     init?(dict: [String: Int]) {
         if let row = dict["row"], column = dict["column"], value = dict["value"] {

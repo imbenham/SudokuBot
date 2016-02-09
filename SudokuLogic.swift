@@ -254,13 +254,44 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
         }
     }
     
-    func printRowHeadOrders() {
+    func printRows() {
+        var current = verticalHead
+        let last = verticalHead.up!.vertOrder
         
-        var current = verticalHead.down!
-        var prevOrder = 0
-        print("\(verticalHead.vertOrder)")
-        while current.vertOrder != verticalHead.vertOrder {
+        while current.vertOrder != last {
+            let key = current.key!
+            print("\(current.vertOrder): \(key)")
             
+            current = current.down!
+        }
+        
+        print("\(last): \(current.key!)")
+    }
+    
+    func printColumns() {
+        var current = lateralHead
+        let last = current.left!.latOrder
+        
+        while current.latOrder != last {
+            let key = current.key!
+            print("\(current.latOrder): \(key)")
+            
+            current = current.right!
+        }
+        
+        print("\(last): \(current.key!)")
+    }
+    
+    func enumerateRows() {
+        
+        var current = verticalHead
+        var count = 0
+        
+    
+        while (current.vertOrder != verticalHead.vertOrder || count < 1) {
+            if current.vertOrder == lateralHead.vertOrder {
+                count += 1
+            }
             
             var countString = " "
             current = current.right!
@@ -271,24 +302,21 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             
             let numRow = current.vertOrder
             
-            if prevOrder + 1 != numRow {
-                print("Jumps to: \(numRow)"+countString)
-            } else {
-                print("\(numRow)" + countString)
-            }
+            print("\(numRow)" + countString)
             
-            prevOrder = numRow
             current = current.down!
         }
     }
     
-    func printColumnHeadOrders() {
+    func enumerateColumns() {
         
-        var current = lateralHead.right!
-        var prevOrder = 0
-        print("\(lateralHead.latOrder)")
-        while current.latOrder != lateralHead.latOrder {
-            
+        var current = lateralHead
+        var count = 0
+        
+        while (current.latOrder != lateralHead.latOrder || count < 1) {
+            if current.latOrder == lateralHead.latOrder {
+                count += 1
+            }
             var countString = " "
             
             current = current.down!
@@ -297,13 +325,8 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
                 current = current.down!
             }
             let numCol = current.latOrder
-            if prevOrder + 1 != numCol {
-                print("Jumps to: \(numCol)"+countString)
-            } else {
-                print("\(numCol)" + countString)
-            }
+            print("\(numCol)" + countString)
             
-            prevOrder = numCol
             current = current.right!
         }
     }
@@ -333,7 +356,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     }
     
     func countAllRows() {
-        print("count all rowss")
+    
         let last = verticalHead.up!
         var current = verticalHead
         
@@ -492,13 +515,12 @@ func == (lhs:PuzzleKey, rhs:PuzzleKey) -> Bool {
         return lhs.cell! == rhs.cell!
     }
     
-    let header = lhs.header != nil ? lhs.header! : rhs.header!
+    if let header = lhs.header {
+        return header == rhs.cell!
+    }
     
-    let cell = lhs.cell != nil ? lhs.cell! : rhs.cell!
-    
-    return header == cell
+    return lhs.cell! == rhs.header!
 
-    
 }
 
 extension PuzzleKey: Equatable {}
@@ -1097,6 +1119,7 @@ class Matrix {
                 }
             }
         }
+        
     }
     
     private func buildOutMatrix() {
@@ -1106,19 +1129,17 @@ class Matrix {
         var currentRow:LinkedNode<PuzzleKey> = vertHead
         let last = vertHead.up!
         
-        defer {
-            connectMatchingConstraintsForRow(last)
-        }
-        
         RowLoop: while currentRow.key != last.key {
             
             connectMatchingConstraintsForRow(currentRow)
             currentRow = currentRow.down!
         }
         
+        connectMatchingConstraintsForRow(last)
+        
     }
     
-    func connectMatchingConstraintsForRow(row: LinkedNode<PuzzleKey>) {
+    private func connectMatchingConstraintsForRow(row: LinkedNode<PuzzleKey>) {
         let latHead = matrix.lateralHead
         
         var currentHeader = latHead
@@ -1126,8 +1147,7 @@ class Matrix {
         
         let addNodeBlock = { (header: LinkedNode<PuzzleKey>) -> () in
             if header.key == row.key {
-                let newKey = PuzzleKey(node: row.key!) // changed from constHead!.key!
-                let newNode = LinkedNode(key: newKey)
+                let newNode = LinkedNode(key: row.key!)
                 self.matrix.addLateralLinkFromNode(row.getLateralTail(), toNewNode: newNode)
                 self.matrix.addVerticalLinkFromNode(header.getVerticalTail(), toNewNode: newNode)
                 newNode.down = header
@@ -1135,15 +1155,13 @@ class Matrix {
             }
         }
         
-        defer {
-            addNodeBlock(last)
-        }
-        
         HeaderLoop: while currentHeader.key! != last.key {
             
             addNodeBlock(currentHeader)
             currentHeader = currentHeader.right!
         }
+        
+        addNodeBlock(last)
         
     }
     
