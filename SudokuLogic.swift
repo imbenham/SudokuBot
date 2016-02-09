@@ -8,15 +8,6 @@
 
 import UIKit
 
-class LinkedList<T:Equatable> {
-    private var head: LinkedNode<T>
-    
-    init() {
-        head = LinkedNode<T>()
-    }
-
-}
-
 
 protocol LaterallyLinkable {
     typealias T:Equatable
@@ -77,6 +68,7 @@ protocol VerticallyLinkable {
 }
 
 extension VerticallyLinkable {
+    
     func addVerticalLink(key: T) {
         if verticalHead.key == nil {
             verticalHead.key = key
@@ -125,8 +117,6 @@ protocol TwoDimensionallyLinkable: LaterallyLinkable, VerticallyLinkable {
     func addLateralLinkFromNode(node: LinkedNode<T>, toNewNode newNode: LinkedNode<T>)
     func addVerticalLinkFromNode(node: LinkedNode<T>, toNewNode newNode: LinkedNode<T>)
     
-    
-    
 }
 
 extension TwoDimensionallyLinkable {
@@ -135,42 +125,26 @@ extension TwoDimensionallyLinkable {
         newNode.latOrder = node.latOrder+1
         newNode.right = node.right
         newNode.left = node
+        node.right!.left = newNode
         node.right = newNode
-        var current = newNode.right
-        WhileLoop: while current != nil {
-            if current!.latOrder == 0 {
-                break WhileLoop
-            }
-            current!.latOrder += 1
-            current = current!.down
-        }
-        node.getLateralHead().left = node.getLateralTail()
     }
     
     func addVerticalLinkFromNode(node: LinkedNode<T>, toNewNode newNode: LinkedNode<T>) {
         newNode.vertOrder = node.vertOrder+1
         newNode.down = node.down
         newNode.up = node
+        node.down!.up = newNode
         node.down = newNode
-        
-        var current = newNode.down
-        WhileLoop: while current != nil {
-            if current!.vertOrder == 0 {
-                break WhileLoop
-            }
-            current!.vertOrder += 1
-            current = current!.down
-        }
-        node.getVerticalHead().up = node.getVerticalTail()
     }
 
 
 }
 
-class SudokuMatrix<T:Equatable where T:Hashable>: LinkedList<T>, VerticallyLinkable, LaterallyLinkable {
-    var verticalHead = LinkedNode<T>()
-    
+
+class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyLinkable, TwoDimensionallyLinkable {
+
     var lateralHead = LinkedNode<T>()
+    var verticalHead = LinkedNode<T>()
     
     lazy var rows: [Int : LinkedNode<T>] = {
         var rowDict:[Int : LinkedNode<T>] = [:]
@@ -385,9 +359,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LinkedList<T>, VerticallyLinka
 }
 
 
-extension SudokuMatrix: TwoDimensionallyLinkable {
-    
-}
+
 
 class LinkedNode<T> {
     var key: T? = nil
@@ -685,7 +657,7 @@ class Matrix {
     
     static let sharedInstance: Matrix = Matrix()
     
-    var rowsAndColumns: SudokuMatrix<PuzzleNode>? = SudokuMatrix<PuzzleNode>()
+    var matrix = SudokuMatrix<PuzzleNode>()
     typealias Choice = (Chosen: LinkedNode<PuzzleNode>, Columns:[LinkedNode<PuzzleNode>], Rows:[LinkedNode<PuzzleNode>], Root:Int)
     private var currentSolution = [Choice]()
     private var eliminated = [Choice]()
@@ -853,7 +825,7 @@ class Matrix {
     
     private func solved() -> Bool {
         
-        if rowsAndColumns!.lateralHead.key == nil {
+        if matrix.lateralHead.key == nil {
             return true
         }
         
@@ -944,7 +916,7 @@ class Matrix {
     private func reinsertLast(last: Choice) {
         
         for col in last.Columns.reverse() {
-            rowsAndColumns!.insertLateralLink(col)
+            matrix.insertLateralLink(col)
         }
         
         for row in last.Rows.reverse()
@@ -956,7 +928,7 @@ class Matrix {
     
     private func selectColumn() -> LinkedNode<PuzzleNode>? {
     
-        var currentColumn:LinkedNode<PuzzleNode> = rowsAndColumns!.lateralHead
+        var currentColumn:LinkedNode<PuzzleNode> = matrix.lateralHead
         var minColumns: [LinkedNode<PuzzleNode>] = []
         var minRows = currentColumn.countColumn()
         
@@ -1008,7 +980,7 @@ class Matrix {
             solveForRow(row, root: row.vertOrder, elims: elims)
         }
         
-        return rowsAndColumns!.verticalCount()
+        return matrix.verticalCount()
     }
     
     private func solveForRow(row: LinkedNode<PuzzleNode>, root: Int = 1, elims: Bool = false) {
@@ -1050,7 +1022,7 @@ class Matrix {
             rowsToRemove.append(current)
             current = current.down!
         }
-        rowsAndColumns!.removeLateralLink(current)
+        matrix.removeLateralLink(current)
         return rowsToRemove
     }
     
@@ -1063,7 +1035,7 @@ class Matrix {
             current = current.right!
         }
         
-        rowsAndColumns!.removeVerticalLink(current)
+        matrix.removeVerticalLink(current)
     }
     
     func insertRow(row: LinkedNode<PuzzleNode>) {
@@ -1074,7 +1046,7 @@ class Matrix {
             current.down!.up = current
             current = current.right!
         }
-        rowsAndColumns!.insertVerticalLink(current)
+        matrix.insertVerticalLink(current)
     }
     
     private func resetSolution() {
@@ -1089,12 +1061,7 @@ class Matrix {
     
     // Constructing matrix
     private func constructMatrix() {
-
-        if rowsAndColumns == nil {
-            rowsAndColumns = SudokuMatrix<PuzzleNode>()
-        }
         
-        //allRows = rowsAndColumns!.rows
         buildRowChoices()
         
         buildCellConstraints()
@@ -1115,7 +1082,7 @@ class Matrix {
                 }*/
                 let header = ColumnHeader(row: rowIndex, column: columnIndex)
                 let node = PuzzleNode(header: header)
-                rowsAndColumns!.addLateralLink(node)
+                matrix.addLateralLink(node)
             }
         }
         
@@ -1128,7 +1095,7 @@ class Matrix {
             for columnIndex in 1...9 {
                 let header = ColumnHeader(value: aValue, column: columnIndex)
                 let node = PuzzleNode(header: header)
-                rowsAndColumns!.addLateralLink(node)
+                matrix.addLateralLink(node)
             }
         }
     }
@@ -1139,7 +1106,7 @@ class Matrix {
             for rowIndex in 1...9 {
                 let header = ColumnHeader(value: aValue, row: rowIndex)
                 let node = PuzzleNode(header: header)
-                rowsAndColumns!.addLateralLink(node)
+                matrix.addLateralLink(node)
             }
         }
     }
@@ -1150,7 +1117,7 @@ class Matrix {
             for boxIndex in 1...9 {
                 let header = ColumnHeader(value: aValue, box: boxIndex)
                 let node = PuzzleNode(header: header)
-                rowsAndColumns!.addLateralLink(node)
+                matrix.addLateralLink(node)
             }
         }
     }
@@ -1162,7 +1129,7 @@ class Matrix {
                 for aValue in 1...9 {
                     let cell = PuzzleCell(row: rowIndex, column: columnIndex, value: aValue)
                     let node = PuzzleNode(cell: cell)
-                    rowsAndColumns!.addVerticalLink(node)
+                    matrix.addVerticalLink(node)
                 }
             }
         }
@@ -1170,10 +1137,7 @@ class Matrix {
     
     private func buildOutMatrix() {
         
-        guard let vertHead = rowsAndColumns?.verticalHead else {
-            print("Matrix setup failed because the vertically linked list was headless")
-            return
-        }
+        let vertHead = matrix.verticalHead 
         
         var currentRow:LinkedNode<PuzzleNode> = vertHead
         let last = vertHead.up!
@@ -1191,10 +1155,8 @@ class Matrix {
     }
     
     func connectMatchingConstraintsForRow(row: LinkedNode<PuzzleNode>) {
-        guard let latHead = rowsAndColumns?.lateralHead else {
-            print("Matrix setup failed because the laterally linked list was headless")
-            return
-        }
+        let latHead = matrix.lateralHead
+        
         var currentHeader = latHead
         let last = latHead.left!
         
@@ -1202,8 +1164,8 @@ class Matrix {
             if header.key == row.key {
                 let newKey = PuzzleNode(node: row.key!) // changed from constHead!.key!
                 let newNode = LinkedNode(key: newKey)
-                self.rowsAndColumns!.addLateralLinkFromNode(row.getLateralTail(), toNewNode: newNode)
-                self.rowsAndColumns!.addVerticalLinkFromNode(header.getVerticalTail(), toNewNode: newNode)
+                self.matrix.addLateralLinkFromNode(row.getLateralTail(), toNewNode: newNode)
+                self.matrix.addVerticalLinkFromNode(header.getVerticalTail(), toNewNode: newNode)
                 newNode.down = header
                 newNode.right = row
             }
@@ -1233,9 +1195,9 @@ class Matrix {
             }
         }*/
         
-        var current = rowsAndColumns!.verticalHead.up!
+        var current = matrix.verticalHead.up!
         
-        while current.vertOrder != rowsAndColumns!.verticalHead.vertOrder {
+        while current.vertOrder != matrix.verticalHead.vertOrder {
             if current.key! == mRow {
                 return current
             }
@@ -1245,9 +1207,9 @@ class Matrix {
     }
     
     private func findRowMatchForCell(cell: PuzzleCell) -> LinkedNode<PuzzleNode> {
-        var current = rowsAndColumns!.verticalHead.up!
+        var current = matrix.verticalHead.up!
         
-        while current.vertOrder != rowsAndColumns!.verticalHead.vertOrder {
+        while current.vertOrder != matrix.verticalHead.vertOrder {
             if current.key!.cell == cell {
                 return current
             }
