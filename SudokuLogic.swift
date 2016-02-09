@@ -8,92 +8,128 @@
 
 import UIKit
 
-
-    private var verticalHead: LinkedNode<T>
-    private var lateralHead: LinkedNode<T>
-    lazy var rows: [Int : LinkedNode<T>] = {
-        var rowDict:[Int : LinkedNode<T>] = [:]
-        
-        var current:LinkedNode<T>? = self.verticalHead
-        if let hash = current?.key?.getHash() {
-            rowDict[hash] = current!
-        }
-        current = current?.down
-        while current != nil {
-            if current!.key == self.verticalHead.key {
-                break
-            }
-            if let hash = current?.key?.getHash() {
-                rowDict[hash] = current!
-            }
-            current = current!.down
-        }
-        return rowDict
-        
-    }()
-
+class LinkedList<T:Equatable> {
+    private var head: LinkedNode<T>
     
     init() {
-        verticalHead = LinkedNode<T>()
-        verticalHead.up = verticalHead
-        verticalHead.down = verticalHead
-        lateralHead = LinkedNode<T>()
-        lateralHead.left = lateralHead
-        lateralHead.right = lateralHead
+        head = LinkedNode<T>()
     }
-    
+
+}
+
+
+protocol LaterallyLinkable {
+    typealias T:Equatable
+    var lateralHead: LinkedNode<T> {get set}
+    func addLateralLink(key: T)
+}
+
+extension LaterallyLinkable {
     func addLateralLink(key: T) {
-        if self.lateralHead.key == nil {
+        
+        if lateralHead.key == nil {
             lateralHead.key = key
             lateralHead.left = lateralHead
             lateralHead.right = lateralHead
+            lateralHead.up = lateralHead
+            lateralHead.down = lateralHead
             return
         }
         
-        var current = lateralHead.right
+        var current = lateralHead.right!
         
-        WhileLoop: while current != nil {
-            if current!.right!.key == lateralHead.key! {
-                let newLink = LinkedNode<T>()
-                newLink.key = key
-                newLink.left = current
-                newLink.right = lateralHead
-                
-                lateralHead.left = newLink
-                current!.right = newLink
-                
-                newLink.latOrder = current!.latOrder+1
+        let newLinkBloc = { () in
+            let newLink = LinkedNode<T>()
+            newLink.key = key
+            newLink.left = current
+            newLink.right = current.right
+            newLink.up = newLink
+            newLink.down = newLink
+            
+            newLink.right!.left = newLink
+            current.right = newLink
+            
+            newLink.latOrder = current.latOrder+1
+            
+        }
+        
+        if current.key == lateralHead.key {
+            newLinkBloc()
+            return
+        }
+        
+        WhileLoop: while current.key != lateralHead.key {
+            // print("current key: \(current!.key), current-right key: \(current!.right!.key), head key: \(head.key)")
+            if current.right!.key == lateralHead.key! {
+                newLinkBloc()
                 break WhileLoop
             }
-            current = current?.right
+            current = current.right!
         }
         
     }
+}
 
-    
+protocol VerticallyLinkable {
+    typealias T: Equatable
+    var verticalHead: LinkedNode<T> {get set}
+    func addVerticalLink(key: T)
+}
+
+extension VerticallyLinkable {
     func addVerticalLink(key: T) {
         if verticalHead.key == nil {
             verticalHead.key = key
             verticalHead.down = verticalHead
             verticalHead.up = verticalHead
+            verticalHead.left = verticalHead
+            verticalHead.right = verticalHead
             return
         }
         
-        var current = verticalHead.down
         
-        WhileLoop: while current != nil {
-            if current!.down!.key == verticalHead.key! {
-                let newLink = LinkedNode<T>()
-                newLink.key = key
-                newLink.up = current
-                current!.getVerticalHead().up = newLink
-                current!.down = newLink
-                newLink.vertOrder = current!.vertOrder+1
-                newLink.down = newLink.getVerticalHead()
+        var current = verticalHead.down!
+        let newLinkBloc = { () in
+            let newLink = LinkedNode<T>()
+            newLink.key = key
+            newLink.up = current
+            newLink.down = current.down
+            newLink.left = newLink
+            newLink.right = newLink
+            
+            self.verticalHead.up = newLink
+            current.down = newLink
+            
+            newLink.vertOrder = current.vertOrder+1
+        }
+        
+        if current.key == verticalHead.key {
+            newLinkBloc()
+            return
+        }
+        
+        WhileLoop: while current.key != verticalHead.key {
+            if current.down!.key == verticalHead.key! {
+                newLinkBloc()
+                break WhileLoop
             }
-            current = current?.down
+            current = current.down!
         }
     }
+
+}
+
+protocol TwoDimensionallyLinkable: LaterallyLinkable, VerticallyLinkable {
+    typealias T: Equatable
+    
+    func addLateralLinkFromNode(node: LinkedNode<T>, toNewNode newNode: LinkedNode<T>)
+    func addVerticalLinkFromNode(node: LinkedNode<T>, toNewNode newNode: LinkedNode<T>)
+    
+    
+    
+}
+
+extension TwoDimensionallyLinkable {
     
     func addLateralLinkFromNode(node: LinkedNode<T>, toNewNode newNode: LinkedNode<T>) {
         newNode.latOrder = node.latOrder+1
@@ -101,7 +137,9 @@ import UIKit
         newNode.left = node
         node.right = newNode
         var current = newNode.right
+        WhileLoop: while current != nil {
             if current!.latOrder == 0 {
+                break WhileLoop
             }
             current!.latOrder += 1
             current = current!.down
@@ -116,20 +154,54 @@ import UIKit
         node.down = newNode
         
         var current = newNode.down
+        WhileLoop: while current != nil {
             if current!.vertOrder == 0 {
+                break WhileLoop
             }
             current!.vertOrder += 1
             current = current!.down
         }
         node.getVerticalHead().up = node.getVerticalTail()
     }
+
+
+}
+
+class SudokuMatrix<T:Equatable where T:Hashable>: LinkedList<T>, VerticallyLinkable, LaterallyLinkable {
+    var verticalHead = LinkedNode<T>()
+    
+    var lateralHead = LinkedNode<T>()
+    
+    lazy var rows: [Int : LinkedNode<T>] = {
+        var rowDict:[Int : LinkedNode<T>] = [:]
+        
+        var current:LinkedNode<T>? = self.verticalHead
+        if let hash = current?.key?.hashValue {
+            rowDict[hash] = current!
+        }
+        current = current?.down
+        while current != nil {
+            if current!.key == self.verticalHead.key {
+                break
+            }
+            if let hash = current?.key?.hashValue {
+                rowDict[hash] = current!
+            }
+            current = current!.down
+        }
+        return rowDict
+        
+    }()
+    
     
     func verticalCount() -> Int {
         var current:LinkedNode<T>? = verticalHead.down
         var count = 1
+        WhileLoop: while current != nil {
             if current!.key == verticalHead.key {
+                break WhileLoop
             }
-            count++
+            count+=1
             current = current!.down
         }
         return count
@@ -139,14 +211,16 @@ import UIKit
     func lateralCount() -> Int {
         var current:LinkedNode<T>? = lateralHead.right
         var count = 1
+        WhileLoop: while current != nil {
             if current!.latOrder == lateralHead.latOrder {
+                break WhileLoop
             }
-            count++
+            count+=1
             current = current!.right
         }
         return count
     }
-
+    
     func removeLateralLink(link: LinkedNode<T>) {
         
         if link.left?.latOrder == link.latOrder {
@@ -162,6 +236,7 @@ import UIKit
             link.right?.left = link.left
         }
     }
+    
     func removeVerticalLink(link: LinkedNode<T>) {
         
         if link.up?.vertOrder == link.vertOrder {
@@ -201,14 +276,15 @@ import UIKit
             if link.vertOrder <= verticalHead.vertOrder {
                 verticalHead = link
             }
-
+            
         }
     }
     
     func printRowHeadOrders() {
-       
+        
         var current = verticalHead.down!
         var prevOrder = 0
+        print("\(verticalHead.vertOrder)")
         while current.vertOrder != verticalHead.vertOrder {
             
             
@@ -218,11 +294,11 @@ import UIKit
                 countString += "-\(current.latOrder)"
                 current = current.right!
             }
-
+            
             let numRow = current.vertOrder
             
             if prevOrder + 1 != numRow {
-                 print("Jumps to: \(numRow)"+countString)
+                print("Jumps to: \(numRow)"+countString)
             } else {
                 print("\(numRow)" + countString)
             }
@@ -233,11 +309,12 @@ import UIKit
     }
     
     func printColumnHeadOrders() {
-       
+        
         var current = lateralHead.right!
         var prevOrder = 0
+        print("\(lateralHead.latOrder)")
         while current.latOrder != lateralHead.latOrder {
-    
+            
             var countString = " "
             
             current = current.down!
@@ -256,22 +333,86 @@ import UIKit
             current = current.right!
         }
     }
+    
+    func countAllColumns() {
+        let last = lateralHead.left!
+        var current = lateralHead
+        
+        while current.latOrder != last.latOrder {
+            
+            print("column: \(current.latOrder) has \(countColumn(current)) nodes")
+            current = current.right!
+        }
+    }
+    
+    func countColumn(node: LinkedNode<T>) -> Int {
+        
+        var current = node.down!
+        var count = 1
+        
+        while current.vertOrder != node.vertOrder {
+            count += 1
+            current = current.down!
+        }
+        
+        return count
+    }
+    
+    func countAllRows() {
+        print("count all rowss")
+        let last = verticalHead.up!
+        var current = verticalHead
+        
+        while current.vertOrder != last.vertOrder {
+            print("row: \(current.vertOrder) has \(countRow(current)) nodes")
+            current = current.down!
+        }
+        
+    }
+    
+    func countRow(node: LinkedNode<T>) -> Int {
+        var current = node.right!
+        var count = 1
+        
+        while current.latOrder != node.latOrder {
+            count += 1
+            current = current.right!
+        }
+        
+        return count
+    }
+
+}
+
+
+extension SudokuMatrix: TwoDimensionallyLinkable {
+    
 }
 
 class LinkedNode<T> {
     var key: T? = nil
-    var left: LinkedNode<T>? = nil
-    var right: LinkedNode<T>? = nil
-    var up: LinkedNode<T>? = nil
-    var down: LinkedNode<T>? = nil
+    
+    var left: LinkedNode<T>?
+    var right: LinkedNode<T>?
+    var up: LinkedNode<T>?
+    var down: LinkedNode<T>?
+    
     var latOrder: Int = 0
     var vertOrder: Int = 0
+}
 
+
+
+
+
+extension LinkedNode  {
+    
     convenience init(key: T) {
         self.init()
         self.key = key
     }
     
+
     func countColumn() -> Int {
         let start = self.vertOrder
         var count = 1
@@ -280,25 +421,12 @@ class LinkedNode<T> {
             if current!.vertOrder == start {
                 break
             }
-            count++
+            count+=1
             current = current!.down
         }
         return count
     }
     
-    func countRow() -> Int {
-        let head = self.getLateralHead()
-        var current = self.getLateralHead()
-        var count = 1
-        while current.right != nil{
-            if current.right!.latOrder == head.latOrder {
-                break
-            }
-            count++
-            current = current.right!
-        }
-        return count
-    }
     
     func getVerticalHead() -> LinkedNode<T> {
         var current:LinkedNode<T> = self
@@ -346,139 +474,99 @@ class LinkedNode<T> {
         return current
     }
     
+  }
+
+
+
+struct PuzzleNode: Hashable {
     
-    func fromVertHead() -> Int {
-        var current = self
-        var count = 0
+    var cell: PuzzleCell?
+    var header: ColumnHeader?
+    
+
+    var value:Int? {
+        get {
+            guard let val = cell?.value else{
+                return header?.value
+            }
+            return val
+        }
+    }
+    var column:Int? {
+        get {
+            guard let col = cell?.column else {
+                return header?.column
+            }
+            return col
+        }
         
-        while current.up != nil {
-            if current.vertOrder == 0 {
-                break
+    }
+    var row:Int? {
+        get {
+            guard let row = cell?.row else {
+                return header?.row
             }
-            current = current.up!
-            count++
+            return row
         }
-        
-        return count
+    }
+   var box:Int? {
+    mutating get {
+        guard let box = cell?.box else{
+            return header?.box
+        }
+        return box
+    }
     }
     
-    func fromLatHead() -> Int {
-        var current = self
-        var count = 0
-        while current.left != nil {
-            if current.latOrder == 0 {
-                break
-            }
-            current = current.left!
-            count++
+    var hashValue: Int {
+        guard let cell = cell else {
+            return 0
         }
-        return count
+        return cell.hashValue
     }
     
-    func connectedDownWithHead() -> Bool {
-        var current = self.down!
-        let vert = self.vertOrder
-        if vert == 0 {
-            return true
-        }
-        while current.vertOrder != vert {
-            if current.vertOrder == 0 {
-                return true
-            }
-            current = current.down!
-        }
-        return false
+     init(value: Int, column: Int, row: Int) {
+        cell = PuzzleCell(row: row, column: column, value: value)
     }
+    
+    init(node: PuzzleNode){
+        cell = node.cell
+        header = node.header
+    }
+    
+    init(cell: PuzzleCell) {
+        self.cell = cell
+    }
+    
+    init(header: ColumnHeader) {
+        self.header = header
+    }
+    
+    
 }
 
-protocol HashGenerator {
-    func getHash() -> Int?
-}
-
-struct PuzzleNode: HashGenerator {
-
-    var value:Int?
-    var column:Int?
-    var row:Int?
-    var box:Int?
-    
-     init(value: Int, column: Int, row: Int, box: Int) {
-        self.value = value
-        self.column = column
-        self.row = row
-        self.box = box
-    }
-     init(value: Int, column: Int) {
-        self.value = value
-        self.column = column
-    }
-     init(value: Int, row: Int) {
-        self.value = value
-        self.row = row
-    }
-     init(row: Int, column: Int) {
-        self.row = row
-        self.column = column
-    }
-     init(value: Int, box: Int) {
-        self.value = value
-        self.box = box
-    }
-     init(node: PuzzleNode){
-        self.value = node.value
-        self.row = node.row
-        self.column = node.column
-        self.box = node.box
-    }
-    
-    func getHash() -> Int? {
-        
-        if let row = self.row, column = self.column, value = self.value {
-            let cell = PuzzleCell(row: row, column: column, value: value)
-            return cell.hashValue
-        }
-        return nil
-    }
-}
 
 func == (lhs:PuzzleNode, rhs:PuzzleNode) -> Bool {
-    var boolList = [Bool]()
-    if let val1 = lhs.value {
-        if let val2 = rhs.value {
-            boolList.append(val1==val2)
-        }
+    
+    guard lhs.header == nil || rhs.header == nil else {
+        return lhs.header! == rhs.header!
     }
     
-    if let row1 = lhs.row {
-        if let row2 = rhs.row {
-            boolList.append(row1==row2)
-        }
-    }
-   
-    if let col1 = lhs.column{
-        if let col2 = rhs.column {
-            boolList.append(col1==col2)
-        }
+    guard lhs.cell == nil || rhs.cell == nil else {
+        return lhs.cell! == rhs.cell!
     }
     
-    if let box1 = lhs.box {
-        if let box2 = rhs.box {
-            boolList.append(box1==box2)
-        }
-    }
+    let header = lhs.header != nil ? lhs.header! : rhs.header!
     
-    if boolList.count > 1 {
-        for b in boolList {
-            if b == false {
-                return false
-            }
-        }
-        return true
-    }
-    return false
+    let cell = lhs.cell != nil ? lhs.cell! : rhs.cell!
+    
+    return header == cell
+
+    
 }
 
-extension PuzzleNode: Equatable{}
+extension PuzzleNode: Equatable {}
+
 
 enum PuzzleDifficulty: Equatable, Hashable {
     case Easy
@@ -597,7 +685,7 @@ class Matrix {
     
     static let sharedInstance: Matrix = Matrix()
     
-    var rowsAndColumns:LinkedList<PuzzleNode>? = LinkedList<PuzzleNode>()
+    var rowsAndColumns: SudokuMatrix<PuzzleNode>? = SudokuMatrix<PuzzleNode>()
     typealias Choice = (Chosen: LinkedNode<PuzzleNode>, Columns:[LinkedNode<PuzzleNode>], Rows:[LinkedNode<PuzzleNode>], Root:Int)
     private var currentSolution = [Choice]()
     private var eliminated = [Choice]()
@@ -867,59 +955,49 @@ class Matrix {
     }
     
     private func selectColumn() -> LinkedNode<PuzzleNode>? {
-        let latHeadOrder = rowsAndColumns!.lateralHead.latOrder
-        var current:LinkedNode<PuzzleNode> = rowsAndColumns!.lateralHead
-        var numRows = current.countColumn()
-        var minColumn: LinkedNode<PuzzleNode>?
-        if numRows == 1 {
-            return nil
-        }
-        current = current.right!
+    
+        var currentColumn:LinkedNode<PuzzleNode> = rowsAndColumns!.lateralHead
+        var minColumns: [LinkedNode<PuzzleNode>] = []
+        var minRows = currentColumn.countColumn()
         
-        while current.latOrder != latHeadOrder {
-            let count = current.countColumn()
-            if count == 1 {
-                return nil
+        let last = currentColumn.left!
+        
+        defer {
+            let lastCount = last.countColumn()
+            if (lastCount > 1) && (last.countColumn() < minRows) {
+                minColumns.append(last)
             }
-            if count == 2 && minColumn == nil {
-                minColumn = current
-            }
+        }
+        
+        CountLoop: while currentColumn.key != last.key {
             
-            if count < numRows {
-                numRows = count
+            let count = currentColumn.countColumn()
+            if count == 1 { // if we have a one-row column, we have an unsatisfiable constraint and therefore an invalid puzzle
+                return nil
+            } else if count < minRows {
+                minRows = count
+                minColumns = [currentColumn]
+            } else if count == minRows {
+                minColumns.append(currentColumn)
             }
-            current = current.right!
-        }
-        if let nextCol = minColumn {
-            return nextCol.down!
+            currentColumn = currentColumn.right!
         }
         
-        var possibleChoices: [LinkedNode<PuzzleNode>] = []
+        if minColumns.isEmpty { return nil }
+           
         
-        current = rowsAndColumns!.lateralHead
-        if current.countColumn() == numRows {
-            possibleChoices.append(current)
-        }
-        current = current.right!
-        while current.latOrder != latHeadOrder {
-            if current.countColumn() == numRows {
-                possibleChoices.append(current)
-            }
-            current  = current.right!
-        }
+        let random1 = Int(arc4random_uniform((UInt32(minColumns.count))))
+        currentColumn = minColumns[random1]
         
-        let random1 = Int(arc4random_uniform((UInt32(possibleChoices.count))))
-        current = possibleChoices[random1]
-        
-        let random2 = Int(arc4random_uniform(UInt32(numRows-1)))+1
+        let random2 = Int(arc4random_uniform(UInt32(minRows-1)))+1
         var count = 0
         
         while count != random2 {
-            current = current.down!
-            count++
+            currentColumn = currentColumn.down!
+            count+=1
         }
         
-        return current
+        return currentColumn
 
     }
     
@@ -934,6 +1012,7 @@ class Matrix {
     }
     
     private func solveForRow(row: LinkedNode<PuzzleNode>, root: Int = 1, elims: Bool = false) {
+    
         var columnList: [LinkedNode<PuzzleNode>] = []
         var current = row.getLateralHead().right!
         while current.latOrder != 0 {
@@ -964,6 +1043,7 @@ class Matrix {
     }
     
     func coverColumn(column: LinkedNode<PuzzleNode>)->[LinkedNode<PuzzleNode>] {
+       
         var rowsToRemove: [LinkedNode<PuzzleNode>] = []
         var current = column.down!
         while current.vertOrder != 0 {
@@ -975,6 +1055,7 @@ class Matrix {
     }
     
     func removeRow(row: LinkedNode<PuzzleNode>) {
+       
         var current = row.getLateralHead().right!
         while current.latOrder !=  0 {
             current.up!.down = current.down
@@ -986,6 +1067,7 @@ class Matrix {
     }
     
     func insertRow(row: LinkedNode<PuzzleNode>) {
+    
         var current = row.getLateralHead().right!
         while current.latOrder != 0 {
             current.up!.down = current
@@ -1007,61 +1089,79 @@ class Matrix {
     
     // Constructing matrix
     private func constructMatrix() {
+
         if rowsAndColumns == nil {
-            rowsAndColumns = LinkedList<PuzzleNode>()
+            rowsAndColumns = SudokuMatrix<PuzzleNode>()
         }
-        buildRowChoices()
+        
         //allRows = rowsAndColumns!.rows
+        buildRowChoices()
+        
         buildCellConstraints()
         buildColumnConstraints()
         buildRowConstraints()
         buildBoxConstraints()
+       
         buildOutMatrix()
         
     }
     
     private func buildCellConstraints(){
+        
         for columnIndex in 1...9 {
             for rowIndex in 1...9 {
-                let node = PuzzleNode(row: rowIndex, column: columnIndex)
+                /*if columnIndex == 2 {
+                    rowsAndColumns!.countAllColumns()
+                }*/
+                let header = ColumnHeader(row: rowIndex, column: columnIndex)
+                let node = PuzzleNode(header: header)
                 rowsAndColumns!.addLateralLink(node)
             }
         }
         
+        
     }
     
     private func buildColumnConstraints(){
+        
         for aValue in 1...9 {
             for columnIndex in 1...9 {
-                let node = PuzzleNode(value: aValue, column: columnIndex)
+                let header = ColumnHeader(value: aValue, column: columnIndex)
+                let node = PuzzleNode(header: header)
                 rowsAndColumns!.addLateralLink(node)
             }
         }
     }
     
     private func buildRowConstraints() {
+        
         for aValue in 1...9 {
             for rowIndex in 1...9 {
-                let node = PuzzleNode(value: aValue, row: rowIndex)
+                let header = ColumnHeader(value: aValue, row: rowIndex)
+                let node = PuzzleNode(header: header)
                 rowsAndColumns!.addLateralLink(node)
             }
         }
     }
     
     private func buildBoxConstraints() {
+        
         for aValue in 1...9 {
             for boxIndex in 1...9 {
-                let node = PuzzleNode(value: aValue, box: boxIndex)
+                let header = ColumnHeader(value: aValue, box: boxIndex)
+                let node = PuzzleNode(header: header)
                 rowsAndColumns!.addLateralLink(node)
             }
         }
     }
     
     private func buildRowChoices() {
+        
         for rowIndex in 1...9 {
             for columnIndex in 1...9 {
                 for aValue in 1...9 {
-                    let node = PuzzleNode(value: aValue, column: columnIndex, row: rowIndex, box: getBox(columnIndex, row: rowIndex))
+                    let cell = PuzzleCell(row: rowIndex, column: columnIndex, value: aValue)
+                    let node = PuzzleNode(cell: cell)
                     rowsAndColumns!.addVerticalLink(node)
                 }
             }
@@ -1070,31 +1170,55 @@ class Matrix {
     
     private func buildOutMatrix() {
         
-       var rowHead:LinkedNode<PuzzleNode>? = rowsAndColumns!.verticalHead
-        var constHead:LinkedNode<PuzzleNode>? = rowsAndColumns!.lateralHead
-        while rowHead != nil {
-            if rowHead!.countRow() > 1 {
-                break
-            }
-            var count = 0
-            while constHead != nil && count < 1 {
-                if constHead!.right!.latOrder == 0 {
-                    count++
-                }
-                if rowHead!.key! == constHead!.key! {
-                    let newKey = PuzzleNode(node: constHead!.key!)
-                    let newNode = LinkedNode(key: newKey)
-                    rowsAndColumns!.addLateralLinkFromNode(rowHead!.getLateralTail(), toNewNode: newNode)
-                    rowsAndColumns!.addVerticalLinkFromNode(constHead!.getVerticalTail(), toNewNode: newNode)
-                }
-                constHead!.getVerticalTail().down = constHead!.getVerticalHead()
-                constHead = constHead!.right
-            } // end second while loop
-            rowHead!.getLateralTail().right = rowHead!.getLateralHead()
-            rowHead = rowHead!.down
-            constHead = rowsAndColumns!.lateralHead
+        guard let vertHead = rowsAndColumns?.verticalHead else {
+            print("Matrix setup failed because the vertically linked list was headless")
+            return
+        }
+        
+        var currentRow:LinkedNode<PuzzleNode> = vertHead
+        let last = vertHead.up!
+        
+        defer {
+            connectMatchingConstraintsForRow(last)
+        }
+        
+        RowLoop: while currentRow.key != last.key {
             
-        } // end first while loop
+            connectMatchingConstraintsForRow(currentRow)
+            currentRow = currentRow.down!
+        }
+        
+    }
+    
+    func connectMatchingConstraintsForRow(row: LinkedNode<PuzzleNode>) {
+        guard let latHead = rowsAndColumns?.lateralHead else {
+            print("Matrix setup failed because the laterally linked list was headless")
+            return
+        }
+        var currentHeader = latHead
+        let last = latHead.left!
+        
+        let addNodeBlock = { (header: LinkedNode<PuzzleNode>) -> () in
+            if header.key == row.key {
+                let newKey = PuzzleNode(node: row.key!) // changed from constHead!.key!
+                let newNode = LinkedNode(key: newKey)
+                self.rowsAndColumns!.addLateralLinkFromNode(row.getLateralTail(), toNewNode: newNode)
+                self.rowsAndColumns!.addVerticalLinkFromNode(header.getVerticalTail(), toNewNode: newNode)
+                newNode.down = header
+                newNode.right = row
+            }
+        }
+        
+        defer {
+            addNodeBlock(last)
+        }
+        
+        HeaderLoop: while currentHeader.key! != last.key {
+            
+            addNodeBlock(currentHeader)
+            currentHeader = currentHeader.right!
+        }
+        
     }
     
     
@@ -1124,7 +1248,7 @@ class Matrix {
         var current = rowsAndColumns!.verticalHead.up!
         
         while current.vertOrder != rowsAndColumns!.verticalHead.vertOrder {
-            if current.key!.getHash()! == cell.hashValue {
+            if current.key!.cell == cell {
                 return current
             }
             current = current.up!
