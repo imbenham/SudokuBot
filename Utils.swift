@@ -186,9 +186,7 @@ func tileForConstraint(node: PuzzleNode, tiles:[Tile]) -> Tile? {
 func translateCellsToConstraintList(cells:[PuzzleCell])->[PuzzleNode] {
     var matrixRowArray = [PuzzleNode]()
     for cell in cells {
-        let cIndex = cell.column
-        let rIndex = cell.row
-        let mRow:PuzzleNode = PuzzleNode(value: cell.value, column: cIndex, row: rIndex, box: getBox(cIndex, row: rIndex))
+        let mRow:PuzzleNode = PuzzleNode(cell: cell)
         matrixRowArray.append(mRow)
     }
     return matrixRowArray

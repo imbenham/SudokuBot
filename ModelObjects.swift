@@ -9,20 +9,102 @@
 import Foundation
 
 
+struct ColumnHeader {
+    let row:Int
+    let column:Int
+    let value:Int
+    let box:Int
+    
+    init(value:Int = 0, column:Int = 0, row:Int = 0, box:Int = 0) {
+        self.value = value
+        self.column = column
+        self.box = box
+        self.row = row
+
+    }
+
+
+}
+
+func == (lhs: ColumnHeader, rhs: ColumnHeader) -> Bool {
+    let theTruth = true
+    
+    guard (lhs.row == rhs.row) && (lhs.box == rhs.box) && (lhs.column == rhs.column) && (lhs.value == rhs.value)  else {
+        return false
+    }
+    
+    return theTruth
+}
+
+extension ColumnHeader: Equatable{}
+
+func == (lhs: ColumnHeader, var rhs: PuzzleCell) -> Bool {
+  
+    var lhsProps = [lhs.row, lhs.column, lhs.value, lhs.box]
+    var rhsProps = [rhs.row, rhs.column, rhs.value, rhs.box]
+    var count = 0
+    
+    while count < 2 && !lhsProps.isEmpty {
+        let cH = lhsProps.removeFirst()
+        let pC = rhsProps.removeFirst()
+        if cH == pC { count += 1}
+    }
+    
+    
+    return count == 2
+}
 
 
 struct PuzzleCell: Hashable {
  
     
-    let row: Int!
-    let column: Int!
+    let row: Int
+    let column: Int
     var value: Int
+    lazy var box: Int = {
+        switch self.column {
+        case 1, 2, 3:
+            switch self.row {
+            case 1,2,3:
+                return 1
+            case 4,5,6:
+                return 4
+            default:
+                return 7
+            }
+        case 4,5,6:
+            switch self.row {
+            case 1,2,3:
+                return 2
+            case 4,5,6:
+                return 5
+            default:
+                return 8
+            }
+        default:
+            switch self.row {
+            case 1,2,3:
+                return 3
+            case 4,5,6:
+                return 6
+            default:
+                return 9
+            }
+        }
+    }()
+
   
     
     init(row: Int, column:Int, value:Int = 0) {
         self.row = row
         self.column = column
         self.value = value
+    }
+    
+    init(cell:PuzzleCell) {
+        self.row = cell.row
+        self.column = cell.column
+        self.value = cell.value
     }
     
     init?(dict: [String: Int]) {
@@ -53,10 +135,13 @@ struct PuzzleCell: Hashable {
     
 }
 
+
+
 func == (lhs: PuzzleCell, rhs: PuzzleCell) -> Bool {
     return lhs.hashValue == rhs.hashValue
 }
 
+extension PuzzleCell: Equatable {}
 
 class Puzzle: NSObject, NSCoding {
     

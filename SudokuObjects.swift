@@ -252,9 +252,7 @@ class Box: SudokuItem, Nester{
     
 }
 
-func == (lhs:Tile, rhs:Tile) {
-    
-}
+
 
 class Tile: SudokuItem {
     
