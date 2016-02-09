@@ -20,20 +20,17 @@ struct ColumnHeader {
         self.column = column
         self.box = box
         self.row = row
-
     }
-
 
 }
 
 func == (lhs: ColumnHeader, rhs: ColumnHeader) -> Bool {
-    let theTruth = true
     
-    guard (lhs.row == rhs.row) && (lhs.box == rhs.box) && (lhs.column == rhs.column) && (lhs.value == rhs.value)  else {
-        return false
+    if (lhs.row == rhs.row) && (lhs.box == rhs.box) && (lhs.column == rhs.column) && (lhs.value == rhs.value) {
+        return true
     }
     
-    return theTruth
+    return false
 }
 
 extension ColumnHeader: Equatable{}

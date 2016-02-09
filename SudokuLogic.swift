@@ -450,58 +450,15 @@ extension LinkedNode  {
 
 
 
-struct PuzzleNode: Hashable {
+struct PuzzleKey: Hashable {
     
     var cell: PuzzleCell?
     var header: ColumnHeader?
     
-
-    var value:Int? {
-        get {
-            guard let val = cell?.value else{
-                return header?.value
-            }
-            return val
-        }
-    }
-    var column:Int? {
-        get {
-            guard let col = cell?.column else {
-                return header?.column
-            }
-            return col
-        }
-        
-    }
-    var row:Int? {
-        get {
-            guard let row = cell?.row else {
-                return header?.row
-            }
-            return row
-        }
-    }
-   var box:Int? {
-    mutating get {
-        guard let box = cell?.box else{
-            return header?.box
-        }
-        return box
-    }
-    }
     
-    var hashValue: Int {
-        guard let cell = cell else {
-            return 0
-        }
-        return cell.hashValue
-    }
     
-     init(value: Int, column: Int, row: Int) {
-        cell = PuzzleCell(row: row, column: column, value: value)
-    }
     
-    init(node: PuzzleNode){
+    init(node: PuzzleKey){
         cell = node.cell
         header = node.header
     }
@@ -514,11 +471,18 @@ struct PuzzleNode: Hashable {
         self.header = header
     }
     
+    var hashValue: Int {
+        guard let cell = cell else {
+            return 0
+        }
+        return cell.hashValue
+    }
+    
     
 }
 
 
-func == (lhs:PuzzleNode, rhs:PuzzleNode) -> Bool {
+func == (lhs:PuzzleKey, rhs:PuzzleKey) -> Bool {
     
     guard lhs.header == nil || rhs.header == nil else {
         return lhs.header! == rhs.header!
@@ -537,7 +501,7 @@ func == (lhs:PuzzleNode, rhs:PuzzleNode) -> Bool {
     
 }
 
-extension PuzzleNode: Equatable {}
+extension PuzzleKey: Equatable {}
 
 
 enum PuzzleDifficulty: Equatable, Hashable {
@@ -657,13 +621,13 @@ class Matrix {
     
     static let sharedInstance: Matrix = Matrix()
     
-    var matrix = SudokuMatrix<PuzzleNode>()
-    typealias Choice = (Chosen: LinkedNode<PuzzleNode>, Columns:[LinkedNode<PuzzleNode>], Rows:[LinkedNode<PuzzleNode>], Root:Int)
+    var matrix = SudokuMatrix<PuzzleKey>()
+    typealias Choice = (Chosen: LinkedNode<PuzzleKey>, Columns:[LinkedNode<PuzzleKey>], Rows:[LinkedNode<PuzzleKey>], Root:Int)
     private var currentSolution = [Choice]()
     private var eliminated = [Choice]()
-    typealias Solution = [LinkedNode<PuzzleNode>]
+    typealias Solution = [LinkedNode<PuzzleKey>]
     private var solutions = [Solution]()
-    private var solutionDict: [PuzzleCell: LinkedNode<PuzzleNode>]?
+    private var solutionDict: [PuzzleCell: LinkedNode<PuzzleKey>]?
     private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 160, .Hard: 190, .Insane: 240]
     //var allRows: [Int: LinkedNode<PuzzleNode>]?
     
@@ -742,7 +706,7 @@ class Matrix {
         
         //var rowList:[LinkedNode<PuzzleNode>] = []
         let vals = allVals + tried
-        let rowList: [LinkedNode<PuzzleNode>] = vals.map({solutionDict![$0]!})
+        let rowList: [LinkedNode<PuzzleKey>] = vals.map({solutionDict![$0]!})
         
         let rawDiff = solveForRows(rowList, elims:true)
         
@@ -796,9 +760,9 @@ class Matrix {
     }
     
     
-   private func getRowsFromCells(cells: [PuzzleCell]) -> [LinkedNode<PuzzleNode>] {
+   private func getRowsFromCells(cells: [PuzzleCell]) -> [LinkedNode<PuzzleKey>] {
         
-        var rowsToSolve = [LinkedNode<PuzzleNode>]()
+        var rowsToSolve = [LinkedNode<PuzzleKey>]()
         
         for cell in cells {
             let solvedRow = findRowMatchForCell(cell)
@@ -833,7 +797,7 @@ class Matrix {
     }
     
     private func addSolution() {
-        var solution: [LinkedNode<PuzzleNode>] = []
+        var solution: [LinkedNode<PuzzleKey>] = []
         
         for choice in currentSolution {
             solution.append(choice.Chosen.getLateralHead())
@@ -842,7 +806,7 @@ class Matrix {
         solutions.append(solution)
     }
   
-    private func allSolutionsForPuzzle(rowChoice:LinkedNode<PuzzleNode>, andCount count:Int = 0, withCutOff cutOff:Int = 2, andRoot root:Int = 1) -> Int {
+    private func allSolutionsForPuzzle(rowChoice:LinkedNode<PuzzleKey>, andCount count:Int = 0, withCutOff cutOff:Int = 2, andRoot root:Int = 1) -> Int {
         
         if count == cutOff {
             return cutOff
@@ -873,7 +837,7 @@ class Matrix {
     }
 
     
-    private func findFirstSolution(rowChoice:LinkedNode<PuzzleNode>, root: Int) -> Bool {
+    private func findFirstSolution(rowChoice:LinkedNode<PuzzleKey>, root: Int) -> Bool {
         
         solveForRow(rowChoice, root: root)
 
@@ -895,7 +859,7 @@ class Matrix {
         }
     }
     
-    private func findNextRowChoice()->(Node: LinkedNode<PuzzleNode>, Root:Int)? {
+    private func findNextRowChoice()->(Node: LinkedNode<PuzzleKey>, Root:Int)? {
         
         if currentSolution.count == 0 {
             return nil
@@ -926,10 +890,10 @@ class Matrix {
 
     }
     
-    private func selectColumn() -> LinkedNode<PuzzleNode>? {
+    private func selectColumn() -> LinkedNode<PuzzleKey>? {
     
-        var currentColumn:LinkedNode<PuzzleNode> = matrix.lateralHead
-        var minColumns: [LinkedNode<PuzzleNode>] = []
+        var currentColumn:LinkedNode<PuzzleKey> = matrix.lateralHead
+        var minColumns: [LinkedNode<PuzzleKey>] = []
         var minRows = currentColumn.countColumn()
         
         let last = currentColumn.left!
@@ -974,7 +938,7 @@ class Matrix {
     }
     
     
-    private func solveForRows(rows: [LinkedNode<PuzzleNode>], elims:Bool = false) -> Int {
+    private func solveForRows(rows: [LinkedNode<PuzzleKey>], elims:Bool = false) -> Int {
         
         for row in rows {
             solveForRow(row, root: row.vertOrder, elims: elims)
@@ -983,9 +947,9 @@ class Matrix {
         return matrix.verticalCount()
     }
     
-    private func solveForRow(row: LinkedNode<PuzzleNode>, root: Int = 1, elims: Bool = false) {
+    private func solveForRow(row: LinkedNode<PuzzleKey>, root: Int = 1, elims: Bool = false) {
     
-        var columnList: [LinkedNode<PuzzleNode>] = []
+        var columnList: [LinkedNode<PuzzleKey>] = []
         var current = row.getLateralHead().right!
         while current.latOrder != 0 {
             let col = current.getVerticalHead()
@@ -994,7 +958,7 @@ class Matrix {
         }
         
       
-        var removedRows: [LinkedNode<PuzzleNode>] = []
+        var removedRows: [LinkedNode<PuzzleKey>] = []
         
         for column in columnList {
             let rowsToRemove = coverColumn(column)
@@ -1014,9 +978,9 @@ class Matrix {
         
     }
     
-    func coverColumn(column: LinkedNode<PuzzleNode>)->[LinkedNode<PuzzleNode>] {
+    func coverColumn(column: LinkedNode<PuzzleKey>)->[LinkedNode<PuzzleKey>] {
        
-        var rowsToRemove: [LinkedNode<PuzzleNode>] = []
+        var rowsToRemove: [LinkedNode<PuzzleKey>] = []
         var current = column.down!
         while current.vertOrder != 0 {
             rowsToRemove.append(current)
@@ -1026,7 +990,7 @@ class Matrix {
         return rowsToRemove
     }
     
-    func removeRow(row: LinkedNode<PuzzleNode>) {
+    func removeRow(row: LinkedNode<PuzzleKey>) {
        
         var current = row.getLateralHead().right!
         while current.latOrder !=  0 {
@@ -1038,7 +1002,7 @@ class Matrix {
         matrix.removeVerticalLink(current)
     }
     
-    func insertRow(row: LinkedNode<PuzzleNode>) {
+    func insertRow(row: LinkedNode<PuzzleKey>) {
     
         var current = row.getLateralHead().right!
         while current.latOrder != 0 {
@@ -1081,7 +1045,7 @@ class Matrix {
                     rowsAndColumns!.countAllColumns()
                 }*/
                 let header = ColumnHeader(row: rowIndex, column: columnIndex)
-                let node = PuzzleNode(header: header)
+                let node = PuzzleKey(header: header)
                 matrix.addLateralLink(node)
             }
         }
@@ -1094,7 +1058,7 @@ class Matrix {
         for aValue in 1...9 {
             for columnIndex in 1...9 {
                 let header = ColumnHeader(value: aValue, column: columnIndex)
-                let node = PuzzleNode(header: header)
+                let node = PuzzleKey(header: header)
                 matrix.addLateralLink(node)
             }
         }
@@ -1105,7 +1069,7 @@ class Matrix {
         for aValue in 1...9 {
             for rowIndex in 1...9 {
                 let header = ColumnHeader(value: aValue, row: rowIndex)
-                let node = PuzzleNode(header: header)
+                let node = PuzzleKey(header: header)
                 matrix.addLateralLink(node)
             }
         }
@@ -1116,7 +1080,7 @@ class Matrix {
         for aValue in 1...9 {
             for boxIndex in 1...9 {
                 let header = ColumnHeader(value: aValue, box: boxIndex)
-                let node = PuzzleNode(header: header)
+                let node = PuzzleKey(header: header)
                 matrix.addLateralLink(node)
             }
         }
@@ -1128,7 +1092,7 @@ class Matrix {
             for columnIndex in 1...9 {
                 for aValue in 1...9 {
                     let cell = PuzzleCell(row: rowIndex, column: columnIndex, value: aValue)
-                    let node = PuzzleNode(cell: cell)
+                    let node = PuzzleKey(cell: cell)
                     matrix.addVerticalLink(node)
                 }
             }
@@ -1139,7 +1103,7 @@ class Matrix {
         
         let vertHead = matrix.verticalHead 
         
-        var currentRow:LinkedNode<PuzzleNode> = vertHead
+        var currentRow:LinkedNode<PuzzleKey> = vertHead
         let last = vertHead.up!
         
         defer {
@@ -1154,15 +1118,15 @@ class Matrix {
         
     }
     
-    func connectMatchingConstraintsForRow(row: LinkedNode<PuzzleNode>) {
+    func connectMatchingConstraintsForRow(row: LinkedNode<PuzzleKey>) {
         let latHead = matrix.lateralHead
         
         var currentHeader = latHead
         let last = latHead.left!
         
-        let addNodeBlock = { (header: LinkedNode<PuzzleNode>) -> () in
+        let addNodeBlock = { (header: LinkedNode<PuzzleKey>) -> () in
             if header.key == row.key {
-                let newKey = PuzzleNode(node: row.key!) // changed from constHead!.key!
+                let newKey = PuzzleKey(node: row.key!) // changed from constHead!.key!
                 let newNode = LinkedNode(key: newKey)
                 self.matrix.addLateralLinkFromNode(row.getLateralTail(), toNewNode: newNode)
                 self.matrix.addVerticalLinkFromNode(header.getVerticalTail(), toNewNode: newNode)
@@ -1186,7 +1150,7 @@ class Matrix {
     
     // matches given values against row choices -- move this to linked list class def? 
 
-    private func findRowMatch(mRow: PuzzleNode) -> LinkedNode<PuzzleNode> {
+    private func findRowMatch(mRow: PuzzleKey) -> LinkedNode<PuzzleKey> {
     
         // if the node we're looking for is in the allRows dictionary, we can just look it up rather than traversing the row ladder
         /*if let hash = mRow.getHash(), rows = allRows {
@@ -1206,7 +1170,7 @@ class Matrix {
         return current
     }
     
-    private func findRowMatchForCell(cell: PuzzleCell) -> LinkedNode<PuzzleNode> {
+    private func findRowMatchForCell(cell: PuzzleCell) -> LinkedNode<PuzzleKey> {
         var current = matrix.verticalHead.up!
         
         while current.vertOrder != matrix.verticalHead.vertOrder {
