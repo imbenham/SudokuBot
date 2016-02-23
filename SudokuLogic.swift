@@ -651,6 +651,11 @@ class Matrix {
     private var solutions = [Solution]()
     private var solutionDict: [PuzzleCell: LinkedNode<PuzzleKey>]?
     private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 160, .Hard: 190, .Insane: 240]
+    var isSolved: Bool {
+        get {
+            return matrix.lateralHead.key == nil
+        }
+    }
     //var allRows: [Int: LinkedNode<PuzzleNode>]?
     
     
@@ -688,7 +693,7 @@ class Matrix {
             let initialChoice = self.selectColumn()!
             
             if !self.findFirstSolution(initialChoice, root: initialChoice.vertOrder) {
-                // throw an error
+                // throw an error?
             }
             
             let sol = self.solutions[0]
@@ -797,7 +802,7 @@ class Matrix {
     
     private func countPuzzleSolutions() -> Int {
         
-        if self.solved() {
+        if isSolved {
             return 1
         }
         
@@ -808,15 +813,6 @@ class Matrix {
         return 0
     }
     
-    
-    private func solved() -> Bool {
-        
-        if matrix.lateralHead.key == nil {
-            return true
-        }
-        
-        return false
-    }
     
     private func addSolution() {
         var solution: [LinkedNode<PuzzleKey>] = []
@@ -837,7 +833,7 @@ class Matrix {
         solveForRow(rowChoice, root: root)
         
         
-        if solved() {
+        if isSolved {
             addSolution()
             
             if let next = findNextRowChoice() {
@@ -864,7 +860,7 @@ class Matrix {
         solveForRow(rowChoice, root: root)
 
         
-        if solved() {
+        if isSolved {
             addSolution()
            return true
         } else {
@@ -919,13 +915,7 @@ class Matrix {
         var minRows = currentColumn.countColumn()
         
         let last = currentColumn.left!
-        
-        defer {
-            let lastCount = last.countColumn()
-            if (lastCount > 1) && (last.countColumn() < minRows) {
-                minColumns.append(last)
-            }
-        }
+       
         
         CountLoop: while currentColumn.key != last.key {
             
@@ -941,7 +931,17 @@ class Matrix {
             currentColumn = currentColumn.right!
         }
         
-        if minColumns.isEmpty { return nil }
+        let lastCount = last.countColumn()
+        if lastCount == 1 {
+            return nil
+        } else if lastCount < minRows {
+            minColumns = [last]
+        } else if lastCount == minRows {
+            minColumns.append(last)
+        }
+
+        
+       // if minColumns.isEmpty { return nil }
            
         
         let random1 = Int(arc4random_uniform((UInt32(minColumns.count))))
