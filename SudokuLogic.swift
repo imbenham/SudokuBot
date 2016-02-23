@@ -690,7 +690,7 @@ class Matrix {
         
         
         dispatch_barrier_async(concurrentPuzzleQueue) {
-            let initialChoice = self.selectColumn()!
+            let initialChoice = self.selectRowToSolve()!
             
             if !self.findFirstSolution(initialChoice, root: initialChoice.vertOrder) {
                 // throw an error?
@@ -806,7 +806,7 @@ class Matrix {
             return 1
         }
         
-        if let bestColumn = selectColumn() {
+        if let bestColumn = selectRowToSolve() {
             return allSolutionsForPuzzle(bestColumn, andRoot:bestColumn.vertOrder)
         }
         
@@ -842,7 +842,7 @@ class Matrix {
                 return count+1
             }
         } else {
-            if let next = selectColumn() {
+            if let next = selectRowToSolve() {
                 return allSolutionsForPuzzle(next, andCount: count, withCutOff: cutOff, andRoot:next.vertOrder)
             } else {
                 if let next = findNextRowChoice() {
@@ -865,7 +865,7 @@ class Matrix {
            return true
         } else {
 
-            if let next = selectColumn() {
+            if let next = selectRowToSolve() {
                 return findFirstSolution(next, root: next.vertOrder)
             } else {
                 if let next = findNextRowChoice() {
@@ -908,7 +908,7 @@ class Matrix {
 
     }
     
-    private func selectColumn() -> LinkedNode<PuzzleKey>? {
+    private func selectRowToSolve() -> LinkedNode<PuzzleKey>? {
     
         var currentColumn:LinkedNode<PuzzleKey> = matrix.lateralHead
         var minColumns: [LinkedNode<PuzzleKey>] = []
@@ -940,8 +940,6 @@ class Matrix {
             minColumns.append(last)
         }
 
-        
-       // if minColumns.isEmpty { return nil }
            
         
         let random1 = Int(arc4random_uniform((UInt32(minColumns.count))))
@@ -955,7 +953,23 @@ class Matrix {
             count+=1
         }
         
-        return currentColumn
+        func rowRandomizer() -> LinkedNode<PuzzleKey> {
+            let random1 = Int(arc4random_uniform((UInt32(minColumns.count))))
+            currentColumn = minColumns[random1]
+            
+            let random2 = Int(arc4random_uniform(UInt32(minRows-1)))+1
+            var count = 0
+            
+            while count != random2 {
+                currentColumn = currentColumn.down!
+                count+=1
+            }
+            
+            return currentColumn
+
+        }
+        
+        return rowRandomizer()
 
     }
     
