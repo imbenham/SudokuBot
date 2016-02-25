@@ -910,15 +910,13 @@ class Matrix {
     
     private func selectRowToSolve() -> LinkedNode<PuzzleKey>? {
     
-        var currentColumn:LinkedNode<PuzzleKey> = matrix.lateralHead
+        var currentColumn:LinkedNode<PuzzleKey> = matrix.lateralHead.left!
         var minColumns: [LinkedNode<PuzzleKey>] = []
         var minRows = currentColumn.countColumn()
-        
-        let last = currentColumn.left!
+        let last = currentColumn.key
        
         
-        CountLoop: while currentColumn.key != last.key {
-            
+        repeat {
             let count = currentColumn.countColumn()
             if count == 1 { // if we have a one-row column, we have an unsatisfiable constraint and therefore an invalid puzzle
                 return nil
@@ -929,29 +927,7 @@ class Matrix {
                 minColumns.append(currentColumn)
             }
             currentColumn = currentColumn.right!
-        }
-        
-        let lastCount = last.countColumn()
-        if lastCount == 1 {
-            return nil
-        } else if lastCount < minRows {
-            minColumns = [last]
-        } else if lastCount == minRows {
-            minColumns.append(last)
-        }
-
-           
-        
-        let random1 = Int(arc4random_uniform((UInt32(minColumns.count))))
-        currentColumn = minColumns[random1]
-        
-        let random2 = Int(arc4random_uniform(UInt32(minRows-1)))+1
-        var count = 0
-        
-        while count != random2 {
-            currentColumn = currentColumn.down!
-            count+=1
-        }
+        }  while currentColumn.key != last
         
         func rowRandomizer() -> LinkedNode<PuzzleKey> {
             let random1 = Int(arc4random_uniform((UInt32(minColumns.count))))
