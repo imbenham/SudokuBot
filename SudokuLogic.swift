@@ -459,7 +459,7 @@ class Matrix {
     }
     
     private func solveForRow(row: LinkedNode<PuzzleKey>, root: Int = 1){
-        let choice = choiceDataForRow(row)
+        let choice = choiceDataForRow(row, root: root)
         currentSolution.append(choice)
     }
     
