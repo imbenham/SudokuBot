@@ -127,7 +127,7 @@ class Matrix {
     static let sharedInstance: Matrix = Matrix()
     
     var matrix = SudokuMatrix<PuzzleKey>()
-    typealias Choice = (Chosen: LinkedNode<PuzzleKey>, Columns:[LinkedNode<PuzzleKey>], Rows:[LinkedNode<PuzzleKey>], Root:Int)
+    typealias Choice = (Chosen: LinkedNode<PuzzleKey>, Root:Int)
     private var currentSolution = [Choice]()
     private var eliminated = [Choice]()
     typealias Solution = [LinkedNode<PuzzleKey>]
@@ -155,7 +155,7 @@ class Matrix {
             return rawDiffDict[difficulty]!
         }
     }
-   func rebuild() {
+   private func rebuild() {
         while currentSolution.count != 0 {
             let lastChoice:Choice = currentSolution.removeLast()
             reinsertLast(lastChoice)
@@ -164,7 +164,8 @@ class Matrix {
             let lastChoice:Choice = eliminated.removeLast()
             reinsertLast(lastChoice)
         }
-        
+    
+    
         solutions = []
     }
     
@@ -201,6 +202,7 @@ class Matrix {
             
             
             self.rebuild()
+            
             
             let notificationCenter = NSNotificationCenter.defaultCenter()
             notificationCenter.postNotificationName(difficulty.notificationString(), object: self, userInfo: ["puzzle": aPuzzle])
@@ -341,13 +343,19 @@ class Matrix {
     private func findFirstSolution(rowChoice:LinkedNode<PuzzleKey>, root: Int) -> Bool {
         
         solveForRow(rowChoice, root: root)
-
+        
+        //print(matrix.countAllColumns())
+        //print(matrix.countAllRows())
+        
+        //rebuild()
+        
+       // print(matrix.countAllColumns())
+       // print(matrix.countAllRows())
         
         if isSolved {
             addSolution()
            return true
         } else {
-
             if let next = selectRowToSolve() {
                 return findFirstSolution(next, root: next.vertOrder)
             } else {
@@ -380,14 +388,13 @@ class Matrix {
     
     private func reinsertLast(last: Choice) {
         
-        for col in last.Columns.reverse() {
-            matrix.insertLateralLink(col)
-        }
         
-        for row in last.Rows.reverse()
-        {
-            insertRow(row)
-        }
+        var current = last.Chosen.getLateralTail() // start at last node and work back to the head reconnecting each node with its column
+        
+        repeat {
+            uncoverColumn(current)
+            current = current.left!
+        } while current.latOrder != 0
 
     }
     
@@ -433,34 +440,11 @@ class Matrix {
     }
     
     
-    private func choiceDataForRow(row: LinkedNode<PuzzleKey>, root: Int = 1) -> Choice {
-    
-        var columnList: [LinkedNode<PuzzleKey>] = []
-        var current = row.getLateralHead().right!
-        while current.latOrder != 0 {
-            let col = current.getVerticalHead()
-            columnList.append(col)
-            current = current.right!
-        }
-        
-      
-        var removedRows: [LinkedNode<PuzzleKey>] = []
-        
-        for column in columnList {
-            let rowsToRemove = coverColumn(column)
-            removedRows += rowsToRemove
-            for aRow in rowsToRemove {
-                removeRow(aRow)
-            }
-        }
-        
-        return (row, columnList, removedRows, root)
-
-    }
+ 
     
     private func solveForRow(row: LinkedNode<PuzzleKey>, root: Int = 1){
-        let choice = choiceDataForRow(row, root: root)
-        currentSolution.append(choice)
+        removeRowFromMatrix(row, root: root)
+        currentSolution.append((row, root))
     }
     
     private func eliminateRows(rows: [LinkedNode<PuzzleKey>]) -> Int {
@@ -471,46 +455,87 @@ class Matrix {
         return matrix.verticalCount()
     }
     
+    
     private func eliminateRow(row: LinkedNode<PuzzleKey>, root: Int = 1){
-        let removalData = choiceDataForRow(row, root: root)
-        eliminated.append(removalData)
+        removeRowFromMatrix(row, root: root)
+        eliminated.append((row, root))
     }
     
-   
     
-    func coverColumn(column: LinkedNode<PuzzleKey>)->[LinkedNode<PuzzleKey>] {
-       
-        var rowsToRemove: [LinkedNode<PuzzleKey>] = []
-        var current = column.down!
-        while current.vertOrder != 0 {
-            rowsToRemove.append(current)
-            current = current.down!
-        }
-        matrix.removeLateralLink(current)
-        return rowsToRemove
-    }
-    
-    func removeRow(row: LinkedNode<PuzzleKey>) {
-       
+    private func removeRowFromMatrix(row: LinkedNode<PuzzleKey>, root: Int = 1) {
+        
         var current = row.getLateralHead().right!
-        while current.latOrder !=  0 {
-            current.up!.down = current.down
-            current.down!.up = current.up
+        while current.latOrder != 0 {
+            let col = current.getVerticalHead()  // go to the top of the column
+            coverColumn(col)                     // "cover" the column
             current = current.right!
         }
         
-        matrix.removeVerticalLink(current)
+    }
+   
+    
+    private func coverColumn(column: LinkedNode<PuzzleKey>)  {
+        
+        var current = column.down!
+        while current.vertOrder != 0 {      // start at top of column and remove each row until we get to the column head
+            removeRow(current)
+            current = current.down!
+        }
+        
+         matrix.removeLateralLink(column)  // unlink the column head so it doesn't get read during row selection
+        
     }
     
-    func insertRow(row: LinkedNode<PuzzleKey>) {
-    
-        var current = row.getLateralHead().right!
-        while current.latOrder != 0 {
-            current.up!.down = current
-            current.down!.up = current
-            current = current.right!
+    private func uncoverColumn(column: LinkedNode<PuzzleKey>) {
+        var current = column.getVerticalTail()
+        if current.vertOrder == 0 {
+           print("stop")
         }
-        matrix.insertVerticalLink(current)
+        
+        repeat {  // we start at the bottom of the column and insert each row until we get back to the top
+            insertRow(current)
+            //print("current vert order: \(current.vertOrder)")
+            current = current.up!
+        } while current.vertOrder != 0
+        
+        matrix.insertLateralLink(current) // we reinsert the column head laterally
+        
+    }
+    
+    private func removeRow(row: LinkedNode<PuzzleKey>) {
+        let skip = row.latOrder
+        var current = row.getLateralHead() // start at leftmost node and remove each from left to right
+         repeat {
+            if current.latOrder == skip {
+                current = current.right!
+                continue
+            }
+            matrix.removeVerticalLink(current)
+            current = current.right!
+        } while current.latOrder !=  0
+        
+       
+    }
+    
+    private func insertRow(row: LinkedNode<PuzzleKey>) {
+        
+        let skip = row.latOrder
+        var current = row.getLateralTail()
+        
+        if (current.latOrder != 4) {
+            print("current LO:\(current.latOrder) vs. row LO \(row.latOrder)")
+        }
+        
+        repeat {                                // start at the last node and go backwards reconnecting nodes with their columns
+            if current.latOrder == skip {
+                current = current.left!
+                continue
+            }
+            matrix.insertVerticalLink(current)
+            current = current.left!
+            //print("current LO: \(current.latOrder)")
+        } while current.latOrder != 4
+    
     }
     
     private func resetSolution() {
@@ -534,6 +559,9 @@ class Matrix {
         buildBoxConstraints()
        
         buildOutMatrix()
+        
+        let rowLength = matrix.verticalHead.left!.latOrder
+        print("first row is \(rowLength) columns long")
         
     }
     

@@ -230,27 +230,30 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     func insertLateralLink(link: LinkedNode<T>) {
         if lateralHead.key == nil {
             lateralHead = link
-        } else {
-            link.left?.right = link
-            link.right?.left = link
-            if link.latOrder <= lateralHead.latOrder {
-                lateralHead = link
-            }
+            return
+        }
+        
+        link.left?.right = link
+        link.right?.left = link
+        if link.latOrder <= lateralHead.latOrder {
+            lateralHead = link
         }
         
     }
     
     func insertVerticalLink(link: LinkedNode<T>) {
+        
         if verticalHead.key == nil {
             verticalHead = link
-        } else {
-            link.up?.down = link
-            link.down?.up = link
-            if link.vertOrder <= verticalHead.vertOrder {
-                verticalHead = link
-            }
-            
+            return
         }
+        
+        link.up?.down = link
+        link.down?.up = link
+        if link.vertOrder <= verticalHead.vertOrder {
+            verticalHead = link
+        }
+        
     }
     
     func printRows() {
@@ -331,14 +334,16 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     }
     
     func countAllColumns() {
-        let last = lateralHead.left!
+        var total = 0
         var current = lateralHead
         
-        while current.latOrder != last.latOrder {
-            
+        repeat {
             print("column: \(current.latOrder) has \(countColumn(current)) nodes")
             current = current.right!
-        }
+            total += 1
+        } while current.latOrder != 0
+        
+        print("total:\(total)")
     }
     
     func countColumn(node: LinkedNode<T>) -> Int {
@@ -356,14 +361,15 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     
     func countAllRows() {
         
-        let last = verticalHead.up!
         var current = verticalHead
+        var total = 0
         
-        while current.vertOrder != last.vertOrder {
+         repeat {
             print("row: \(current.vertOrder) has \(countRow(current)) nodes")
             current = current.down!
-        }
-        
+            total += 1
+        } while current.vertOrder != 0
+        print("total:\(total)")
     }
     
     func countRow(node: LinkedNode<T>) -> Int {
@@ -449,7 +455,7 @@ extension LinkedNode  {
     func getVerticalTail() -> LinkedNode<T> {
         var current = self
         while current.down != nil {
-            if current.down!.vertOrder == 0 {
+            if current.down!.vertOrder <= current.vertOrder {
                 break
             }
             current = current.down!
@@ -460,7 +466,7 @@ extension LinkedNode  {
     func getLateralTail() -> LinkedNode<T> {
         var current:LinkedNode<T> = self
         while current.right != nil {
-            if current.right!.latOrder == 0 {
+            if current.right!.latOrder <= current.latOrder {
                 break
             }
             current = current.right!
