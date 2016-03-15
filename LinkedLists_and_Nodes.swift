@@ -230,6 +230,20 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     func insertLateralLink(link: LinkedNode<T>) {
         if lateralHead.key == nil {
             lateralHead = link
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+        } else {
+            link.left?.right = link
+            link.right?.left = link
+            if link.latOrder <= lateralHead.latOrder {
+                lateralHead = link
+            }
+=======
+=======
+>>>>>>> refactoring
+>>>>>>> Stashed changes
             return
         }
         
@@ -237,11 +251,36 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
         link.right?.left = link
         if link.latOrder <= lateralHead.latOrder {
             lateralHead = link
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+>>>>>>> refactoring
+=======
+>>>>>>> refactoring
+>>>>>>> Stashed changes
         }
         
     }
     
     func insertVerticalLink(link: LinkedNode<T>) {
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+        if verticalHead.key == nil {
+            verticalHead = link
+        } else {
+            link.up?.down = link
+            link.down?.up = link
+            if link.vertOrder <= verticalHead.vertOrder {
+                verticalHead = link
+            }
+            
+        }
+=======
+=======
+>>>>>>> refactoring
+>>>>>>> Stashed changes
         
         if verticalHead.key == nil {
             verticalHead = link
@@ -254,6 +293,13 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             verticalHead = link
         }
         
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+>>>>>>> refactoring
+=======
+>>>>>>> refactoring
+>>>>>>> Stashed changes
     }
     
     func printRows() {
@@ -334,6 +380,22 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     }
     
     func countAllColumns() {
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+        let last = lateralHead.left!
+        var current = lateralHead
+        
+        while current.latOrder != last.latOrder {
+            
+            print("column: \(current.latOrder) has \(countColumn(current)) nodes")
+            current = current.right!
+        }
+=======
+=======
+>>>>>>> refactoring
+>>>>>>> Stashed changes
         var total = 0
         var current = lateralHead
         
@@ -344,6 +406,13 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
         } while current.latOrder != 0
         
         print("total:\(total)")
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+>>>>>>> refactoring
+=======
+>>>>>>> refactoring
+>>>>>>> Stashed changes
     }
     
     func countColumn(node: LinkedNode<T>) -> Int {
@@ -361,6 +430,22 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     
     func countAllRows() {
         
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+        let last = verticalHead.up!
+        var current = verticalHead
+        
+        while current.vertOrder != last.vertOrder {
+            print("row: \(current.vertOrder) has \(countRow(current)) nodes")
+            current = current.down!
+        }
+        
+=======
+=======
+>>>>>>> refactoring
+>>>>>>> Stashed changes
         var current = verticalHead
         var total = 0
         
@@ -370,6 +455,13 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             total += 1
         } while current.vertOrder != 0
         print("total:\(total)")
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+>>>>>>> refactoring
+=======
+>>>>>>> refactoring
+>>>>>>> Stashed changes
     }
     
     func countRow(node: LinkedNode<T>) -> Int {
@@ -455,7 +547,19 @@ extension LinkedNode  {
     func getVerticalTail() -> LinkedNode<T> {
         var current = self
         while current.down != nil {
+<<<<<<< Updated upstream
             if current.down!.vertOrder <= current.vertOrder {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+            if current.down!.vertOrder == 0 {
+=======
+            if current.down!.vertOrder <= current.vertOrder {
+>>>>>>> refactoring
+=======
+            if current.down!.vertOrder <= current.vertOrder {
+>>>>>>> refactoring
+>>>>>>> Stashed changes
                 break
             }
             current = current.down!
@@ -466,7 +570,19 @@ extension LinkedNode  {
     func getLateralTail() -> LinkedNode<T> {
         var current:LinkedNode<T> = self
         while current.right != nil {
+<<<<<<< Updated upstream
             if current.right!.latOrder <= current.latOrder {
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+            if current.right!.latOrder == 0 {
+=======
+            if current.right!.latOrder <= current.latOrder {
+>>>>>>> refactoring
+=======
+            if current.right!.latOrder <= current.latOrder {
+>>>>>>> refactoring
+>>>>>>> Stashed changes
                 break
             }
             current = current.right!
@@ -528,4 +644,128 @@ func == (lhs:PuzzleKey, rhs:PuzzleKey) -> Bool {
     
 }
 
+<<<<<<< Updated upstream
 extension PuzzleKey: Equatable {}
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+extension PuzzleKey: Equatable {}
+
+
+enum PuzzleDifficulty: Equatable, Hashable {
+    case Easy
+    case Medium
+    case Hard
+    case Insane
+    case Custom (Int)
+    
+    static func fromCacheString(cacheString: String) -> PuzzleDifficulty {
+        let dict:[String: PuzzleDifficulty] = [PuzzleDifficulty.Easy.cacheString(): .Easy, PuzzleDifficulty.Medium.cacheString(): .Medium, PuzzleDifficulty.Hard.cacheString(): .Hard, PuzzleDifficulty.Insane.cacheString(): Insane]
+        if let diff = dict[cacheString] {
+            return diff
+        } else {
+            return Custom(0)
+        }
+    }
+    
+    var isCachable: Bool {
+        switch self{
+        case .Custom (_):
+            return false
+        default:
+            return true
+        }
+    }
+    
+    var currentKey: String? {
+        switch self {
+        case .Easy:
+            return currentEasyPuzzleKey
+        case .Medium:
+            return currentMediumPuzzleKey
+        case .Hard:
+            return currentHardPuzzleKey
+        case .Insane:
+            return currentInsanePuzzleKey
+        default:
+            return nil
+        }
+    }
+    
+    var hashValue: Int {
+        get {
+            return self.toInt()
+        }
+    }
+    
+    
+    func toInt() -> Int {
+        switch self{
+        case .Easy:
+            return 0
+        case .Medium:
+            return 1
+        case .Hard:
+            return 2
+        case .Insane:
+            return 3
+        case .Custom(let diff):
+            return 4 + diff
+        }
+    }
+    
+    func cacheString() -> String {
+        switch self{
+        case .Easy:
+            return easyPuzzleKey
+        case .Medium:
+            return mediumPuzzleKey
+        case .Hard:
+            return hardPuzzleKey
+        case .Insane:
+            return insanePuzzleKey
+        default:
+            return "caching unavailable"
+        }
+    }
+    
+    func notificationString() -> String {
+        switch self{
+        case .Easy:
+            return easyPuzzleReady
+        case .Medium:
+            return mediumPuzzleReady
+        case .Hard:
+            return hardPuzzleReady
+        case .Insane:
+            return insanePuzzleReady
+        default:
+            return customPuzzleReady
+        }
+    }
+    
+    func cachePath() -> NSURL {
+        switch self{
+        case .Easy:
+            return easyCacheFilePath
+        case .Medium:
+            return mediumCacheFilePath
+        case .Hard:
+            return hardCacheFilePath
+        default:
+            return insaneCacheFilePath
+        }
+    }
+    
+}
+
+func == (lhs:PuzzleDifficulty, rhs:PuzzleDifficulty) -> Bool{
+    return lhs.toInt() == rhs.toInt()
+}
+=======
+extension PuzzleKey: Equatable {}
+>>>>>>> refactoring
+=======
+extension PuzzleKey: Equatable {}
+>>>>>>> refactoring
+>>>>>>> Stashed changes

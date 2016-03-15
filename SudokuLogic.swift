@@ -9,6 +9,7 @@
 import UIKit
 
 
+
 enum PuzzleDifficulty: Equatable, Hashable {
     case Easy
     case Medium
