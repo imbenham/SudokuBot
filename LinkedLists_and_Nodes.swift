@@ -230,17 +230,28 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     func insertLateralLink(link: LinkedNode<T>) {
         if lateralHead.key == nil {
             lateralHead = link
+<<<<<<< HEAD
         } else {
             link.left?.right = link
             link.right?.left = link
             if link.latOrder <= lateralHead.latOrder {
                 lateralHead = link
             }
+=======
+            return
+        }
+        
+        link.left?.right = link
+        link.right?.left = link
+        if link.latOrder <= lateralHead.latOrder {
+            lateralHead = link
+>>>>>>> refactoring
         }
         
     }
     
     func insertVerticalLink(link: LinkedNode<T>) {
+<<<<<<< HEAD
         if verticalHead.key == nil {
             verticalHead = link
         } else {
@@ -251,6 +262,20 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             }
             
         }
+=======
+        
+        if verticalHead.key == nil {
+            verticalHead = link
+            return
+        }
+        
+        link.up?.down = link
+        link.down?.up = link
+        if link.vertOrder <= verticalHead.vertOrder {
+            verticalHead = link
+        }
+        
+>>>>>>> refactoring
     }
     
     func printRows() {
@@ -331,6 +356,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     }
     
     func countAllColumns() {
+<<<<<<< HEAD
         let last = lateralHead.left!
         var current = lateralHead
         
@@ -339,6 +365,18 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             print("column: \(current.latOrder) has \(countColumn(current)) nodes")
             current = current.right!
         }
+=======
+        var total = 0
+        var current = lateralHead
+        
+        repeat {
+            print("column: \(current.latOrder) has \(countColumn(current)) nodes")
+            current = current.right!
+            total += 1
+        } while current.latOrder != 0
+        
+        print("total:\(total)")
+>>>>>>> refactoring
     }
     
     func countColumn(node: LinkedNode<T>) -> Int {
@@ -356,6 +394,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     
     func countAllRows() {
         
+<<<<<<< HEAD
         let last = verticalHead.up!
         var current = verticalHead
         
@@ -364,6 +403,17 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             current = current.down!
         }
         
+=======
+        var current = verticalHead
+        var total = 0
+        
+         repeat {
+            print("row: \(current.vertOrder) has \(countRow(current)) nodes")
+            current = current.down!
+            total += 1
+        } while current.vertOrder != 0
+        print("total:\(total)")
+>>>>>>> refactoring
     }
     
     func countRow(node: LinkedNode<T>) -> Int {
@@ -449,7 +499,11 @@ extension LinkedNode  {
     func getVerticalTail() -> LinkedNode<T> {
         var current = self
         while current.down != nil {
+<<<<<<< HEAD
             if current.down!.vertOrder == 0 {
+=======
+            if current.down!.vertOrder <= current.vertOrder {
+>>>>>>> refactoring
                 break
             }
             current = current.down!
@@ -460,7 +514,11 @@ extension LinkedNode  {
     func getLateralTail() -> LinkedNode<T> {
         var current:LinkedNode<T> = self
         while current.right != nil {
+<<<<<<< HEAD
             if current.right!.latOrder == 0 {
+=======
+            if current.right!.latOrder <= current.latOrder {
+>>>>>>> refactoring
                 break
             }
             current = current.right!
@@ -522,6 +580,7 @@ func == (lhs:PuzzleKey, rhs:PuzzleKey) -> Bool {
     
 }
 
+<<<<<<< HEAD
 extension PuzzleKey: Equatable {}
 
 
@@ -635,3 +694,6 @@ enum PuzzleDifficulty: Equatable, Hashable {
 func == (lhs:PuzzleDifficulty, rhs:PuzzleDifficulty) -> Bool{
     return lhs.toInt() == rhs.toInt()
 }
+=======
+extension PuzzleKey: Equatable {}
+>>>>>>> refactoring
