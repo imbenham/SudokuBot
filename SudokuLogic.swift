@@ -123,6 +123,7 @@ func == (lhs:PuzzleDifficulty, rhs:PuzzleDifficulty) -> Bool{
 
 
 
+
 class Matrix {
     
     static let sharedInstance: Matrix = Matrix()

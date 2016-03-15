@@ -230,20 +230,14 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     func insertLateralLink(link: LinkedNode<T>) {
         if lateralHead.key == nil {
             lateralHead = link
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
+
         } else {
             link.left?.right = link
             link.right?.left = link
             if link.latOrder <= lateralHead.latOrder {
                 lateralHead = link
             }
-=======
-=======
->>>>>>> refactoring
->>>>>>> Stashed changes
+
             return
         }
         
@@ -251,22 +245,13 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
         link.right?.left = link
         if link.latOrder <= lateralHead.latOrder {
             lateralHead = link
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
->>>>>>> refactoring
-=======
->>>>>>> refactoring
->>>>>>> Stashed changes
+
         }
         
     }
     
     func insertVerticalLink(link: LinkedNode<T>) {
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
+
         if verticalHead.key == nil {
             verticalHead = link
         } else {
@@ -277,10 +262,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             }
             
         }
-=======
-=======
->>>>>>> refactoring
->>>>>>> Stashed changes
+
         
         if verticalHead.key == nil {
             verticalHead = link
@@ -293,13 +275,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             verticalHead = link
         }
         
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
->>>>>>> refactoring
-=======
->>>>>>> refactoring
->>>>>>> Stashed changes
+
     }
     
     func printRows() {
@@ -380,10 +356,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     }
     
     func countAllColumns() {
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
+
         let last = lateralHead.left!
         var current = lateralHead
         
@@ -392,10 +365,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             print("column: \(current.latOrder) has \(countColumn(current)) nodes")
             current = current.right!
         }
-=======
-=======
->>>>>>> refactoring
->>>>>>> Stashed changes
+
         var total = 0
         var current = lateralHead
         
@@ -406,13 +376,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
         } while current.latOrder != 0
         
         print("total:\(total)")
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
->>>>>>> refactoring
-=======
->>>>>>> refactoring
->>>>>>> Stashed changes
+
     }
     
     func countColumn(node: LinkedNode<T>) -> Int {
@@ -430,10 +394,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     
     func countAllRows() {
         
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
+
         let last = verticalHead.up!
         var current = verticalHead
         
@@ -442,10 +403,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             current = current.down!
         }
         
-=======
-=======
->>>>>>> refactoring
->>>>>>> Stashed changes
+
         var current = verticalHead
         var total = 0
         
@@ -455,13 +413,7 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
             total += 1
         } while current.vertOrder != 0
         print("total:\(total)")
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
->>>>>>> refactoring
-=======
->>>>>>> refactoring
->>>>>>> Stashed changes
+
     }
     
     func countRow(node: LinkedNode<T>) -> Int {
@@ -547,19 +499,15 @@ extension LinkedNode  {
     func getVerticalTail() -> LinkedNode<T> {
         var current = self
         while current.down != nil {
-<<<<<<< Updated upstream
+
             if current.down!.vertOrder <= current.vertOrder {
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
+
             if current.down!.vertOrder == 0 {
-=======
+
             if current.down!.vertOrder <= current.vertOrder {
->>>>>>> refactoring
-=======
+
             if current.down!.vertOrder <= current.vertOrder {
->>>>>>> refactoring
->>>>>>> Stashed changes
+
                 break
             }
             current = current.down!
@@ -570,19 +518,15 @@ extension LinkedNode  {
     func getLateralTail() -> LinkedNode<T> {
         var current:LinkedNode<T> = self
         while current.right != nil {
-<<<<<<< Updated upstream
+
             if current.right!.latOrder <= current.latOrder {
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
+
             if current.right!.latOrder == 0 {
-=======
+
             if current.right!.latOrder <= current.latOrder {
->>>>>>> refactoring
-=======
+
             if current.right!.latOrder <= current.latOrder {
->>>>>>> refactoring
->>>>>>> Stashed changes
+
                 break
             }
             current = current.right!
@@ -644,11 +588,9 @@ func == (lhs:PuzzleKey, rhs:PuzzleKey) -> Bool {
     
 }
 
-<<<<<<< Updated upstream
+
 extension PuzzleKey: Equatable {}
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
+
 extension PuzzleKey: Equatable {}
 
 
@@ -762,10 +704,8 @@ enum PuzzleDifficulty: Equatable, Hashable {
 func == (lhs:PuzzleDifficulty, rhs:PuzzleDifficulty) -> Bool{
     return lhs.toInt() == rhs.toInt()
 }
-=======
+
 extension PuzzleKey: Equatable {}
->>>>>>> refactoring
-=======
+
 extension PuzzleKey: Equatable {}
->>>>>>> refactoring
->>>>>>> Stashed changes
+
