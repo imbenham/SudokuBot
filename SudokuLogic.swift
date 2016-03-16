@@ -550,8 +550,6 @@ class Matrix {
         buildBoxConstraints()
        
         buildOutMatrix()
-        
-        let rowLength = matrix.verticalHead.left!.latOrder
        
         
     }
