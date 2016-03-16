@@ -388,7 +388,6 @@ class Matrix {
     
     private func reinsertLast(last: Choice) {
         
-        
         var current = last.Chosen.getLateralTail() // start at last node and work back to the head reconnecting each node with its column
         
         repeat {
@@ -488,13 +487,9 @@ class Matrix {
     
     private func uncoverColumn(column: LinkedNode<PuzzleKey>) {
         var current = column.getVerticalTail()
-        if current.vertOrder == 0 {
-           print("stop")
-        }
         
         repeat {  // we start at the bottom of the column and insert each row until we get back to the top
             insertRow(current)
-            //print("current vert order: \(current.vertOrder)")
             current = current.up!
         } while current.vertOrder != 0
         
@@ -503,7 +498,7 @@ class Matrix {
     }
     
     private func removeRow(row: LinkedNode<PuzzleKey>) {
-        let skip = row.latOrder
+        let skip = row.latOrder  // skip the column we're choosing on
         var current = row.getLateralHead() // start at leftmost node and remove each from left to right
          repeat {
             if current.latOrder == skip {
@@ -522,10 +517,6 @@ class Matrix {
         let skip = row.latOrder
         var current = row.getLateralTail()
         
-        if (current.latOrder != 4) {
-            print("current LO:\(current.latOrder) vs. row LO \(row.latOrder)")
-        }
-        
         repeat {                                // start at the last node and go backwards reconnecting nodes with their columns
             if current.latOrder == skip {
                 current = current.left!
@@ -533,7 +524,7 @@ class Matrix {
             }
             matrix.insertVerticalLink(current)
             current = current.left!
-            //print("current LO: \(current.latOrder)")
+            
         } while current.latOrder != 4
     
     }
@@ -561,7 +552,7 @@ class Matrix {
         buildOutMatrix()
         
         let rowLength = matrix.verticalHead.left!.latOrder
-        print("first row is \(rowLength) columns long")
+       
         
     }
     
@@ -569,9 +560,6 @@ class Matrix {
         
         for columnIndex in 1...9 {
             for rowIndex in 1...9 {
-                /*if columnIndex == 2 {
-                    rowsAndColumns!.countAllColumns()
-                }*/
                 let header = ColumnHeader(row: rowIndex, column: columnIndex)
                 let node = PuzzleKey(header: header)
                 matrix.addLateralLink(node)
