@@ -9,19 +9,22 @@
 import UIKit
 
 class SudokuItem: UIView {
+    
+    
+    
     weak var controller: SudokuController? {
         didSet {
-            didSetController()
+        didSetController()
         }
     }
-    var parentSquare: Nester?
+    var parentSquare:UIView?
     var defaultIndex = 0
     
     init(index: Int) {
         super.init(frame: CGRectZero)
         self.defaultIndex = index
     }
-
+    
     required init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)!
     }
@@ -33,7 +36,6 @@ class SudokuItem: UIView {
     func didSetController() {
         
     }
-
 }
 
 protocol Nestable {
@@ -41,23 +43,17 @@ protocol Nestable {
     
 }
 
-enum Row: Int {
-    case One = 1
-    case Two = 2
-    case Three = 3
+
+
+protocol Nester: class {
+    typealias T: SudokuItem
+    var boxes: [T] {get set}
+    func makeRow(row: Int) -> [T]
+    func makeColumn(column: Int) -> [T]
 }
 
-enum Column: Int {
-    case One = 1
-    case Two = 2
-    case Three = 3
-}
-
-protocol Nester {
-    var boxes: [SudokuItem] {get set}
-    func makeRow(row: Row) -> [SudokuItem]
-    func makeColumn(column: Column) -> [SudokuItem]
-    func view() -> UIView
+extension Nester where Self:UIView {
+    
 }
 
 extension SudokuItem: Nestable {
@@ -71,10 +67,10 @@ extension SudokuItem: Nestable {
 
 class SudokuBoard: SudokuItem, Nester {
     
-    var boxes: [SudokuItem] = []
+    typealias T = Box
     
+    var boxes: [Box] = []
     
-
     override init(frame: CGRect) {
         super.init(frame: frame)
         for index in 0...8 {
@@ -86,7 +82,7 @@ class SudokuBoard: SudokuItem, Nester {
         self.prepareBoxes()
     }
     
-
+    
     required init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         for index in 0...8 {
@@ -99,28 +95,28 @@ class SudokuBoard: SudokuItem, Nester {
     
     override func didSetController() {
         for box in boxes {
-           box.controller = self.controller
+            box.controller = self.controller
         }
     }
     
-    func makeRow(row: Row)-> [SudokuItem] {
+    func makeRow(row: Int)-> [Box] {
         switch row {
-        case .One:
+        case 1:
             return [boxes[0], boxes[1], boxes[2]]
-        case .Two:
+        case 2:
             return [boxes[3], boxes[4], boxes[5]]
-        case .Three:
+        default:
             return [boxes[6], boxes[7], boxes[8]]
         }
     }
     
-    func makeColumn(column: Column) -> [SudokuItem]{
+    func makeColumn(column: Int) -> [Box]{
         switch column {
-        case .One:
+        case 1:
             return [boxes[0], boxes[3], boxes[6]]
-        case .Two:
+        case 2:
             return [boxes[1], boxes[4], boxes[7]]
-        case .Three:
+        default:
             return [boxes[2], boxes[5], boxes[8]]
         }
     }
@@ -142,9 +138,6 @@ class SudokuBoard: SudokuItem, Nester {
     }
     
     
-    func view() -> UIView {
-        return self
-    }
     
     func tilesReady() {
         if let cntrlr = self.controller {
@@ -158,6 +151,7 @@ class SudokuBoard: SudokuItem, Nester {
 class Box: SudokuItem, Nester{
     
     var boxes: [SudokuItem] = []
+    
     
     override init(index: Int) {
         super.init(index:index)
@@ -176,7 +170,7 @@ class Box: SudokuItem, Nester{
         self.parentSquare = parent
         controller = parent.controller
     }
-
+    
     
     required init(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -203,25 +197,25 @@ class Box: SudokuItem, Nester{
         }
     }
     
-    func makeRow(row: Row)-> [SudokuItem] {
+    func makeRow(row: Int)-> [SudokuItem] {
         switch row {
-        case .One:
+        case 1:
             return [boxes[0], boxes[1], boxes[2]]
-        case .Two:
+        case 2:
             return [boxes[3], boxes[4], boxes[5]]
-        case .Three:
+        default:
             return [boxes[6], boxes[7], boxes[8]]
         }
     }
     
-
-    func makeColumn(column: Column) -> [SudokuItem]{
+    
+    func makeColumn(column: Int) -> [SudokuItem]{
         switch column {
-        case .One:
+        case 1:
             return [boxes[0], boxes[3], boxes[6]]
-        case .Two:
+        case 2:
             return [boxes[1], boxes[4], boxes[7]]
-        case .Three:
+        default:
             return [boxes[2], boxes[5], boxes[8]]
         }
     }
@@ -242,13 +236,10 @@ class Box: SudokuItem, Nester{
         if let parent = self.parentSquare as? SudokuBoard {
             parent.tilesReady()
         }
-
-
+        
+        
     }
     
-    func view() -> UIView {
-        return self
-    }
     
 }
 
@@ -258,20 +249,20 @@ class Tile: SudokuItem {
     
     var value: TileValue = TileValue.Nil {
         didSet {
-            if value != .Nil {
-                noteValues = []
-            }
-            backingCell.value = value.rawValue
-            refreshLabel()
+        if value != .Nil {
+            noteValues = []
+        }
+        backingCell.value = value.rawValue
+        refreshLabel()
         }
     }
     var discovered = false {
         didSet {
-            if discovered == true {
-                solutionValue = nil
-                userInteractionEnabled = false
-            }
-            refreshLabel()
+        if discovered == true {
+            solutionValue = nil
+            userInteractionEnabled = false
+        }
+        refreshLabel()
         }
     }
     var valueLabel = UILabel()
@@ -280,10 +271,10 @@ class Tile: SudokuItem {
     let chosenTextColor = UIColor.redColor()
     var selected = false {
         didSet {
-            if !selected {
-                noteMode = false
-            }
-            refreshLabel()
+        if !selected {
+            noteMode = false
+        }
+        refreshLabel()
         }
     }
     var symbolSet: SymbolSet {
@@ -299,7 +290,7 @@ class Tile: SudokuItem {
                 return .Flags
             }
         }
-
+        
     }
     
     let noteLabels: [TableCell]
@@ -312,25 +303,25 @@ class Tile: SudokuItem {
     let noteBackground = UIView()
     var noteMode = false {
         didSet {
-            if noteMode == true {
-                if value != .Nil {
-                    noteValues.append(value)
-                }
-                self.selected = true
-                
-            } else {
-                if noteValues.count > 0 {
-                    value = .Nil
-                }
+        if noteMode == true {
+            if value != .Nil {
+                noteValues.append(value)
             }
-            refreshBackground()
-            controller?.refreshNoteButton()
+            self.selected = true
+            
+        } else {
+            if noteValues.count > 0 {
+                value = .Nil
+            }
+        }
+        refreshBackground()
+        controller?.refreshNoteButton()
         }
     }
     var noteValues: [TileValue] = []
     
     var solutionValue: Int?
-
+    
     override init (index: Int) {
         var labels: [TableCell] = []
         while labels.count < 9 {
@@ -341,13 +332,13 @@ class Tile: SudokuItem {
         }
         noteLabels = labels
         super.init(index: index)
-    
+        
     }
     
-    convenience init (index: Int, withParent parent: Nester) {
+    convenience init (index: Int, withParent parent: UIView) {
         self.init(index: index)
         self.parentSquare = parent
-       // let tileIndex: TileIndex = (parent.index, self.index)
+        // let tileIndex: TileIndex = (parent.index, self.index)
         let cells = cellsFromTiles([self])
         self.backingCell = cells[0]
     }
@@ -373,7 +364,7 @@ class Tile: SudokuItem {
         valueLabel.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         valueLabel.textAlignment = .Center
         valueLabel.font = UIFont.boldSystemFontOfSize(UIFont.labelFontSize()+2)
-       
+        
         noteBackground.frame = self.bounds
         addSubview(noteBackground)
         noteBackground.backgroundColor = UIColor.clearColor()
@@ -391,13 +382,13 @@ class Tile: SudokuItem {
     func getValueText()->String {
         return self.value != .Nil ? symbolSet.getSymbolForTyleValue(value) : ""
     }
- 
+    
     
     func refreshLabel() {
         if discovered {
             valueLabel.textColor = chosenTextColor
         } else {
-           valueLabel.textColor = labelColor
+            valueLabel.textColor = labelColor
         }
         
         valueLabel.text = noteMode ? "" : self.getValueText()
@@ -441,7 +432,7 @@ class Tile: SudokuItem {
     }
     
     func layoutNoteViews() {
-
+        
         for index in 0...8 {
             let noteLabel = noteLabels[index]
             var rect = self.noteBackground.bounds
@@ -468,7 +459,7 @@ class Tile: SudokuItem {
             let fontHeight = noteLabel.frame.size.height * 9/10
             noteLabel.label?.font = UIFont(name: "futura", size: fontHeight)
             noteLabel.label?.textColor = UIColor.darkGrayColor()
-           
+            
         }
     }
     
@@ -487,39 +478,39 @@ class Tile: SudokuItem {
 }
 
 
-    class BoxSetter {
+class BoxSetter {
     
     func configureConstraintsForParentSquare<U:UIView where U:Nester>(square: U) -> [NSLayoutConstraint] {
         var constraints = [NSLayoutConstraint]()
         
-        for box in square.makeRow(.One) {
+        for box in square.makeRow(1) {
             constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Top, .Height]))
         }
         
-        for box in square.makeRow(.Three) {
+        for box in square.makeRow(3) {
             constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Bottom, .Height]))
         }
         
-        for box in square.makeColumn(.One) {
+        for box in square.makeColumn(1) {
             constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Leading, .Width]))
         }
         
-        for box in square.makeColumn(.Three) {
+        for box in square.makeColumn(3) {
             constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Trailing, .Width]))
         }
         
-        for box in square.makeRow(.Two) {
+        for box in square.makeRow(2) {
             constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Top, .Bottom]))
         }
         
-       for box in square.makeColumn(.Two) {
+        for box in square.makeColumn(2) {
             constraints.appendContentsOf(self.makeLayoutConstraintsForBox(box, inBox: square, forAttributes: [.Leading, .Trailing]))
             
         }
         
         return constraints
     }
-
+    
     
     
     func makeLayoutConstraintsForBox<T:UIView, U:UIView where T: Nestable, U:Nester>(box: T, inBox parentBox: U, forAttributes attributes:[NSLayoutAttribute]) -> [NSLayoutConstraint] {
@@ -589,7 +580,7 @@ class Tile: SudokuItem {
     func getLeftNeighborForBoxIndex<U:UIView where U:Nester>(index: Int, inParent parent: U) -> ToItem {
         switch index {
         case 0,3,6:
-            return (parent.view(), .Leading)
+            return (parent, .Leading)
         case 1,2,4,5,7,8:
             return (parent.boxes[index-1], .Trailing)
         default:
@@ -600,7 +591,7 @@ class Tile: SudokuItem {
     func getRightNeighborForBoxIndex<U:UIView where U:Nester>(index: Int, inParent parent: U) -> ToItem {
         switch index {
         case 2,5,8:
-            return (parent.view(), .Trailing)
+            return (parent, .Trailing)
         case 0,1,3,4,6,7:
             return (parent.boxes[index+1], .Leading)
         default:
@@ -639,7 +630,7 @@ typealias TileIndex = (Box:Int, Tile:Int)
 extension SudokuBoard {
     
     func getBoxAtIndex(index: Int) -> Box {
-        let boxOfBoxes = self.boxes as! [Box]
+        let boxOfBoxes = self.boxes
         return boxOfBoxes[index-1]
     }
     
@@ -672,7 +663,7 @@ extension SudokuBoard {
     func getNilTiles() -> [Tile] {
         var nilTiles = [Tile]()
         for item in boxes {
-            let box = item as! Box
+            let box = item
             nilTiles += box.getNilTiles()
         }
         return nilTiles
@@ -780,6 +771,6 @@ extension Tile {
         }
     }
     
-   
+    
     
 }
