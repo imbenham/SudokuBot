@@ -77,9 +77,7 @@ class SudokuBoard: SudokuItem, Nester {
             let aBox = Box(index: index, withParent: self)
             aBox.parentSquare = self
             boxes.append(aBox)
-            self.addSubview(aBox)
         }
-        self.prepareBoxes()
     }
     
     
@@ -88,8 +86,10 @@ class SudokuBoard: SudokuItem, Nester {
         for index in 0...8 {
             let aBox = Box(index: index)
             boxes.append(aBox)
-            self.addSubview(aBox)
         }
+    }
+    
+    override func layoutSubviews() {
         self.prepareBoxes()
     }
     
@@ -122,19 +122,25 @@ class SudokuBoard: SudokuItem, Nester {
     }
     
     
-    private func prepareBoxes() {
-        for nested in boxes {
-            let box = nested as SudokuItem
+    func prepareBoxes() {
+        for box in boxes {
             box.parentSquare = self
-            box.backgroundColor = UIColor.lightGrayColor()
-            box.layer.borderColor = UIColor.blackColor().CGColor
-            box.layer.borderWidth = 1.0
+            self.addSubview(box)
+            
+            
             box.userInteractionEnabled = true
             box.translatesAutoresizingMaskIntoConstraints = false
+            
+            box.layer.borderColor = UIColor.blackColor().CGColor
+            box.layer.borderWidth = 1.0
+            
+            
         }
+        
         
         let constraints = BoxSetter().configureConstraintsForParentSquare(self)
         self.addConstraints(constraints)
+        
     }
     
     
@@ -150,8 +156,9 @@ class SudokuBoard: SudokuItem, Nester {
 
 class Box: SudokuItem, Nester{
     
-    var boxes: [SudokuItem] = []
+    typealias T = Tile
     
+    var boxes: [Tile] = []
     
     override init(index: Int) {
         super.init(index:index)
@@ -159,8 +166,6 @@ class Box: SudokuItem, Nester{
             for ind in 0...8 {
                 let aBox = Tile(index: ind, withParent: self)
                 boxes.append(aBox)
-                self.addSubview(aBox)
-                aBox.userInteractionEnabled = true
             }
         }
     }
@@ -177,14 +182,14 @@ class Box: SudokuItem, Nester{
         for index in 0...8 {
             let aBox = Tile(index: index)
             boxes.append(aBox)
-            self.addSubview(aBox)
         }
-        self.prepareBoxes()
     }
     
     override func layoutSubviews() {
+        
         self.prepareBoxes()
     }
+    
     
     override func didSetController() {
         for box in boxes {
@@ -197,7 +202,7 @@ class Box: SudokuItem, Nester{
         }
     }
     
-    func makeRow(row: Int)-> [SudokuItem] {
+    func makeRow(row: Int)-> [Tile] {
         switch row {
         case 1:
             return [boxes[0], boxes[1], boxes[2]]
@@ -209,7 +214,7 @@ class Box: SudokuItem, Nester{
     }
     
     
-    func makeColumn(column: Int) -> [SudokuItem]{
+    func makeColumn(column: Int) -> [Tile]{
         switch column {
         case 1:
             return [boxes[0], boxes[3], boxes[6]]
@@ -220,12 +225,13 @@ class Box: SudokuItem, Nester{
         }
     }
     
-    private func prepareBoxes() {
+    func prepareBoxes() {
         
-        for nested in boxes {
-            let box = nested as SudokuItem
+        for box in boxes {
+            self.addSubview(box)
+            box.userInteractionEnabled = true
             box.layer.borderColor = UIColor.lightGrayColor().CGColor
-            box.layer.borderWidth = 1.0
+            box.layer.borderWidth = 1
             box.translatesAutoresizingMaskIntoConstraints = false
         }
         
@@ -480,7 +486,9 @@ class Tile: SudokuItem {
 
 class BoxSetter {
     
-    func configureConstraintsForParentSquare<U:UIView where U:Nester>(square: U) -> [NSLayoutConstraint] {
+    typealias T = SudokuItem
+    
+    func configureConstraintsForParentSquare<U:SudokuItem where U:Nester>(square: U) -> [NSLayoutConstraint] {
         var constraints = [NSLayoutConstraint]()
         
         for box in square.makeRow(1) {
@@ -513,7 +521,7 @@ class BoxSetter {
     
     
     
-    func makeLayoutConstraintsForBox<T:UIView, U:UIView where T: Nestable, U:Nester>(box: T, inBox parentBox: U, forAttributes attributes:[NSLayoutAttribute]) -> [NSLayoutConstraint] {
+    func makeLayoutConstraintsForBox<T:SudokuItem, U:SudokuItem where T: Nestable, U:Nester>(box: T, inBox parentBox: U, forAttributes attributes:[NSLayoutAttribute]) -> [NSLayoutConstraint] {
         var constraints = [NSLayoutConstraint]()
         
         for attribute in attributes {
@@ -523,7 +531,7 @@ class BoxSetter {
         return constraints
     }
     
-    func makeLayoutConstraintForBox<T:UIView, U:UIView where T:Nestable, U:Nester>(box: T, inBox parentBox: U, forAttribute anAttribute: NSLayoutAttribute) -> NSLayoutConstraint {
+    func makeLayoutConstraintForBox<T:SudokuItem, U:SudokuItem where T:Nestable, U:Nester>(box: T, inBox parentBox: U, forAttribute anAttribute: NSLayoutAttribute) -> NSLayoutConstraint {
         switch anAttribute{
         case .Width, .Height:
             return NSLayoutConstraint(item: box, attribute: anAttribute, relatedBy: NSLayoutRelation.Equal, toItem: parentBox, attribute: anAttribute, multiplier: 1/3, constant: 0)
@@ -538,9 +546,9 @@ class BoxSetter {
     }
     
     // MARK: Constraint maker helpers
-    typealias ToItem = (neighbor:UIView, attribute:NSLayoutAttribute)?
+    typealias ToItem = (neighbor:SudokuItem, attribute:NSLayoutAttribute)?
     
-    func getNeighborForBoxIndex<U:UIView where U:Nester>(index: Int, inParent parent: U, forAttribute anAttribute:NSLayoutAttribute) -> ToItem {
+    func getNeighborForBoxIndex<U: SudokuItem where U:Nester>(index: Int, inParent parent: U, forAttribute anAttribute:NSLayoutAttribute) -> ToItem {
         switch anAttribute {
         case .Bottom:
             return self.getBottomNeighborForBoxIndex(index, inParent: parent)
@@ -555,7 +563,7 @@ class BoxSetter {
         }
     }
     
-    func getTopNeighborForBoxIndex<U:UIView where U:Nester>(index: Int, inParent parent: U) -> ToItem {
+    func getTopNeighborForBoxIndex<U: SudokuItem where U: Nester >(index: Int, inParent parent: U) -> ToItem {
         switch index {
         case 3...8:
             return (parent.boxes[index-3], .Bottom)
@@ -566,7 +574,7 @@ class BoxSetter {
         }
     }
     
-    func getBottomNeighborForBoxIndex<U:UIView where U:Nester>(index: Int, inParent parent: U) -> ToItem {
+    func getBottomNeighborForBoxIndex<U: SudokuItem where U: Nester >(index: Int, inParent parent: U) -> ToItem {
         switch index {
         case 0...5:
             return (parent.boxes[index+3], .Top)
@@ -577,7 +585,7 @@ class BoxSetter {
         }
     }
     
-    func getLeftNeighborForBoxIndex<U:UIView where U:Nester>(index: Int, inParent parent: U) -> ToItem {
+    func getLeftNeighborForBoxIndex<U:SudokuItem where U:Nester>(index: Int, inParent parent: U) -> ToItem {
         switch index {
         case 0,3,6:
             return (parent, .Leading)
@@ -588,7 +596,7 @@ class BoxSetter {
         }
     }
     
-    func getRightNeighborForBoxIndex<U:UIView where U:Nester>(index: Int, inParent parent: U) -> ToItem {
+    func getRightNeighborForBoxIndex<U:SudokuItem where U:Nester>(index: Int, inParent parent: U) -> ToItem {
         switch index {
         case 2,5,8:
             return (parent, .Trailing)
@@ -675,13 +683,13 @@ extension Box {
     // add game-logic related methods
     
     func getTileAtIndex(index: Int) -> Tile {
-        return boxes[index] as! Tile
+        return boxes[index]
     }
     
     func getNilTiles() -> [Tile] {
         var nilTiles = [Tile]()
         for box in boxes {
-            let tile = box as! Tile
+            let tile = box
             if tile.value == TileValue.Nil {
                 nilTiles.append(tile)
             }

@@ -75,9 +75,9 @@ class SudokuController: UIViewController, NumPadDelegate {
     var tiles: [Tile] {
         get {
             var mutableTiles = [Tile]()
-            let boxList = self.board.boxes as! [Box]
-            for box in boxList {
-                let containedTiles = box.boxes as! [Tile]
+            
+            for box in self.board.boxes {
+                let containedTiles = box.boxes
                 mutableTiles.appendContentsOf(containedTiles)
             }
             return mutableTiles

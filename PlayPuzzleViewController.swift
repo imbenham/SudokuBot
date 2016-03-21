@@ -1013,14 +1013,14 @@ class PlayPuzzleViewController: SudokuController {
         var boxes:[Box] = []
         
         for index in indices {
-            let aBox = board.boxes[index] as! Box
+            let aBox = board.boxes[index]
             boxes.append(aBox)
         }
         
         boxes = boxes.reverse()
         
         func flashBoxAnimationsWithBoxes(var boxes: [Box]) {
-            let tiles = boxes[0].boxes as! [Tile]
+            let tiles = boxes[0].boxes
             UIView.animateWithDuration(0.15, animations: {
                 for tile in tiles {
                     tile.backgroundColor = tile.assignedBackgroundColor
