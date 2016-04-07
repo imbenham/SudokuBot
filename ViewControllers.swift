@@ -360,38 +360,37 @@ class SudokuController: UIViewController, NumPadDelegate {
         
         let handler: (Puzzle -> ()) = {
             puzzle -> () in
-            dispatch_async(GlobalMainQueue){
-                self.spinner.stopAnimating()
-                middleTile.selectedColor = placeHolderColor
+            self.spinner.stopAnimating()
+            middleTile.selectedColor = placeHolderColor
+            
+            self.puzzle = puzzle
+            
+            for cell in self.puzzle!.solution {
+                let tile = self.board.tileAtIndex((cell.convertToTileIndex()))
+                tile.backingCell = cell
                 
-                self.puzzle = puzzle
-                
-                for cell in self.puzzle!.solution {
-                    let tile = self.board.tileAtIndex((cell.convertToTileIndex()))
-                    tile.backingCell = cell
-                    
-                }
-                for cell in self.puzzle!.initialValues{
-                    let tile = self.board.tileAtIndex(cell.convertToTileIndex())
-                    tile.backingCell = cell
-                    
-                }
-                
-                self.board.userInteractionEnabled = true
-                UIView.animateWithDuration(0.25) {
-                    self.navigationController?.navigationBarHidden = false
-                    self.longFetchLabel.hidden = true
-                }
-                
-                
-                /*
-                 if let time = dict?["time"] as? Double {
-                 self.storedTime = time
-                 }
-                 */
-                
-                self.puzzleReady()
             }
+            for cell in self.puzzle!.initialValues{
+                let tile = self.board.tileAtIndex(cell.convertToTileIndex())
+                tile.backingCell = cell
+                
+            }
+            
+            self.board.userInteractionEnabled = true
+            UIView.animateWithDuration(0.35) {
+                self.navigationController?.navigationBarHidden = false
+                self.longFetchLabel.hidden = true
+            }
+            
+            
+            /*
+             if let time = dict?["time"] as? Double {
+             self.storedTime = time
+             }
+             */
+            
+            self.puzzleReady()
+
         }
         
         PuzzleStore.sharedInstance.getPuzzleForController(self, withCompletionHandler: handler)

@@ -50,11 +50,11 @@ class PuzzleStore: NSObject {
             
             controller.prepareForLongFetch()
             
+            
             dispatch_async(concurrentPuzzleQueue) {
                 self.completionHandler = handler
                 self.difficulty = controller.difficulty
                 Matrix.sharedInstance.generatePuzzle()
-               
             }
         }
 
@@ -80,8 +80,12 @@ class PuzzleStore: NSObject {
     
     func puzzleReady(initials: [PuzzleCell], solution: [PuzzleCell]) {
         
-        completionHandler!(Puzzle.init(initialValues: initials, solution: solution))
-        completionHandler = nil
+        dispatch_async(GlobalMainQueue) {
+            self.completionHandler!(Puzzle.init(initialValues: initials, solution: solution))
+            self.completionHandler = nil
+        }
+        
+      
         
     }
 

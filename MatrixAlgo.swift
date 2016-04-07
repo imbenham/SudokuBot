@@ -12,41 +12,35 @@ extension Matrix {
     func generatePuzzle() {
         var puzz: [PuzzleCell] = []
         
+        let initialChoice = self.selectRowToSolve()!
         
-        // may want to put the PuzzleStore in charge of handling the multithreading
-        
-        dispatch_barrier_async(concurrentPuzzleQueue) {
-            let initialChoice = self.selectRowToSolve()!
-            
-            if !self.findFirstSolution(initialChoice, root: initialChoice.vertOrder) {
-                // throw an error?
-            }
-            
-            let sol = self.solutions[0]
-            
-            puzz = cellsFromConstraints(sol)
-            
-            self.solutionDict = cellNodeDictFromNodes(sol)
-            
-            let last = puzz.removeLast()
-            
-            // get a list of minimal givens that need to be left in the grid for a valid puzzle and a list of all the values that are taken out
-            let filtered = self.packagePuzzle(puzz, withLastRemoved: last)
-            
-            
-            //self.rebuild()
-            // add removed values from the second list back into the first list until a puzzle of the desired difficulty level is achieved
-            // let finished = self.puzzleOfSpecifedDifficulty(difficulty, withGivens: filtered.Givens, andSolution: filtered.Solution)
-            puzz = filtered.Givens
-            
-            let puzzSolution = filtered.Solution
-            
-            dispatch_async(dispatch_get_main_queue()) {
-                PuzzleStore.sharedInstance.puzzleReady(puzz, solution: puzzSolution)
-            }
-            self.rebuild()
-            
+        if !self.findFirstSolution(initialChoice, root: initialChoice.vertOrder) {
+            // throw an error?
         }
+        
+        let sol = self.solutions[0]
+        
+        puzz = cellsFromConstraints(sol)
+        
+        self.solutionDict = cellNodeDictFromNodes(sol)
+        
+        let last = puzz.removeLast()
+        
+        // get a list of minimal givens that need to be left in the grid for a valid puzzle and a list of all the values that are taken out
+        let filtered = self.packagePuzzle(puzz, withLastRemoved: last)
+        
+        
+        //self.rebuild()
+        // add removed values from the second list back into the first list until a puzzle of the desired difficulty level is achieved
+        // let finished = self.puzzleOfSpecifedDifficulty(difficulty, withGivens: filtered.Givens, andSolution: filtered.Solution)
+        puzz = filtered.Givens
+        
+        let puzzSolution = filtered.Solution
+        
+        PuzzleStore.sharedInstance.puzzleReady(puzz, solution: puzzSolution)
+        
+        self.rebuild()
+
     }
     
     internal func packagePuzzle(allVals:[PuzzleCell], withLastRemoved lastRemoved:PuzzleCell, andTried tried:[PuzzleCell]=[], andSolution solution:[PuzzleCell]=[]) -> (Givens:[PuzzleCell], Solution:[PuzzleCell]) {
