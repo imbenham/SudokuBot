@@ -82,7 +82,7 @@ class SudokuNumberPad: UIView {
             button.layer.borderColor = UIColor.blackColor().CGColor
             button.layer.borderWidth = 3.0
             button.tag = index+1
-           button.addTarget(self, action: "buttonTapped:", forControlEvents: .TouchUpInside)
+           button.addTarget(self, action: #selector(SudokuNumberPad.buttonTapped(_:)), forControlEvents: .TouchUpInside)
         
         }
     }

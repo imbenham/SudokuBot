@@ -97,7 +97,7 @@ class SudokuController: UIViewController, NumPadDelegate {
         }
     }
     
-    var difficulty: PuzzleDifficulty = .Custom(150)
+   var difficulty: PuzzleDifficulty = .Custom(150)
     
     var numPadHeight: CGFloat {
         get {
@@ -122,13 +122,13 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     var discoveredTiles: [Tile] {
-        return nonNilTiles.filter({$0.discovered})
+        return nonNilTiles.filter({$0.revealed})
     }
     
-    func tileWithBackingCell(cell: PuzzleCell) -> Tile {
+    func tileWithBackingCell(cell: BackingCell) -> Tile {
         let row = cell.row
         let column = cell.column
-        let tI = getTileIndexForRow(row, andColumn: column)
+        let tI = getTileIndex(0, row: row, column: column)
         return board.tileAtIndex(tI)
     }
     
@@ -326,11 +326,12 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     // puzzle fetching
     func fetchPuzzle() {
-        
+     
+        /*
         for tile in tiles {
-            tile.discovered = false
+            tile.revealed = false
         }
-        
+        */
         bannerView.userInteractionEnabled = false
        
         UIView.animateWithDuration(0.25) {
@@ -339,35 +340,33 @@ class SudokuController: UIViewController, NumPadDelegate {
         }
         
         board.userInteractionEnabled = false
-        let firstTile = board.tileAtIndex((1,1))
+        let firstTile = board.tileAtIndex((0,1,1))
         let placeHolderColor = firstTile.selectedColor
-        let middleTile = board.tileAtIndex((5,4))
+        let middleTile = board.tileAtIndex((0,5,4))
         if !spinner.isAnimating() {
             middleTile.selectedColor = UIColor.blackColor()
             selectedTile = middleTile
             spinner.startAnimating()
         }
-        let handler: ((Puzzle,[String:Any]?) -> ()) = {
-            puzz, dict -> () in
+        
+        //(initials: [PuzzleCell], solution: [PuzzleCell]) -> ()
+        // Puzzle,[String:Any]?) -> ()
+        let handler: ((initials: [PuzzleCell], solution: [PuzzleCell]) -> ()) = {
+            initials, solution -> () in
             dispatch_async(GlobalMainQueue){
                 self.spinner.stopAnimating()
                 middleTile.selectedColor = placeHolderColor
-                self.puzzle = puzz
-                self.startingNils = []
-                self.givens = []
-                for cell in puzz.solution {
-                    let tIndex = getTileIndexForRow(cell.row, andColumn: cell.column)
-                    let tile = self.board.tileAtIndex(tIndex)
+                
+                self.puzzle = Puzzle(initialValues: initials, solution: solution)
+                
+                
+                for cell in self.puzzle!.solution {
+                    let tile = self.board.tileAtIndex((cell.convertToTileIndex()))
                     tile.backingCell = cell
-                    tile.solutionValue = cell.value
-                    self.startingNils.append(tile)
                 }
-                for cell in puzz.initialValues {
-                    let tIndex = getTileIndexForRow(cell.row, andColumn: cell.column)
-                    let tile = self.board.tileAtIndex(tIndex)
+                for cell in self.puzzle!.initialValues{
+                    let tile = self.board.tileAtIndex(cell.convertToTileIndex())
                     tile.backingCell = cell
-                    tile.value = TileValue(rawValue: cell.value)!
-                    self.givens.append(tile)
                     
                 }
                 self.board.userInteractionEnabled = true
@@ -376,36 +375,12 @@ class SudokuController: UIViewController, NumPadDelegate {
                     self.longFetchLabel.hidden = true
                 }
                 
-                if let assignedCells = dict?["progress"] as? [PuzzleCell] {
-                    for cell in assignedCells {
-                        let tile = self.tileWithBackingCell(cell)
-                        tile.backingCell = cell
-                        tile.value = TileValue(rawValue: cell.value)!
-                    }
-                }
                 
-                if let annotatedDict = dict?["annotated"] as? [NSDictionary]  {
-                    for dict in annotatedDict {
-                        let cell = PuzzleCell(dict: (dict["cell"] as! [String: Int]))!
-                        let notes:[TileValue] = (dict["notes"] as! [Int]).map({TileValue(rawValue: $0)!})
-                        let tile = self.tileWithBackingCell(cell)
-                        tile.noteValues = notes
-                        tile.refreshLabel()
-                    }
-                }
-
-                
-                if let discoveredCells = dict?["discovered"] as? [PuzzleCell] {
-                    for cell in discoveredCells {
-                        let tile = self.tileWithBackingCell(cell)
-                        tile.discovered = true
-                    }
-                }
-                
-                if let time = dict?["time"] as? Double {
-                    self.storedTime = time
-                }
-
+                /*
+                 if let time = dict?["time"] as? Double {
+                 self.storedTime = time
+                 }
+                 */
                 
                 self.puzzleReady()
             }
@@ -424,16 +399,13 @@ class SudokuController: UIViewController, NumPadDelegate {
         
         UIView.animateWithDuration(0.5) {
             for tile in self.startingNils {
-                if tile.solutionValue == nil {
-                    tile.solutionValue = tile.backingCell.value
-                    tile.userInteractionEnabled = true
-                }
+                tile.userInteractionEnabled = true
                 tile.value = TileValue.Nil
             }
         }
         
         
-
+        
         for tile in givens {
             tile.userInteractionEnabled = false
         }
@@ -480,11 +452,10 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     func noteValueChanged(value: Int) {
         if let selected = selectedTile {
-            let tv = TileValue(rawValue: value)!
-            if selected.noteValues.contains(tv) {
-                selected.removeNoteValue(tv)
+            if selected.noteValues.contains(value) {
+                selected.removeNoteValue(value)
             } else {
-                selected.addNoteValue(tv)
+                selected.addNoteValue(value)
             }
         }
     }
@@ -511,11 +482,7 @@ class SudokuController: UIViewController, NumPadDelegate {
         if selected?.noteMode == false {
             return nil
         } else {
-            var vals:[Int] = []
-            for tv in selected!.noteValues {
-                vals.append(tv.rawValue)
-            }
-            return vals
+            return selected?.noteValues
         }
     }
     
@@ -607,183 +574,4 @@ class SudokuController: UIViewController, NumPadDelegate {
     
 }
 
-class PuzzleOptionsViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
-    
-    let tableView = UITableView(frame: CGRectZero, style: .Grouped)
-    let baseView = UIView(frame: CGRectZero)
-    let saveButton = UIButton()
-    var selectedIndex:NSIndexPath = NSIndexPath(forRow: 0, inSection: 0)  {
-        willSet {
-            if selectedIndex != newValue {
-                let cell = tableView.cellForRowAtIndexPath(selectedIndex)
-                cell?.accessoryType = .None
-            }
-        }
-        didSet {
-            if selectedIndex != oldValue {
-                let cell = tableView.cellForRowAtIndexPath(selectedIndex)
-                cell?.accessoryType = .Checkmark
-            }
-        }
-    }
-    
-    var timedStatus = true {
-        didSet {
-            let indexPath = NSIndexPath(forRow: 0, inSection: 1)
-            let cell = tableView.cellForRowAtIndexPath(indexPath)
-            cell?.textLabel!.text = timedStatusString
-        }
-    }
-    var timedStatusString: String {
-        get {
-            return timedStatus ? "On" : "Off"
-        }
-    }
-    
-    required init?(coder aDecoder: NSCoder) {
-        
-        super.init(coder: aDecoder)
-        
-    }
-
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        tableView.registerClass(UITableViewCell.self, forCellReuseIdentifier: "cell")
-        view.addSubview(tableView)
-        view.addSubview(baseView)
-        baseView.addSubview(saveButton)
-        saveButton.addTarget(self, action: Selector("saveAndDismiss"), forControlEvents: .TouchUpInside)
-        saveButton.setTitle("Save", forState: .Normal)
-        saveButton.layer.borderColor = UIColor.darkGrayColor().CGColor
-        saveButton.layer.borderWidth = 2.0
-        saveButton.setTitleColor(UIColor.blackColor(), forState: .Normal)
-        saveButton.layer.cornerRadius = 5.0
-        saveButton.backgroundColor = UIColor.whiteColor()
-        saveButton.showsTouchWhenHighlighted = true
-        baseView.backgroundColor = UIColor.lightGrayColor()
-       
-        
-        self.layoutTableView()
-        tableView.delegate = self
-        tableView.dataSource = self
-        
-        let defaults = NSUserDefaults.standardUserDefaults()
-        let selected = defaults.integerForKey(symbolSetKey)
-        
-        let index = NSIndexPath(forRow: selected, inSection: 0)
-        selectedIndex = index
-        
-    }
-    
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-    }
-    
-    func layoutTableView() {
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        baseView.translatesAutoresizingMaskIntoConstraints = false
-        saveButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        let basePin = NSLayoutConstraint(item: baseView, attribute: .Bottom, relatedBy: .Equal, toItem: view, attribute: .Bottom, multiplier: 1, constant: 0)
-        let baseWidth = NSLayoutConstraint(item: baseView, attribute: .Width, relatedBy: .Equal, toItem: view, attribute: .Width, multiplier: 1, constant: 0)
-        let baseHeight = NSLayoutConstraint(item: baseView, attribute: .Height, relatedBy: .Equal, toItem: view, attribute: .Height, multiplier: 1/12, constant: 0)
-        
-        let tvWidth = NSLayoutConstraint(item: tableView, attribute: .Width, relatedBy: .Equal, toItem: view, attribute: .Width, multiplier: 1, constant: 0)
-        let topPin = NSLayoutConstraint(item: tableView, attribute: .Top, relatedBy: .Equal, toItem: self.topLayoutGuide, attribute: .Bottom, multiplier: 1, constant: 0)
-        let bottomPin = NSLayoutConstraint(item: tableView, attribute: .Bottom, relatedBy: .Equal, toItem: baseView, attribute: .Top, multiplier: 1, constant: 0)
-        
-        let buttonHeight = NSLayoutConstraint(item: saveButton, attribute: .Height, relatedBy: .Equal, toItem: baseView, attribute: .Height, multiplier: 4/5, constant: 0)
-        let buttonWidth = NSLayoutConstraint(item: saveButton, attribute: .Width, relatedBy: .Equal, toItem: baseView, attribute: .Width, multiplier: 1/6, constant: 0)
-        let buttonVertCenter = NSLayoutConstraint(item: saveButton, attribute: .CenterY, relatedBy: .Equal, toItem: baseView, attribute: .CenterY, multiplier: 1, constant: 0)
-        let buttonPin = NSLayoutConstraint(item: saveButton, attribute: .Trailing, relatedBy: .Equal, toItem: baseView, attribute: .Trailing, multiplier: 1, constant: -8)
-        
-        let constraints = [basePin, baseWidth, baseHeight, tvWidth, topPin, bottomPin, buttonHeight, buttonWidth, buttonVertCenter, buttonPin]
-        
-        self.view.addConstraints(constraints)
-        
-    }
-
-    
-    func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        return 2
-    }
-    
-    func tableView(tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        
-        switch section {
-        case 0:
-            return "Change Symbol Set"
-         default:
-            return "Timer"
-        }
-    }
-    
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch section{
-        case 0:
-            return 3
-        default:
-            return 1
-            
-        }
-    }
-    
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        
-        let cell = tableView.dequeueReusableCellWithIdentifier("cell", forIndexPath: indexPath) as UITableViewCell
-        cell.textLabel?.font = UIFont(name: "futura", size: UIFont.labelFontSize())
-       
-        switch indexPath.section {
-        case 0:
-            switch indexPath.row {
-            case 0:
-                cell.textLabel?.text = "Standard: 1-9"
-            case 1:
-                cell.textLabel?.text = "Critters:🐥-🐌"
-            default:
-                cell.textLabel?.text = "Flags:🇨🇭-🇲🇽"
-            }
-        default:
-            cell.textLabel?.text = timedStatusString
-        }
-        
-        if indexPath == selectedIndex {
-            cell.accessoryType = .Checkmark
-        }
-        return cell
-        
-    }
-    
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
-        
-        if indexPath.section == 0 {
-            selectedIndex = indexPath
-        } else {
-            timedStatus = !timedStatus
-        }
-        
-    }
-    
-    // saving changes
-    
-    func saveAndDismiss() {
-        
-        let selected = selectedIndex.row
-        let defaults = NSUserDefaults.standardUserDefaults()
-        
-        defaults.setInteger(selected, forKey: "symbolSet")
-        defaults.setBool(timedStatus, forKey: "timed")
-        
-        defaults.synchronize()
-        
-        presentingViewController!.dismissViewControllerAnimated(true) {
-            
-        }
-
-    }
-    
-    
-    
-}
 

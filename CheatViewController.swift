@@ -41,7 +41,7 @@ class CheatViewController: SudokuController {
             solveButton!.setTitleColor(UIColor.blackColor(), forState: .Normal)
             solveButton!.setTitle("Solve", forState: .Normal)
             solveButton!.layer.cornerRadius = 5.0
-            solveButton!.addTarget(self, action: "solvePuzzle", forControlEvents: .TouchUpInside)
+            solveButton!.addTarget(self, action: #selector(CheatViewController.solvePuzzle), forControlEvents: .TouchUpInside)
             solveButton!.layer.borderColor = UIColor.blackColor().CGColor
             solveButton!.layer.borderWidth = 2.0
             originalContentView.addSubview(clearButton!)
@@ -49,7 +49,7 @@ class CheatViewController: SudokuController {
             clearButton!.setTitleColor(UIColor.blackColor(), forState: .Normal)
             clearButton!.setTitle("Clear", forState: .Normal)
             clearButton!.layer.cornerRadius = 5.0
-            clearButton!.addTarget(self, action: "clearAll", forControlEvents: .TouchUpInside)
+            clearButton!.addTarget(self, action: #selector(CheatViewController.clearAll), forControlEvents: .TouchUpInside)
             clearButton!.layer.borderColor = UIColor.blackColor().CGColor
             clearButton!.layer.borderWidth = 2.0
             
@@ -70,7 +70,7 @@ class CheatViewController: SudokuController {
             view.addConstraints(constraints)
 
         } else {
-            let swipe = UISwipeGestureRecognizer(target: self, action: "solvePuzzle")
+            let swipe = UISwipeGestureRecognizer(target: self, action: #selector(CheatViewController.solvePuzzle))
             board.addGestureRecognizer(swipe)
         }
         
@@ -167,7 +167,7 @@ class CheatViewController: SudokuController {
         let cells: [PuzzleCell] = cellsFromTiles(valuatedTiles)
         if let solution = Matrix.sharedInstance.solutionForValidPuzzle(cells) {
             for cell in solution {
-                let tIndex = getTileIndexForRow(cell.row, andColumn: cell.column)
+                let tIndex = getTileIndex(row: cell.row, column: cell.column)
                 let tile = board.tileAtIndex(tIndex)
                 tile.labelColor = UIColor.redColor()
                 tile.value = TileValue(rawValue: cell.value)!

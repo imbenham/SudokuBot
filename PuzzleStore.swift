@@ -6,7 +6,12 @@
 //  Copyright © 2015 Isaac Benham. All rights reserved.
 //
 
+
+
 import Foundation
+
+
+
 class PuzzleStore: NSObject {
     static let sharedInstance = PuzzleStore()
   
@@ -15,17 +20,31 @@ class PuzzleStore: NSObject {
     
     var puzzReadyNotificationString: String?
     
-    var completionHandler: ((Puzzle, [String:Any]?) -> ())?
+    var completionHandler: ((initials: [PuzzleCell], solution: [PuzzleCell]) -> ())?
+    
+    var difficulty: PuzzleDifficulty = .Medium
+    private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 160, .Hard: 190, .Insane: 240]
+
     
     
-      // accessing the cached puzzles
+    func setPuzzleDifficulty(pd:PuzzleDifficulty) {
+        difficulty = pd
+    }
+    
+    func getPuzzleDifficulty() -> Int {
+        switch difficulty {
+        case .Custom(let val):
+            return val
+        default:
+            return rawDiffDict[difficulty]!
+        }
+    }
     
     
-    func getPuzzleForController(controller: SudokuController, withCompletionHandler handler: ((Puzzle, [String: Any]?) ->())) {
+    func getPuzzleForController(controller: SudokuController, withCompletionHandler handler: ((initials: [PuzzleCell], solution: [PuzzleCell]) -> ())) {
         
-        
-        if let saved = savedPuzzleForDifficulty(controller.difficulty) {
-            handler(saved.0, saved.1)
+        // PLACEHOLDER-- HANDLE SAVED PUZZLE
+        if false {
             return
         } else {
                 dispatch_async (concurrentPuzzleQueue) {
@@ -37,28 +56,25 @@ class PuzzleStore: NSObject {
                     }
                 }
                     
-                let matrix = Matrix.sharedInstance
-                
-                let notificationCenter = NSNotificationCenter.defaultCenter()
+                    self.completionHandler = handler
+                    self.difficulty = controller.difficulty
+                    let matrix = Matrix.sharedInstance
                     
-                self.completionHandler = handler
-                self.puzzReadyNotificationString = controller.difficulty.notificationString()
-                notificationCenter.addObserver(self, selector: Selector("puzzleReady:"), name: self.puzzReadyNotificationString, object: matrix)
-                
-                let block: () ->() = {
-                    matrix.generatePuzzleOfDifficulty(controller.difficulty)
-                }
-                
-                let operation = NSBlockOperation(block: block)
-                operation.qualityOfService = .UserInitiated
-                operation.queuePriority = .High
-                self.operationQueue.addOperation(operation)
-                }
+                    
+                    let block: () ->() = {
+                        matrix.generatePuzzle()
+                    }
+                    
+                    let operation = NSBlockOperation(block: block)
+                    operation.qualityOfService = .UserInitiated
+                    operation.queuePriority = .High
+                    self.operationQueue.addOperation(operation)
+            }
         }
 
     }
     
-    func savedPuzzleForDifficulty(difficulty: PuzzleDifficulty) -> (Puzzle, [String:Any]?)? {
+   /* func savedPuzzleForDifficulty(difficulty: PuzzleDifficulty) -> (Puzzle, [String:Any]?)? {
         let defaults = NSUserDefaults.standardUserDefaults()
         guard let key = difficulty.currentKey, let dict = defaults.objectForKey(key) as? [String: AnyObject], puzzData = dict["puzzle"] as? NSData, assigned = dict["progress"] as? [[String:Int]], let annotatedDict = dict["annotated"] as? [NSDictionary], let discovered = dict["discovered"] as? [[String: Int]], let time = dict["time"] as? Double  else {
             return nil
@@ -73,17 +89,16 @@ class PuzzleStore: NSObject {
         
         return (currentPuzz, puzzInfo)
 
-    }
+    }*/
     
     
-    func puzzleReady(notification: NSNotification) {
-        let notificationCenter = NSNotificationCenter.defaultCenter()
-        notificationCenter.removeObserver(self, name: puzzReadyNotificationString, object: nil)
-        let puzz:Puzzle = notification.userInfo!["puzzle"] as! Puzzle
-        completionHandler?(puzz, nil)
+    func puzzleReady(initials: [PuzzleCell], solution: [PuzzleCell]) {
+        
+        completionHandler?(initials: initials, solution: solution)
         completionHandler = nil
-        puzzReadyNotificationString = nil
         
     }
+
+    
     
 }

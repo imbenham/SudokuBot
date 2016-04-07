@@ -101,11 +101,11 @@ class PlayPuzzleViewController: SudokuController {
     }
     
     override func viewDidLoad() {
-        let tapRecognizer = UITapGestureRecognizer(target: self, action: "hideButtons")
+        let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(PlayPuzzleViewController.hideButtons))
         self.originalContentView.addGestureRecognizer(tapRecognizer)
         
         if iPhone4 {
-            let bbItem = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: Selector("showButtons:"))
+            let bbItem = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: #selector(PlayPuzzleViewController.showButtons(_:)))
             self.navigationItem.rightBarButtonItem = bbItem
             optionsButton.hidden = true
             hintButton.hidden = true
@@ -165,7 +165,7 @@ class PlayPuzzleViewController: SudokuController {
                     }
                 } else {
                     let timerInfo = ["start": CACurrentMediaTime()]
-                    self.timer = NSTimer(timeInterval: 1.0, target: self, selector: Selector("timerFiredMethod:"), userInfo: timerInfo, repeats: true)
+                    self.timer = NSTimer(timeInterval: 1.0, target: self, selector: #selector(PlayPuzzleViewController.timerFiredMethod(_:)), userInfo: timerInfo, repeats: true)
                     self.timer!.tolerance = 0.25
                     let loop = NSRunLoop.currentRunLoop()
                     loop.addTimer(self.timer!, forMode: NSDefaultRunLoopMode)
@@ -249,7 +249,7 @@ class PlayPuzzleViewController: SudokuController {
         }
         
         if self.puzzle == nil {
-            let middleTile = self.board.tileAtIndex((5,4))
+            let middleTile = self.board.tileAtIndex((self.board.index,5,4))
             middleTile.selectedColor = UIColor.blackColor()
             self.selectedTile = middleTile
             
@@ -278,8 +278,10 @@ class PlayPuzzleViewController: SudokuController {
         super.viewWillDisappear(animated)
         inactivateInterface()
         
-        let gameOver = self.nilTiles.count == 0
-        if !gameOver {
+       // let gameOver = self.nilTiles.count == 0
+        
+        // ADD LOGIC FOR SAVING PUZZLE
+       /* if !gameOver {
             if self.navigationController!.viewControllers.indexOf(self) == nil {
                 
                 if let key = difficulty.currentKey {
@@ -289,7 +291,7 @@ class PlayPuzzleViewController: SudokuController {
                 }
                 
             }
-        }
+        }*/
         
     }
    
@@ -686,7 +688,7 @@ class PlayPuzzleViewController: SudokuController {
             let nils = self.startingNils
             
             for tile in nils {
-                tile.noteValues = []
+                tile.backingCell!.notesArray = []
                 tile.noteMode = false
                 tile.value = .Nil
                 tile.labelColor = tile.defaultTextColor
@@ -715,11 +717,8 @@ class PlayPuzzleViewController: SudokuController {
         let tiles = self.tiles
         for tile in tiles {
             tile.value = .Nil
-            tile.solutionValue = nil
             tile.labelColor = tile.defaultTextColor
         }
-        
-        startingNils = []
 
     }
     
@@ -789,7 +788,7 @@ class PlayPuzzleViewController: SudokuController {
                         //tile.backgroundColor = wrong ? tile.wrongColor : tile.defaultBackgroundColor
                         //tile.labelColor = wrong ? tile.defaultTextColor : tile.chosenTextColor
                         //tile.valueLabel.textColor = tile.labelColor
-                        tile.discovered = true
+                        tile.revealed = true
                     }
                     
                     if finished {
@@ -801,7 +800,7 @@ class PlayPuzzleViewController: SudokuController {
                             completionHandler()
                         }
                     }
-
+                    
                 }
             }
             
@@ -911,9 +910,12 @@ class PlayPuzzleViewController: SudokuController {
         
         
         if difficulty != .Easy {
-            let current = Matrix.sharedInstance.getRawDifficultyForPuzzle(difficulty)
-            let min = Matrix.sharedInstance.getRawDifficultyForPuzzle(.Easy)
+            let pStore = PuzzleStore.sharedInstance
+            let current = pStore.getPuzzleDifficulty()
+            pStore.setPuzzleDifficulty(.Easy)
+            let min = pStore.getPuzzleDifficulty()
             let newLevel = current - 10 < min ? PuzzleDifficulty.Easy : PuzzleDifficulty.Custom(current-10)
+
             
             let easier = UIAlertAction(title: "Slightly easier", style: .Default) { (_) in
                 self.difficulty = newLevel
@@ -989,9 +991,12 @@ class PlayPuzzleViewController: SudokuController {
         
         
         if difficulty != .Insane {
-            let current = Matrix.sharedInstance.getRawDifficultyForPuzzle(difficulty)
-            let max = Matrix.sharedInstance.getRawDifficultyForPuzzle(.Insane)
+            let pStore = PuzzleStore.sharedInstance
+            let current = pStore.getPuzzleDifficulty()
+            pStore.setPuzzleDifficulty(.Insane)
+            let max = pStore.getPuzzleDifficulty()
             let newLevel = current + 10 > max ? PuzzleDifficulty.Insane : PuzzleDifficulty.Custom(current+10)
+
             
             let harderPuzz = UIAlertAction(title: "Slightly tougher", style: .Default) { (_) in
                 self.difficulty = newLevel
@@ -1019,7 +1024,8 @@ class PlayPuzzleViewController: SudokuController {
         
         boxes = boxes.reverse()
         
-        func flashBoxAnimationsWithBoxes(var boxes: [Box]) {
+        func flashBoxAnimationsWithBoxes(boxes: [Box]) {
+            var boxes = boxes
             let tiles = boxes[0].boxes
             UIView.animateWithDuration(0.15, animations: {
                 for tile in tiles {
@@ -1090,7 +1096,7 @@ class PlayPuzzleViewController: SudokuController {
         let startFrom = CACurrentMediaTime() - timeElapsed
         let timerInfo = ["start": startFrom]
         
-        timer = NSTimer(timeInterval: 1.0, target: self, selector: Selector("timerFiredMethod:"), userInfo: timerInfo, repeats: true)
+        timer = NSTimer(timeInterval: 1.0, target: self, selector: #selector(PlayPuzzleViewController.timerFiredMethod(_:)), userInfo: timerInfo, repeats: true)
         
         let loop = NSRunLoop.currentRunLoop()
         loop.addTimer(timer!, forMode: NSDefaultRunLoopMode)

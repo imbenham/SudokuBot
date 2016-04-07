@@ -123,11 +123,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ADBannerViewDelegate {
     }
     
     func saveCurrentPuzzleForController(controller: PlayPuzzleViewController) {
-        let defaults = NSUserDefaults.standardUserDefaults()
+        // TO-DO: PUZZLE SAVING
+        
+       /* let defaults = NSUserDefaults.standardUserDefaults()
         
         let dictionaryToSave = dictionaryToSaveForController(controller)
         
-        defaults.setObject(dictionaryToSave, forKey: currentPuzzleKey)
+        defaults.setObject(dictionaryToSave, forKey: currentPuzzleKey)*/
 
     }
     

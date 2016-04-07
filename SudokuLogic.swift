@@ -9,7 +9,7 @@
 import UIKit
 
 
-enum PuzzleDifficulty: Equatable, Hashable {
+/*enum PuzzleDifficulty: Equatable, Hashable {
     case Easy
     case Medium
     case Hard
@@ -258,10 +258,26 @@ class Matrix {
         }
     }
     
+    // function for "cheat mode" -- checks that there is only one solution given list of given cells and returns solution for the puzzle
     func solutionForValidPuzzle(puzzle: [PuzzleCell]) -> [PuzzleCell]? {
         defer {
             rebuild()
         }
+        
+        // helper function to translate the given list of puzzle cells into matrix rows
+        
+        func getRowsFromCells(cells: [PuzzleCell]) -> [LinkedNode<PuzzleKey>] {
+            
+            var rowsToSolve = [LinkedNode<PuzzleKey>]()
+            
+            for cell in cells {
+                let solvedRow = findRowMatchForCell(cell)
+                rowsToSolve.append(solvedRow)
+            }
+            
+            return rowsToSolve
+        }
+        
         let givens = getRowsFromCells(puzzle)
         eliminateRows(givens)
         if countPuzzleSolutions() != 1 {
@@ -269,19 +285,6 @@ class Matrix {
         }
         let nodes = solutions[0]
         return cellsFromConstraints(nodes)
-    }
-    
-    
-   private func getRowsFromCells(cells: [PuzzleCell]) -> [LinkedNode<PuzzleKey>] {
-        
-        var rowsToSolve = [LinkedNode<PuzzleKey>]()
-        
-        for cell in cells {
-            let solvedRow = findRowMatchForCell(cell)
-            rowsToSolve.append(solvedRow)
-        }
-        
-        return rowsToSolve
     }
     
     
@@ -693,6 +696,6 @@ class Matrix {
     }
 
 }
-
+*/
 
 

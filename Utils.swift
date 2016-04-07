@@ -44,38 +44,39 @@ func getBox(column: Int, row: Int) -> Int {
     }
 }
 
-func getTileIndexForRow(row: Int, andColumn column: Int) -> TileIndex {
+func getTileIndex(board:Int=0, row: Int, column: Int) -> TileIndex {
     let box = getBox(column, row: row)
     switch row {
     case 1,4,7:
         switch column {
         case 1,4,7:
-            return (box, 0)
+            return (board, box, 0)
         case 2,5,8:
-            return (box, 1)
+            return (board, box, 1)
         default:
-            return (box, 2)
+            return (board, box, 2)
         }
     case 2,5,8:
         switch column {
         case 1,4,7:
-            return (box, 3)
+            return (board, box, 3)
         case 2,5,8:
-            return (box, 4)
+            return (board, box, 4)
         default:
-            return (box, 5)
+            return (board, box, 5)
         }
     default:
         switch column {
         case 1,4,7:
-            return (box, 6)
+            return (board, box, 6)
         case 2,5,8:
-            return (box, 7)
+            return (board, box, 7)
         default:
-            return (box, 8)
+            return (board, box, 8)
         }
     }
 }
+
 
 // TileIndex -> row/column
 func getColumnIndexFromTileIndex(tileIndex: TileIndex) -> Int {
@@ -324,7 +325,7 @@ extension TileValue {
     
 }
 
-let cachableDifficulties: [PuzzleDifficulty] = [.Easy, .Medium, .Hard, .Insane]
+
 extension UIView {
     
     func removeConstraints() {
@@ -338,7 +339,7 @@ extension UIView {
     
 }
 
-func dictionaryToSaveForController(controller: PlayPuzzleViewController) -> NSDictionary {
+/*func dictionaryToSaveForController(controller: PlayPuzzleViewController) -> NSDictionary {
     
     let data = NSKeyedArchiver.archivedDataWithRootObject(controller.puzzle!)
     
@@ -354,7 +355,7 @@ func dictionaryToSaveForController(controller: PlayPuzzleViewController) -> NSDi
     
     return ["puzzle":data, "progress":assignedCells, "annotated":annotatedCells, "discovered":discoveredCells, "time":time, "difficulty":difficulty] as NSDictionary
     
-}
+}*/
 
 
 class TableCell: UIView {

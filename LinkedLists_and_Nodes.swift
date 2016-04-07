@@ -9,7 +9,7 @@
 import Foundation
 
 protocol LaterallyLinkable {
-    typealias T:Equatable
+    associatedtype T:Equatable
     var lateralHead: LinkedNode<T> {get set}
     func addLateralLink(key: T)
 }
@@ -61,7 +61,7 @@ extension LaterallyLinkable {
 }
 
 protocol VerticallyLinkable {
-    typealias T: Equatable
+    associatedtype T: Equatable
     var verticalHead: LinkedNode<T> {get set}
     func addVerticalLink(key: T)
 }
@@ -111,7 +111,7 @@ extension VerticallyLinkable {
 }
 
 protocol TwoDimensionallyLinkable: LaterallyLinkable, VerticallyLinkable {
-    typealias T: Equatable
+    associatedtype T: Equatable
     
     func addLateralLinkFromNode(node: LinkedNode<T>, toNewNode newNode: LinkedNode<T>)
     func addVerticalLinkFromNode(node: LinkedNode<T>, toNewNode newNode: LinkedNode<T>)

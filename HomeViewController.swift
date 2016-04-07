@@ -176,7 +176,7 @@ class HomeViewController: UIViewController {
         button.frame = CGRect(x: 0, y: 0, width: 40, height: 40)
         let image = UIImage(named: "ContactButton")
         button.setImage(image, forState: .Normal)
-        button.addTarget(self, action: "contactButtonTapped:", forControlEvents: UIControlEvents.TouchUpInside)
+        button.addTarget(self, action: #selector(HomeViewController.contactButtonTapped(_:)), forControlEvents: UIControlEvents.TouchUpInside)
         let contactButton = UIBarButtonItem(customView: button)
         let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.FlexibleSpace, target: nil, action: nil)
         let fixedSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.FixedSpace, target: nil, action: nil)
@@ -380,7 +380,7 @@ class HomeViewController: UIViewController {
             allCells[section] = [row:cell]
         }
 
-        let tapRecognizer = UITapGestureRecognizer(target: self, action: Selector("rowTapped:"))
+        let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(HomeViewController.rowTapped(_:)))
         cell.addGestureRecognizer(tapRecognizer)
         
         return cell
@@ -432,16 +432,18 @@ class HomeViewController: UIViewController {
             let vc = segue.destinationViewController as! SudokuController
             
             if sender is UIAlertAction {
-                let defaults = NSUserDefaults.standardUserDefaults()
+                //let defaults = NSUserDefaults.standardUserDefaults()
+                
+                /* TO-DO: HANDLE SAVED PUZZLE
                 
                 if let dict = defaults.objectForKey(currentPuzzleKey) as? [String: AnyObject], puzzData = dict["puzzle"] as? NSData, assigned = dict["progress"] as? [[String:Int]], let annotatedDict = dict["annotated"] as? [NSDictionary], let discovered = dict["discovered"] as? [[String: Int]], let time = dict["time"] as? Double, let difficulty = dict["difficulty"] as? String {
                     let currentPuzz = NSKeyedUnarchiver.unarchiveObjectWithData(puzzData) as! Puzzle
                     vc.puzzle = currentPuzz
                     
+                    
                     for cell in currentPuzz.solution {
                         let tile = vc.tileWithBackingCell(cell)
                         tile.backingCell = cell
-                        tile.solutionValue = cell.value
                         vc.startingNils.append(tile)
                     }
                     for cell in currentPuzz.initialValues {
@@ -496,9 +498,24 @@ class HomeViewController: UIViewController {
                     vc.difficulty = .Insane
                 }
                 
+            }*/
+                let difficulty = (sender as! UIView).tag
+                
+                switch difficulty {
+                case 0:
+                    vc.difficulty = .Easy
+                case 1:
+                    vc.difficulty = .Medium
+                case 2:
+                    vc.difficulty = .Hard
+                default:
+                    vc.difficulty = .Insane
+                }
+
             }
-            
         }
+                
+                
         
     }
 
