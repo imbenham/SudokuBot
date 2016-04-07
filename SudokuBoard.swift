@@ -111,9 +111,7 @@ extension SudokuBoard {
         
         for cell in valueList {
             let index = getTileIndex(self.index, row: cell.row, column: cell.column)
-            let value = TileValue(rawValue:cell.value)!
-            
-            self.tileAtIndex(index).value = value
+            self.tileAtIndex(index).setValue(cell.value)
         }
         
         

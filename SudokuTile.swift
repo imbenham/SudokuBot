@@ -11,21 +11,27 @@ import Foundation
 
 class Tile: SudokuItem {
     
-    var value: TileValue {
+    var displayValue: TileValue {
         get {
-            if let assignedVal = backingCell?.assignedValue {
-                return TileValue(rawValue: Int(assignedVal))!
+            
+            guard let bc = backingCell else {
+                return .Nil
             }
-            return .Nil
-        }
-        set {
-            if value != .Nil {
-                backingCell?.notesArray = []
+            
+            if let solutionValue = solutionValue {
+                if revealed {
+                    return TileValue(rawValue: solutionValue)!
+                } else  if let assignedVal = bc.assignedValue {
+                    return TileValue(rawValue: Int(assignedVal))!
+                }
+                return .Nil
+            } else {
+                return TileValue(rawValue:bc.value)!
             }
-            backingCell?.assignedValue = value.rawValue
-            refreshLabel()
+            
         }
     }
+    
     var revealed = false {
         didSet {
             if revealed == true {
@@ -38,6 +44,7 @@ class Tile: SudokuItem {
             refreshLabel()
         }
     }
+    
     var valueLabel = UILabel()
     var labelColor = UIColor.blackColor()
     let defaultTextColor = UIColor.blackColor()
@@ -68,7 +75,11 @@ class Tile: SudokuItem {
     
     let noteLabels: [TableCell]
     let noteModeColor = UIColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 0.3)
-    var backingCell: BackingCell?
+    var backingCell: BackingCell? {
+        didSet {
+            refreshLabel()
+        }
+    }
     let defaultBackgroundColor = UIColor.whiteColor()
     let assignedBackgroundColor = UIColor(red: 0.0, green: 1.0, blue: 0, alpha: 0.3)
     let wrongColor = UIColor(red: 1.0, green: 0.0, blue: 0, alpha: 0.3)
@@ -77,14 +88,14 @@ class Tile: SudokuItem {
     var noteMode = false {
         didSet {
             if noteMode == true {
-                if value != .Nil {
-                    addNoteValue(value.rawValue)
+                if displayValue != .Nil {
+                    addNoteValue(displayValue.rawValue)
                 }
                 self.selected = true
                 
             } else {
                 if noteValues.count > 0 {
-                    value = .Nil
+                    setValue(0)
                 }
             }
             refreshBackground()
@@ -173,8 +184,17 @@ class Tile: SudokuItem {
     }
     
     
+    func setValue(value: Int) {
+        if displayValue != .Nil {
+            backingCell?.notesArray = []
+        }
+        backingCell?.assignedValue = value
+        refreshLabel()
+
+    }
+    
     func getValueText()->String {
-        return self.value != .Nil ? symbolSet.getSymbolForTyleValue(value) : ""
+        return self.displayValue != .Nil ? symbolSet.getSymbolForTyleValue(displayValue) : ""
     }
     
     
@@ -186,8 +206,8 @@ class Tile: SudokuItem {
             valueLabel.textColor = labelColor
             userInteractionEnabled = true
         }
-        
-        valueLabel.text = noteMode ? "" : self.getValueText()
+       
+        valueLabel.text = noteMode ? "" : getValueText()
         refreshBackground()
         configureNoteViews()
     }
@@ -203,7 +223,7 @@ class Tile: SudokuItem {
             }
         }
         
-        if value != .Nil && solutionValue != nil {
+        if displayValue != .Nil && solutionValue != nil {
             backgroundColor = selected ? selectedColor : assignedBackgroundColor
         } else if revealed {
             backgroundColor = defaultBackgroundColor

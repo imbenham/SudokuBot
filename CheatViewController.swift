@@ -154,7 +154,7 @@ class CheatViewController: SudokuController {
         let tiles = self.tiles
         for tile in tiles {
             tile.labelColor = UIColor.blackColor()
-            tile.value = .Nil
+            tile.setValue(0)
             tile.refreshLabel()
         }
         selectedTile = nilTiles[0]
@@ -170,7 +170,7 @@ class CheatViewController: SudokuController {
                 let tIndex = getTileIndex(row: cell.row, column: cell.column)
                 let tile = board.tileAtIndex(tIndex)
                 tile.labelColor = UIColor.redColor()
-                tile.value = TileValue(rawValue: cell.value)!
+                tile.setValue(cell.value)
             }
             selectedTile = nil
             solved = true

@@ -114,7 +114,7 @@ extension Box {
         var nilTiles = [Tile]()
         for box in boxes {
             let tile = box
-            if tile.value == TileValue.Nil {
+            if tile.displayValue == TileValue.Nil {
                 nilTiles.append(tile)
             }
         }

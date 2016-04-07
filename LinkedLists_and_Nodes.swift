@@ -26,36 +26,21 @@ extension LaterallyLinkable {
             return
         }
         
-        var current = lateralHead.right!
+        let current = lateralHead.left!
         
-        let newLinkBloc = { () in
-            let newLink = LinkedNode<T>()
-            newLink.key = key
-            newLink.left = current
-            newLink.right = current.right
-            newLink.up = newLink
-            newLink.down = newLink
-            
-            newLink.right!.left = newLink
-            current.right = newLink
-            
-            newLink.latOrder = current.latOrder+1
-            
-        }
         
-        if current.key == lateralHead.key {
-            newLinkBloc()
-            return
-        }
+        let newLink = LinkedNode<T>()
+        newLink.key = key
+        newLink.left = current
+        newLink.right = current.right
+        newLink.up = newLink
+        newLink.down = newLink
         
-        WhileLoop: while current.key != lateralHead.key {
-            // print("current key: \(current!.key), current-right key: \(current!.right!.key), head key: \(head.key)")
-            if current.right!.key == lateralHead.key! {
-                newLinkBloc()
-                break WhileLoop
-            }
-            current = current.right!
-        }
+        newLink.right!.left = newLink
+        current.right = newLink
+        
+        newLink.latOrder = current.latOrder+1
+        
         
     }
 }
@@ -78,34 +63,20 @@ extension VerticallyLinkable {
             return
         }
         
+        let current = verticalHead.up!
         
-        var current = verticalHead.down!
-        let newLinkBloc = { () in
-            let newLink = LinkedNode<T>()
-            newLink.key = key
-            newLink.up = current
-            newLink.down = current.down
-            newLink.left = newLink
-            newLink.right = newLink
-            
-            self.verticalHead.up = newLink
-            current.down = newLink
-            
-            newLink.vertOrder = current.vertOrder+1
-        }
+        let newLink = LinkedNode<T>()
+        newLink.key = key
+        newLink.up = current
+        newLink.down = current.down
+        newLink.left = newLink
+        newLink.right = newLink
         
-        if current.key == verticalHead.key {
-            newLinkBloc()
-            return
-        }
+        self.verticalHead.up = newLink
+        current.down = newLink
         
-        WhileLoop: while current.key != verticalHead.key {
-            if current.down!.key == verticalHead.key! {
-                newLinkBloc()
-                break WhileLoop
-            }
-            current = current.down!
-        }
+        newLink.vertOrder = current.vertOrder+1
+        
     }
     
 }

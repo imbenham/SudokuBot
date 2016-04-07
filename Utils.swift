@@ -197,7 +197,7 @@ func translateCellsToConstraintList(cells:[PuzzleCell])->[PuzzleKey] {
 func cellsFromTiles(tiles:[Tile]) -> [PuzzleCell] {
     var cells: [PuzzleCell] = []
     for tile in tiles {
-        let val = tile.value.rawValue
+        let val = tile.displayValue.rawValue
         let row = tile.getRowIndex()
         let column = tile.getColumnIndex()
         let pCell = PuzzleCell(row: row, column: column, value: val)

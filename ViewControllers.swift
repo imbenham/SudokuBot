@@ -86,14 +86,14 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     var nilTiles: [Tile] {
         get {
-            return tiles.filter({$0.value == .Nil})
+            return tiles.filter({$0.displayValue == .Nil})
         }
     }
     
     var nonNilTiles: [Tile] {
         get {
            
-            return tiles.filter({$0.value != .Nil})
+            return tiles.filter({$0.displayValue != .Nil})
         }
     }
     
@@ -109,7 +109,7 @@ class SudokuController: UIViewController, NumPadDelegate {
         var wrong: [Tile] = []
         for tile in nonNilTiles {
             if let correct = tile.solutionValue {
-                if correct != tile.value.rawValue {
+                if correct != tile.displayValue.rawValue {
                     wrong.append(tile)
                 }
             }
@@ -153,6 +153,8 @@ class SudokuController: UIViewController, NumPadDelegate {
         longFetchLabel.hidden = true
         longFetchLabel.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         board.addSubview(longFetchLabel)
+        longFetchLabel.layer.zPosition = 1
+        spinner.layer.zPosition = 1
         setUpBoard()
         setUpButtons()
         
@@ -323,52 +325,58 @@ class SudokuController: UIViewController, NumPadDelegate {
         return board.getBoxAtIndex(_index.0).getTileAtIndex(_index.1)
     }
     
-    
-    // puzzle fetching
-    func fetchPuzzle() {
-     
-        /*
-        for tile in tiles {
-            tile.revealed = false
-        }
-        */
-        bannerView.userInteractionEnabled = false
-       
-        UIView.animateWithDuration(0.25) {
+    func prepareForLongFetch() {
+        
+        
+        UIView.animateWithDuration(0.35) {
             self.navigationController?.navigationBarHidden = true
             self.inactivateInterface()
+            self.longFetchLabel.hidden = false
+            self.longFetchLabel.frame = CGRectMake(0, 0, self.board.frame.width, self.board.frame.height * 0.25)
         }
         
-        board.userInteractionEnabled = false
-        let firstTile = board.tileAtIndex((0,1,1))
-        let placeHolderColor = firstTile.selectedColor
+        
+      
+        
         let middleTile = board.tileAtIndex((0,5,4))
         if !spinner.isAnimating() {
             middleTile.selectedColor = UIColor.blackColor()
             selectedTile = middleTile
             spinner.startAnimating()
         }
+
+
+    }
+    
+    // puzzle fetching
+    func fetchPuzzle() {
+     
+       
+        bannerView.userInteractionEnabled = false
+        board.userInteractionEnabled = false
         
-        //(initials: [PuzzleCell], solution: [PuzzleCell]) -> ()
-        // Puzzle,[String:Any]?) -> ()
-        let handler: ((initials: [PuzzleCell], solution: [PuzzleCell]) -> ()) = {
-            initials, solution -> () in
+        let placeHolderColor = board.tileAtIndex((0,1,1)).selectedColor
+        let middleTile = board.tileAtIndex((0,5,4))
+        
+        let handler: (Puzzle -> ()) = {
+            puzzle -> () in
             dispatch_async(GlobalMainQueue){
                 self.spinner.stopAnimating()
                 middleTile.selectedColor = placeHolderColor
                 
-                self.puzzle = Puzzle(initialValues: initials, solution: solution)
-                
+                self.puzzle = puzzle
                 
                 for cell in self.puzzle!.solution {
                     let tile = self.board.tileAtIndex((cell.convertToTileIndex()))
                     tile.backingCell = cell
+                    
                 }
                 for cell in self.puzzle!.initialValues{
                     let tile = self.board.tileAtIndex(cell.convertToTileIndex())
                     tile.backingCell = cell
                     
                 }
+                
                 self.board.userInteractionEnabled = true
                 UIView.animateWithDuration(0.25) {
                     self.navigationController?.navigationBarHidden = false
@@ -400,7 +408,7 @@ class SudokuController: UIViewController, NumPadDelegate {
         UIView.animateWithDuration(0.5) {
             for tile in self.startingNils {
                 tile.userInteractionEnabled = true
-                tile.value = TileValue.Nil
+                tile.setValue(0)
             }
         }
         
@@ -439,12 +447,10 @@ class SudokuController: UIViewController, NumPadDelegate {
     // NumPadDelegate methods
     func valueSelected(value: Int) {
         if let selected = selectedTile {
-            if selected.value.rawValue == value {
-                selected.value = TileValue(rawValue: 0)!
+            if selected.displayValue.rawValue == value {
+                selected.setValue(0)
             } else {
-                if let newTV = TileValue(rawValue: value) {
-                    selected.value = newTV
-                }
+                selected.setValue(value)
             }
         }
         numPad.refresh()
@@ -465,7 +471,7 @@ class SudokuController: UIViewController, NumPadDelegate {
             return nil
         }
         if let sel = selectedTile {
-           let val = sel.value.rawValue
+           let val = sel.displayValue.rawValue
             if val == 0 {
                 return nil
             }

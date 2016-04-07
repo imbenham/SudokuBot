@@ -249,11 +249,7 @@ class PlayPuzzleViewController: SudokuController {
         }
         
         if self.puzzle == nil {
-            let middleTile = self.board.tileAtIndex((self.board.index,5,4))
-            middleTile.selectedColor = UIColor.blackColor()
-            self.selectedTile = middleTile
-            
-            self.spinner.startAnimating()
+
             fetchPuzzle()
         }
 
@@ -690,7 +686,7 @@ class PlayPuzzleViewController: SudokuController {
             for tile in nils {
                 tile.backingCell!.notesArray = []
                 tile.noteMode = false
-                tile.value = .Nil
+                tile.setValue(0)
                 tile.labelColor = tile.defaultTextColor
             }
             
@@ -716,7 +712,7 @@ class PlayPuzzleViewController: SudokuController {
         
         let tiles = self.tiles
         for tile in tiles {
-            tile.value = .Nil
+            tile.setValue(0)
             tile.labelColor = tile.defaultTextColor
         }
 
@@ -768,8 +764,10 @@ class PlayPuzzleViewController: SudokuController {
             label.alpha = 1
         }
         
+        
+        // WILL THIS STILL WORK???
         if let tv = tile.solutionValue {
-            tile.value = TileValue(rawValue: tv)!
+            tile.setValue(tv)
         }
         if wrong {
             tile.backgroundColor = tile.wrongColor
@@ -795,7 +793,7 @@ class PlayPuzzleViewController: SudokuController {
                         let nils = self.nilTiles
                         let nilsCount = nils.count
                         let toSelect:Tile? = nilsCount > 0 ? nils[0] : nil
-                        self.selectedTile = lastSelected?.value == .Nil ? lastSelected : toSelect
+                        self.selectedTile = lastSelected?.displayValue == .Nil ? lastSelected : toSelect
                         if let completionHandler = handler {
                             completionHandler()
                         }

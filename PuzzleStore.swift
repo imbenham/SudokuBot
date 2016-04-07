@@ -20,7 +20,7 @@ class PuzzleStore: NSObject {
     
     var puzzReadyNotificationString: String?
     
-    var completionHandler: ((initials: [PuzzleCell], solution: [PuzzleCell]) -> ())?
+    var completionHandler: (Puzzle -> ())?
     
     var difficulty: PuzzleDifficulty = .Medium
     private var rawDiffDict: [PuzzleDifficulty:Int] = [.Easy : 130, .Medium: 160, .Hard: 190, .Insane: 240]
@@ -41,34 +41,20 @@ class PuzzleStore: NSObject {
     }
     
     
-    func getPuzzleForController(controller: SudokuController, withCompletionHandler handler: ((initials: [PuzzleCell], solution: [PuzzleCell]) -> ())) {
+    func getPuzzleForController(controller: SudokuController, withCompletionHandler handler: (Puzzle -> ())) {
         
         // PLACEHOLDER-- HANDLE SAVED PUZZLE
         if false {
             return
         } else {
-                dispatch_async (concurrentPuzzleQueue) {
-                    
-                dispatch_async(GlobalMainQueue) {
-                    UIView.animateWithDuration(0.25) {
-                        controller.longFetchLabel.hidden = false
-                        controller.longFetchLabel.frame = CGRectMake(0,0, controller.board.frame.width, controller.board.frame.height * 0.2)
-                    }
-                }
-                    
-                    self.completionHandler = handler
-                    self.difficulty = controller.difficulty
-                    let matrix = Matrix.sharedInstance
-                    
-                    
-                    let block: () ->() = {
-                        matrix.generatePuzzle()
-                    }
-                    
-                    let operation = NSBlockOperation(block: block)
-                    operation.qualityOfService = .UserInitiated
-                    operation.queuePriority = .High
-                    self.operationQueue.addOperation(operation)
+            
+            controller.prepareForLongFetch()
+            
+            dispatch_async(concurrentPuzzleQueue) {
+                self.completionHandler = handler
+                self.difficulty = controller.difficulty
+                Matrix.sharedInstance.generatePuzzle()
+               
             }
         }
 
@@ -94,7 +80,7 @@ class PuzzleStore: NSObject {
     
     func puzzleReady(initials: [PuzzleCell], solution: [PuzzleCell]) {
         
-        completionHandler?(initials: initials, solution: solution)
+        completionHandler!(Puzzle.init(initialValues: initials, solution: solution))
         completionHandler = nil
         
     }
