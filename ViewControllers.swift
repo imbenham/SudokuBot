@@ -29,8 +29,6 @@ class SudokuController: UIViewController, NumPadDelegate {
     var storedTime: Double = 0
     
     
-    var inactivateInterface: (()->())!
-    var activateInterface: (()->())!
 
     var bannerView: ADBannerView {
         get {
@@ -244,7 +242,7 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     
     func goToBackground() {
-        inactivateInterface()
+        deactivateInterface()
         
         if canDisplayBannerAds {
             bannerView.removeFromSuperview()
@@ -330,7 +328,7 @@ class SudokuController: UIViewController, NumPadDelegate {
         
         UIView.animateWithDuration(0.35) {
             self.navigationController?.navigationBarHidden = true
-            self.inactivateInterface()
+            self.deactivateInterface()
             self.longFetchLabel.hidden = false
             self.longFetchLabel.frame = CGRectMake(0, 0, self.board.frame.width, self.board.frame.height * 0.25)
         }
@@ -570,13 +568,20 @@ class SudokuController: UIViewController, NumPadDelegate {
     }
     
     func toggleNoteMode(sender: AnyObject) {
-        
+        // override me
     }
     
     func refreshNoteButton() {
-        
+        // override me
     }
     
+    func activateInterface() {
+        // override me
+    }
+    
+    func deactivateInterface() {
+        // override me
+    }
 }
 
 

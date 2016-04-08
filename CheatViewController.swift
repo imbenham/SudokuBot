@@ -78,42 +78,6 @@ class CheatViewController: SudokuController {
         let defaults = NSUserDefaults.standardUserDefaults()
         defaults.setInteger(0, forKey: "symbolSet")
         
-        inactivateInterface = {
-            if !iPhone4 {
-                self.solveButton!.userInteractionEnabled = false
-                self.solveButton!.alpha = 0.5
-                self.clearButton!.userInteractionEnabled = false
-
-            }
-            self.numPad.userInteractionEnabled  = false
-            for tile in self.tiles {
-                tile.userInteractionEnabled = false
-            }
-            self.board.userInteractionEnabled = false
-        }
-        
-        activateInterface = {
-            if !iPhone4 {
-                if !self.solved {
-                    self.solveButton!.userInteractionEnabled = true
-                    self.solveButton!.alpha = 1.0
-                }
-            }
-            
-           
-            for tile in self.tiles {
-                tile.userInteractionEnabled = true
-            }
-            
-            if !iPhone4 {
-                self.clearButton!.userInteractionEnabled = true
-            }
-            self.numPad.userInteractionEnabled = true
-            self.board.userInteractionEnabled = true
-            self.numPad.refresh()
-        }
-
-        
     }
     
     override func motionEnded(motion: UIEventSubtype, withEvent event: UIEvent?) {
@@ -162,7 +126,7 @@ class CheatViewController: SudokuController {
     }
     
     func solvePuzzle() {
-        inactivateInterface()
+        deactivateInterface()
         let valuatedTiles = nonNilTiles
         let cells: [PuzzleCell] = cellsFromTiles(valuatedTiles)
         if let solution = Matrix.sharedInstance.solutionForValidPuzzle(cells) {
@@ -205,6 +169,40 @@ class CheatViewController: SudokuController {
         activateInterface()
         
     }
-
+    
+    override func deactivateInterface() {
+        if !iPhone4 {
+            self.solveButton!.userInteractionEnabled = false
+            self.solveButton!.alpha = 0.5
+            self.clearButton!.userInteractionEnabled = false
+            
+        }
+        self.numPad.userInteractionEnabled  = false
+        for tile in self.tiles {
+            tile.userInteractionEnabled = false
+        }
+        self.board.userInteractionEnabled = false
+    }
+    
+    override func activateInterface() {
+        if !iPhone4 {
+            if !self.solved {
+                self.solveButton!.userInteractionEnabled = true
+                self.solveButton!.alpha = 1.0
+            }
+        }
+        
+        
+        for tile in self.tiles {
+            tile.userInteractionEnabled = true
+        }
+        
+        if !iPhone4 {
+            self.clearButton!.userInteractionEnabled = true
+        }
+        self.numPad.userInteractionEnabled = true
+        self.board.userInteractionEnabled = true
+        self.numPad.refresh()
+    }
 
 }

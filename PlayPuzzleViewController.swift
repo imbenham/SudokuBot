@@ -128,106 +128,7 @@ class PlayPuzzleViewController: SudokuController {
     
         formatter.dateFormat = "mm:ss"
         
-        inactivateInterface =  {
-            if let theTimer = self.timer {
-                theTimer.invalidate()
-            }
-            
-            if !iPhone4 {
-                self.optionsButton.enabled = false
-                self.noteButton?.enabled = false
-                self.clearButton?.enabled = false
-            }
         
-            self.board.userInteractionEnabled = false
-            
-           UIView.animateWithDuration(0.25) {
-            if !iPhone4 {
-                self.containerView.userInteractionEnabled = false
-                self.noteButton?.alpha = 0.5
-                self.clearButton?.alpha = 0.5
-                self.containerSubviews.front.alpha = 0.5
-                self.containerSubviews.back.alpha = 0
-                self.optionsButton.alpha = 0.5
-            }
-            
-            }
-          
-
-        }
-        
-        activateInterface = {
-            let gameOver = self.nilTiles.count == 0
-            if self.timed {
-                if let theTimer = self.timer  {
-                    if !theTimer.valid && !gameOver {
-                        self.restartTimer()
-                    }
-                } else {
-                    let timerInfo = ["start": CACurrentMediaTime()]
-                    self.timer = NSTimer(timeInterval: 1.0, target: self, selector: #selector(PlayPuzzleViewController.timerFiredMethod(_:)), userInfo: timerInfo, repeats: true)
-                    self.timer!.tolerance = 0.25
-                    let loop = NSRunLoop.currentRunLoop()
-                    loop.addTimer(self.timer!, forMode: NSDefaultRunLoopMode)
-                }
-            } else {
-                self.timer?.invalidate()
-                self.navigationItem.title = ""
-            }
-            
-            
-            
-            if !iPhone4 {
-                if self.containerView.subviews.count == 0  {
-                    self.containerView.addSubview(self.hintButton)
-                    self.containerView.addSubview(self.playAgainButton)
-                    self.playAgainButton.alpha = 0
-                    self.containerView.bringSubviewToFront(self.hintButton)
-                    self.containerView.contentMode = .Center
-                    self.hintButton.contentMode = .ScaleToFill
-                    self.playAgainButton.contentMode = .ScaleToFill
-                    self.containerView.translatesAutoresizingMaskIntoConstraints = false
-                    
-                }
-
-                var animations: () -> ()
-                if !gameOver {
-                    
-                    if !self.noteButton!.hidden {
-                        self.noteButton!.enabled = true
-                    }
-                    
-                    self.clearButton!.enabled = true
-                    
-                    
-                    animations = {
-                        self.optionsButton.alpha = 1.0
-                        self.clearButton?.alpha = 1.0
-                        if !self.noteButton!.hidden {
-                            self.noteButton!.alpha = 1.0
-                        }
-                        self.containerSubviews.front.alpha = 1.0
-                        self.containerSubviews.back.alpha = 0
-                    }
-                    UIView.animateWithDuration(0.25, animations: animations)
-                    
-                    
-                } else {
-                    animations = {
-                        self.containerSubviews.front.alpha = 1.0
-                    }
-                    UIView.animateWithDuration(0.25, animations: animations)
-
-                }
-                self.optionsButton.enabled = true
-                self.containerView.userInteractionEnabled = true
-                self.board.userInteractionEnabled = true
-                self.numPad.userInteractionEnabled = true
-            } else {
-                self.hideButtons()
-            }
-        
-        }
     }
     
 
@@ -272,7 +173,7 @@ class PlayPuzzleViewController: SudokuController {
     
     override func viewWillDisappear(animated: Bool) {
         super.viewWillDisappear(animated)
-        inactivateInterface()
+        deactivateInterface()
         
        // let gameOver = self.nilTiles.count == 0
         
@@ -702,7 +603,7 @@ class PlayPuzzleViewController: SudokuController {
         alert.addAction(cancel)
         
         presentViewController(alert, animated: true) { (_) in
-            self.inactivateInterface()
+            self.deactivateInterface()
         }
         
     }
@@ -808,7 +709,7 @@ class PlayPuzzleViewController: SudokuController {
     
     func giveUp() {
         
-        inactivateInterface()
+        deactivateInterface()
         var lastTile: Tile?
         if !nilTiles.isEmpty {
             lastTile = nilTiles[nilTiles.count-1]
@@ -855,7 +756,7 @@ class PlayPuzzleViewController: SudokuController {
     }
     
     func showHelpMenu(sender: AnyObject) {
-        inactivateInterface()
+        deactivateInterface()
         let helpAlert = UIAlertController(title: "Tough, eh?", message: "Request a hint to reveal one cell", preferredStyle: .Alert)
         
         
@@ -881,7 +782,7 @@ class PlayPuzzleViewController: SudokuController {
         
         self.presentViewController(helpAlert, animated: true) {
             () in
-            self.inactivateInterface()
+            self.deactivateInterface()
         }
     }
     
@@ -1061,7 +962,6 @@ class PlayPuzzleViewController: SudokuController {
         
         flashBoxAnimationsWithBoxes(boxes)
         
-        
     }
 
     
@@ -1106,7 +1006,7 @@ class PlayPuzzleViewController: SudokuController {
         
         let superImp = super.bannerViewActionShouldBegin(banner, willLeaveApplication: willLeave)
         if superImp == true {
-            inactivateInterface()
+            deactivateInterface()
         }
         return superImp
     }
@@ -1118,4 +1018,104 @@ class PlayPuzzleViewController: SudokuController {
 
     }
     
+    // activate/deactivate interface
+    
+    override func deactivateInterface() {
+        if let theTimer = self.timer {
+            theTimer.invalidate()
+        }
+        
+        if !iPhone4 {
+            self.optionsButton.enabled = false
+            self.noteButton?.enabled = false
+            self.clearButton?.enabled = false
+        }
+        
+        self.board.userInteractionEnabled = false
+        
+        UIView.animateWithDuration(0.25) {
+            if !iPhone4 {
+                self.containerView.userInteractionEnabled = false
+                self.noteButton?.alpha = 0.5
+                self.clearButton?.alpha = 0.5
+                self.containerSubviews.front.alpha = 0.5
+                self.containerSubviews.back.alpha = 0
+                self.optionsButton.alpha = 0.5
+            }
+            
+        }
+    }
+    
+    override func activateInterface() {
+        let gameOver = self.nilTiles.count == 0
+        if self.timed {
+            if let theTimer = self.timer  {
+                if !theTimer.valid && !gameOver {
+                    self.restartTimer()
+                }
+            } else {
+                let timerInfo = ["start": CACurrentMediaTime()]
+                self.timer = NSTimer(timeInterval: 1.0, target: self, selector: #selector(PlayPuzzleViewController.timerFiredMethod(_:)), userInfo: timerInfo, repeats: true)
+                self.timer!.tolerance = 0.25
+                let loop = NSRunLoop.currentRunLoop()
+                loop.addTimer(self.timer!, forMode: NSDefaultRunLoopMode)
+            }
+        } else {
+            self.timer?.invalidate()
+            self.navigationItem.title = ""
+        }
+        
+        
+        
+        if !iPhone4 {
+            if self.containerView.subviews.count == 0  {
+                self.containerView.addSubview(self.hintButton)
+                self.containerView.addSubview(self.playAgainButton)
+                self.playAgainButton.alpha = 0
+                self.containerView.bringSubviewToFront(self.hintButton)
+                self.containerView.contentMode = .Center
+                self.hintButton.contentMode = .ScaleToFill
+                self.playAgainButton.contentMode = .ScaleToFill
+                self.containerView.translatesAutoresizingMaskIntoConstraints = false
+                
+            }
+            
+            var animations: () -> ()
+            if !gameOver {
+                
+                if !self.noteButton!.hidden {
+                    self.noteButton!.enabled = true
+                }
+                
+                self.clearButton!.enabled = true
+                
+                
+                animations = {
+                    self.optionsButton.alpha = 1.0
+                    self.clearButton?.alpha = 1.0
+                    if !self.noteButton!.hidden {
+                        self.noteButton!.alpha = 1.0
+                    }
+                    self.containerSubviews.front.alpha = 1.0
+                    self.containerSubviews.back.alpha = 0
+                }
+                UIView.animateWithDuration(0.25, animations: animations)
+                
+                
+            } else {
+                animations = {
+                    self.containerSubviews.front.alpha = 1.0
+                }
+                UIView.animateWithDuration(0.25, animations: animations)
+                
+            }
+            self.optionsButton.enabled = true
+            self.containerView.userInteractionEnabled = true
+            self.board.userInteractionEnabled = true
+            self.numPad.userInteractionEnabled = true
+        } else {
+            self.hideButtons()
+        }
+
+    }
 }
