@@ -146,7 +146,7 @@ class Matrix {
         var currentRow:LinkedNode<PuzzleKey> = vertHead
         let last = vertHead.up!
         
-        RowLoop: while currentRow.key != last.key {
+        while currentRow.key != last.key {
             
             connectMatchingConstraintsForRow(currentRow)
             currentRow = currentRow.down!

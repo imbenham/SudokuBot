@@ -169,15 +169,15 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
         
         if link.left?.latOrder == link.latOrder {
             lateralHead = LinkedNode<T>()
-            lateralHead.key = nil
         } else {
-            if link.latOrder < lateralHead.latOrder && link.vertOrder == 0 {
+            link.left?.right = link.right
+            link.right?.left = link.left
+            if link.latOrder == lateralHead.latOrder && link.vertOrder == 0 {
                 if let newHead = link.right {
                     lateralHead = newHead
                 }
             }
-            link.left?.right = link.right
-            link.right?.left = link.left
+            
         }
     }
     
@@ -185,27 +185,33 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
         
         if link.up?.vertOrder == link.vertOrder {
             verticalHead = LinkedNode<T>()
-            verticalHead.key = nil
         } else {
-            if link.vertOrder < verticalHead.vertOrder && link.latOrder == 0{
+            link.up?.down = link.down
+            link.down?.up = link.up
+            
+            if link.vertOrder == verticalHead.vertOrder && link.latOrder == 0 {
                 if let newHead = link.down {
                     verticalHead = newHead
                 }
             }
-            link.up?.down = link.down
-            link.down?.up = link.up
+            
         }
     }
     
+    
     func insertLateralLink(link: LinkedNode<T>) {
         if lateralHead.key == nil {
-            lateralHead = link
-            return
+            if link.vertOrder == 0 {
+                lateralHead = link
+                return
+            }
+            
+            
         }
         
         link.left?.right = link
         link.right?.left = link
-        if link.latOrder <= lateralHead.latOrder {
+        if link.latOrder <= lateralHead.latOrder && link.vertOrder == 0 {
             lateralHead = link
         }
         
@@ -214,18 +220,19 @@ class SudokuMatrix<T:Equatable where T:Hashable>: LaterallyLinkable, VerticallyL
     func insertVerticalLink(link: LinkedNode<T>) {
         
         if verticalHead.key == nil {
-            verticalHead = link
-            return
+            if link.latOrder == 0 {
+                verticalHead = link
+                return
+            }
+            
         }
-        
         link.up?.down = link
         link.down?.up = link
-        if link.vertOrder <= verticalHead.vertOrder {
+        if link.vertOrder <= verticalHead.vertOrder && link.latOrder == 0 {
             verticalHead = link
         }
         
     }
-    
     func printRows() {
         var current = verticalHead
         let last = verticalHead.up!.vertOrder
