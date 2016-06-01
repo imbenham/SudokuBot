@@ -129,7 +129,7 @@ class CheatViewController: SudokuController {
         let cells: [PuzzleCell] = cellsFromTiles(valuatedTiles)
         if let solution = Matrix.sharedInstance.solutionForValidPuzzle(cells) {
             for cell in solution {
-                let tIndex = getTileIndex(row: cell.row, column: cell.column)
+                let tIndex = Utils.BoardCoordinates.getTileIndex(row: cell.row, column: cell.column)
                 let tile = board.tileAtIndex(tIndex)
                 tile.labelColor = UIColor.redColor()
                 tile.setValue(cell.value)

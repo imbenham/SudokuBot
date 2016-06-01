@@ -17,7 +17,7 @@ class SudokuItem: UIView {
         didSetController()
         }
     }
-    var parentSquare:UIView?
+    var parentSquare:SudokuItem?
     var defaultIndex = 0
     
     init(index: Int) {
@@ -190,32 +190,7 @@ class BoxSetter {
     }
 }
 
-enum TileValue:Int {
-    case One = 1
-    case Two = 2
-    case Three = 3
-    case Four = 4
-    case Five = 5
-    case Six = 6
-    case Seven = 7
-    case Eight = 8
-    case Nine = 9
-    case Nil = 0
-    
-    
-    static func getFullSet()->Set<TileValue>{
-        return [TileValue.One, TileValue.Two, TileValue.Three, TileValue.Four, TileValue.Five, TileValue.Six, TileValue.Seven, TileValue.Eight, TileValue.Nine]
-        
-    }
-    
-    func description() -> String {
-        return "\(self.rawValue)"
-    }
-    
-    
-}
 
-typealias TileIndex = (Board:Int, Box:Int, Tile:Int)
 
 
 

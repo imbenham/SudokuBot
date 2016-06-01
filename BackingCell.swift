@@ -82,7 +82,7 @@ class BackingCell {
         let rowIndex = Int(self.row)
         let columnIndex = Int(self.column)
         
-        return getTileIndex(boardIndex, row: rowIndex, column: columnIndex)
+        return getTileIndex(row: rowIndex, column: columnIndex)
     }
     
     

@@ -11,9 +11,23 @@ import Foundation
 
 class Tile: SudokuItem {
     
+    var defaultImage: UIImage!
+    var valueGivenImage: UIImage!
+    var selectedImage: UIImage!
+    var noteModeImage: UIImage!
+    var valueCorrectImage: UIImage!
+    
+    override weak var controller: SudokuController? {
+        get {
+            return parentSquare?.controller
+        }
+        set {
+            parentSquare?.controller = newValue
+        }
+    }
+    
     var displayValue: TileValue {
         get {
-            
             guard let bc = backingCell else {
                 return .Nil
             }
@@ -24,43 +38,56 @@ class Tile: SudokuItem {
                 } else  if let assignedVal = bc.assignedValue {
                     return TileValue(rawValue: Int(assignedVal))!
                 }
+                
                 return .Nil
             } else {
-                return TileValue(rawValue:bc.value)!
+                userInteractionEnabled = false
+                return TileValue(rawValue:Int(bc.value))!
             }
             
         }
     }
-    
-    var revealed = false {
-        didSet {
-            if revealed == true {
+    var revealed: Bool {
+        
+        get {
+            guard let backingCell = backingCell else {
+                return false
+            }
+            
+            return backingCell.revealed.boolValue
+        }
+        
+        set {
+            guard backingCell != nil else{
+                return
+            }
+            if newValue == true {
                 backingCell?.revealed = true
+                clearNoteValues()
                 userInteractionEnabled = false
             } else {
                 backingCell?.revealed = false
                 userInteractionEnabled = true
             }
-            refreshLabel()
         }
     }
-    
     var valueLabel = UILabel()
     var labelColor = UIColor.blackColor()
     let defaultTextColor = UIColor.blackColor()
     let chosenTextColor = UIColor.redColor()
-    var selected = false {
-        didSet {
-            if !selected {
-                noteMode = false
+    var selected:Bool  {
+        get {
+            if let controller = controller {
+                return controller.selectedTile == self
             }
-            refreshLabel()
+            
+            return false
         }
     }
-    var symbolSet: SymbolSet {
+    var symbolSet: Utils.TextConfigs.SymbolSet {
         get {
             let defaults = NSUserDefaults.standardUserDefaults()
-            let symType = defaults.integerForKey(symbolSetKey)
+            let symType = defaults.integerForKey(Utils.Identifiers.symbolSetKey)
             switch symType {
             case 0:
                 return .Standard
@@ -72,42 +99,38 @@ class Tile: SudokuItem {
         }
         
     }
+    var backgroundImageView = UIImageView()
     
     let noteLabels: [TableCell]
-    let noteModeColor = UIColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 0.3)
     var backingCell: BackingCell? {
         didSet {
+            if let bc = backingCell {
+                labelColor = UIColor.blackColor()
+                if bc.puzzleSolution != nil {
+                    userInteractionEnabled = true
+                } else if bc.puzzleInitial != nil {
+                    userInteractionEnabled = false
+                }
+            }
             refreshLabel()
         }
     }
-    let defaultBackgroundColor = UIColor.whiteColor()
-    let assignedBackgroundColor = UIColor(red: 0.0, green: 1.0, blue: 0, alpha: 0.3)
+    
     let wrongColor = UIColor(red: 1.0, green: 0.0, blue: 0, alpha: 0.3)
-    var selectedColor = UIColor(red: 0.1, green: 0.1, blue: 0.9, alpha: 0.2)
+    
     let noteBackground = UIView()
-    var noteMode = false {
-        didSet {
-            if noteMode == true {
-                if displayValue != .Nil {
-                    addNoteValue(displayValue.rawValue)
-                }
-                self.selected = true
-                
-            } else {
-                if noteValues.count > 0 {
-                    setValue(0)
-                }
-            }
-            refreshBackground()
-            controller?.refreshNoteButton()
+    var noteMode:Bool {
+        if let controller = controller as? PlayPuzzleViewController {
+            return controller.noteMode
         }
+        return false
     }
     var noteValues: [Int] {
         get {
             guard let backingCell = backingCell else {
                 return []
             }
-            return backingCell.notesArray
+            return backingCell.notesArray.sort(<)
         }
     }
     
@@ -140,12 +163,26 @@ class Tile: SudokuItem {
         
     }
     
-    convenience init (index: Int, withParent parent: UIView) {
+    convenience init (index: Int, withParent parent: SudokuItem) {
         self.init(index: index)
         self.parentSquare = parent
         // let tileIndex: TileIndex = (parent.index, self.index)
         let cells = cellsFromTiles([self])
         self.backingCell = BackingCell(cell:cells[0])
+    }
+    
+    //tiles -> cells
+    private func cellsFromTiles(tiles:[Tile]) -> [PuzzleCell] {
+        var cells: [PuzzleCell] = []
+        for tile in tiles {
+            let val = tile.displayValue.rawValue
+            let row = tile.getRowIndex()
+            let column = tile.getColumnIndex()
+            let pCell = PuzzleCell(row: row, column: column, value: val)
+            cells.append(pCell)
+        }
+        
+        return cells
     }
     
     
@@ -164,14 +201,32 @@ class Tile: SudokuItem {
     
     
     override func layoutSubviews() {
-        self.addSubview(valueLabel)
+        clipsToBounds = true
+        addSubview(backgroundImageView)
+        backgroundImageView.frame = bounds
+        backgroundImageView.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
+        backgroundImageView.backgroundColor = UIColor.clearColor()
+        
+        let size = backgroundImageView.frame.size
+        let configs = Utils.TileConfigs.self
+        
+        defaultImage = configs.backgroundImageForSize(size)
+        valueGivenImage = configs.backgroundImageForSize(size, color: UIColor.darkGrayColor(), inverted: true)
+        selectedImage = configs.backgroundImageForSize(size, color: UIColor(red: 0.1, green: 0.1, blue: 0.9, alpha: 1.0))
+        noteModeImage = configs.backgroundImageForSize(size, color: UIColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 1.0))
+        valueCorrectImage = configs.backgroundImageForSize(size, color:UIColor(red: 0.0, green: 1.0, blue: 0, alpha: 1.0))
+        
+        
+        self.layer.cornerRadius = 3.0
+        
+        backgroundImageView.addSubview(valueLabel)
         valueLabel.frame = self.bounds
         valueLabel.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         valueLabel.textAlignment = .Center
         valueLabel.font = UIFont.boldSystemFontOfSize(UIFont.labelFontSize()+2)
         
-        noteBackground.frame = self.bounds
-        addSubview(noteBackground)
+        noteBackground.frame = bounds
+        backgroundImageView.addSubview(noteBackground)
         noteBackground.backgroundColor = UIColor.clearColor()
         for label in noteLabels {
             label.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
@@ -183,53 +238,65 @@ class Tile: SudokuItem {
         refreshLabel()
     }
     
+    func addNote(note: Int) {
+        self.backingCell?.notesArray.append(note)
+    }
     
-    func setValue(value: Int) {
-        if displayValue != .Nil {
-            backingCell?.notesArray = []
-        }
-        backingCell?.assignedValue = value
-        refreshLabel()
-
+    func clearValue() {
+        backingCell?.assignedValue = 0
     }
     
     func getValueText()->String {
-        return self.displayValue != .Nil ? symbolSet.getSymbolForTyleValue(displayValue) : ""
+        return self.displayValue != .Nil ? symbolSet.getSymbolForTileValue(displayValue) : ""
     }
     
     
     func refreshLabel() {
-        if backingCell!.revealed.boolValue {
+        
+        guard let backingCell = backingCell else {
+            valueLabel.text = ""
+            refreshBackground()
+            configureNoteViews()
+            return
+        }
+        if backingCell.revealed.boolValue {
             valueLabel.textColor = chosenTextColor
             userInteractionEnabled = false
-        } else {
+        } else if backingCell.puzzleSolution != nil{
             valueLabel.textColor = labelColor
             userInteractionEnabled = true
+            
+        } else {
+            valueLabel.textColor = UIColor.whiteColor()
         }
-       
-        valueLabel.text = noteMode ? "" : getValueText()
+        
+        valueLabel.text = noteMode ? "" : self.getValueText()
         refreshBackground()
         configureNoteViews()
     }
     
-    func refreshBackground() {
+    private func refreshBackground() {
+        guard let backingCell = backingCell else {
+            backgroundImageView.image = defaultImage
+            return
+        }
+        
         if noteMode {
             if selected {
-                self.backgroundColor = noteModeColor
+                backgroundImageView.image = noteModeImage
                 for lv in noteLabels {
-                    lv.layer.borderWidth = 0.25
+                    lv.layer.borderWidth = 1
                 }
                 return
             }
         }
         
-        if displayValue != .Nil && solutionValue != nil {
-            backgroundColor = selected ? selectedColor : assignedBackgroundColor
-        } else if revealed {
-            backgroundColor = defaultBackgroundColor
+        if backingCell.puzzleInitial != nil {
+            backgroundImageView.image = valueGivenImage
         } else {
-            backgroundColor = selected ? selectedColor : defaultBackgroundColor
+            backgroundImageView.image = selected ? selectedImage : defaultImage
         }
+        
         
         for lv in noteLabels {
             lv.layer.borderWidth = 0.0
@@ -242,6 +309,11 @@ class Tile: SudokuItem {
         newNotes.removeAtIndex(index)
         backingCell!.notesArray = newNotes
         configureNoteViews()
+    }
+    
+    func clearNoteValues() {
+        backingCell?.notesArray = []
+        //configureNoteViews()
     }
     
     func addNoteValue(value: Int) {
@@ -275,7 +347,7 @@ class Tile: SudokuItem {
             
             noteLabel.frame = rect
             
-            noteLabel.layer.borderColor = selectedColor.CGColor
+            noteLabel.layer.borderColor = UIColor(red: 0.1, green: 0.1, blue: 0.9, alpha: 0.3).CGColor
             let fontHeight = noteLabel.frame.size.height * 9/10
             noteLabel.label?.font = UIFont(name: "futura", size: fontHeight)
             noteLabel.label?.textColor = UIColor.darkGrayColor()
@@ -290,10 +362,18 @@ class Tile: SudokuItem {
             if symbolSet != .Standard {
                 noteLabel.label?.text = ""
             } else {
-                noteLabel.label?.text = index < numNotes ? symbolSet.getSymbolForTyleValue(tvNoteValues[index]) : ""
+                noteLabel.label?.text = index < numNotes ? symbolSet.getSymbolForTileValue(tvNoteValues[index]) : ""
             }
             
         }
+    }
+    
+    func prepareForPuzzleSolvedAnimation() {
+        backgroundImageView.image = defaultImage
+    }
+    
+    func finishPuzzleSolvedAnimation() {
+        backgroundImageView.image = valueCorrectImage
     }
 }
 
@@ -302,10 +382,10 @@ extension Tile {
     
     var tileIndex: TileIndex {
         get {
-            guard let pSquare = parentSquare as? Box, gpSquare = pSquare.parentSquare as? SudokuBoard else {
-                return (0,0,index)
+            guard let pSquare = parentSquare as? Box else {
+                return (0,index)
             }
-            return (gpSquare.index, pSquare.index, index)
+            return (pSquare.index, index)
         }
         
     }
@@ -313,10 +393,9 @@ extension Tile {
     
     
     func indexString() -> String {
-        let board = tileIndex.Board
         let box = tileIndex.Box
         let tile = tileIndex.Tile
-        return "This tile's index is: \(board)\(box).\(tile) "
+        return "This tile's index is: \(box).\(tile) "
     }
     
     func getColumnIndex() -> Int {

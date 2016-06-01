@@ -22,15 +22,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let defaults = NSUserDefaults.standardUserDefaults()
         let number:Int = 0
         
-        if defaults.objectForKey(symbolSetKey) == nil {
-            defaults.setInteger(number, forKey: symbolSetKey)
+        if defaults.objectForKey(Utils.Identifiers.symbolSetKey) == nil {
+            defaults.setInteger(number, forKey: Utils.Identifiers.symbolSetKey)
         }
-        if defaults.objectForKey(timedKey) == nil {
-            defaults.setBool(false, forKey: timedKey)
-        }
+       
         
         // initialize the matrix so it's ready to crank out puzzles
-        dispatch_async(concurrentPuzzleQueue) {
+        dispatch_async(Utils.ConcurrentPuzzleQueue) {
             Matrix.sharedInstance
         }
 
