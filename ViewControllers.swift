@@ -28,23 +28,6 @@ class SudokuController: UIViewController, NumPadDelegate {
     var numPad: SudokuNumberPad
     var storedTime: Double = 0
     
-    
-
-    var bannerView: ADBannerView {
-        get {
-            let delegate: AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-            if let bv = delegate.banner {
-                return bv
-            }
-            
-            delegate.banner = ADBannerView(adType: .Banner)
-            delegate.banner?.delegate = delegate
-            return delegate.banner!
-        }
-        
-    }
-    var bannerPin: NSLayoutConstraint?
-    var bannerLayoutComplete = false
     var longFetchLabel = UILabel()
     let containerView = UIView(tag: 4)
     var selectedTile: Tile? {
@@ -156,37 +139,6 @@ class SudokuController: UIViewController, NumPadDelegate {
         setUpBoard()
         setUpButtons()
         
-        if self.canDisplayBannerAds  && !bannerLayoutComplete {
-            view.addSubview(bannerView)
-            
-            bannerView.translatesAutoresizingMaskIntoConstraints = false
-            
-            originalContentView.removeConstraints()
-            originalContentView.translatesAutoresizingMaskIntoConstraints = false
-            
-            
-            bannerPin = NSLayoutConstraint(item: bannerView, attribute: .Top, relatedBy: .Equal, toItem: bottomLayoutGuide, attribute: .Top, multiplier: 1, constant: 0)
-            bannerPin!.priority = 1000
-            let bannerLeft = NSLayoutConstraint(item: bannerView, attribute: .Leading, relatedBy: .Equal, toItem:view, attribute: .Leading, multiplier: 1, constant: 0)
-            let bannerRight = NSLayoutConstraint(item: bannerView, attribute: .Trailing, relatedBy: .Equal, toItem: view, attribute: .Trailing, multiplier: 1, constant: 0)
-            
-            
-            let contentBottom = NSLayoutConstraint(item: originalContentView, attribute: .Bottom, relatedBy: .Equal, toItem: bannerView, attribute: .Top, multiplier: 1, constant: 0)
-            contentBottom.priority = 1000
-            let contentLeft = NSLayoutConstraint(item: originalContentView, attribute: .Leading, relatedBy: .Equal, toItem: view, attribute: .Leading, multiplier: 1, constant: 0)
-            let contentRight = NSLayoutConstraint(item: originalContentView, attribute: .Trailing, relatedBy: .Equal, toItem: view, attribute: .Trailing, multiplier: 1, constant: 0)
-            let contentTop = NSLayoutConstraint(item: originalContentView, attribute: .Top, relatedBy: .Equal, toItem: view, attribute: .Top, multiplier: 1, constant: 0)
-            view.addConstraints([contentBottom, contentLeft, contentRight, contentTop, bannerPin!, bannerLeft, bannerRight])
-            
-            bannerLayoutComplete = true
-            
-            board.removeConstraints()
-            setUpBoard()
-            containerView.removeConstraints()
-            setUpButtons()
-            
-        }
-        
         longFetchLabel.layer.backgroundColor = UIColor.blackColor().CGColor
         longFetchLabel.textColor = UIColor.whiteColor()
         longFetchLabel.textAlignment = .Center
@@ -201,10 +153,6 @@ class SudokuController: UIViewController, NumPadDelegate {
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
         
-        if self.puzzle != nil && !canDisplayBannerAds {
-            canDisplayBannerAds = true
-            bannerView.userInteractionEnabled = true
-        }
 
         activateInterface()
         
@@ -224,14 +172,6 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     override func viewDidDisappear(animated: Bool) {
         super.viewDidDisappear(animated)
-        
-        if canDisplayBannerAds {
-            let delegate: AppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-            delegate.banner = nil
-            canDisplayBannerAds = false
-            bannerLayoutComplete = false
-            layoutAnimated(false)
-        }
        
     }
     
@@ -243,13 +183,7 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     func goToBackground() {
         deactivateInterface()
-        
-        if canDisplayBannerAds {
-            bannerView.removeFromSuperview()
-            canDisplayBannerAds = false
-            bannerLayoutComplete = false
-            layoutAnimated(false)
-        }
+      
     }
     
     
@@ -349,8 +283,6 @@ class SudokuController: UIViewController, NumPadDelegate {
     // puzzle fetching
     func fetchPuzzle() {
      
-       
-        bannerView.userInteractionEnabled = false
         board.userInteractionEnabled = false
         
         let placeHolderColor = board.tileAtIndex((0,1,1)).selectedColor
@@ -428,11 +360,6 @@ class SudokuController: UIViewController, NumPadDelegate {
     
     func puzzleReady() {
         activateInterface()
-        if !canDisplayBannerAds {
-            bannerView.userInteractionEnabled = true
-            bannerLayoutComplete = false
-            canDisplayBannerAds = true
-        }
 
         if nilTiles.count > 0 {
             selectedTile = nilTiles[0]
@@ -497,62 +424,6 @@ class SudokuController: UIViewController, NumPadDelegate {
         return false
     }
     
-    // banner view delegate
-    
-    func bannerViewDidLoadAd(banner: ADBannerView!) {
-
-        layoutAnimated(true)
-    }
-    
-    func bannerView(banner: ADBannerView!, didFailToReceiveAdWithError error: NSError!) {
-
-        layoutAnimated(true)
-    }
-    
-    
-    func layoutAnimated(animated: Bool) {
-        
-        if !canDisplayBannerAds {
-            if bannerPin?.constant != 0 {
-                view.layoutIfNeeded()
-                UIView.animateWithDuration(0.25) {
-                    self.bannerPin?.constant = 0
-                    self.view.layoutIfNeeded()
-                }
-            }
-            return
-        }
-        
-        if bannerView.bannerLoaded  {
-            if bannerPin?.constant == 0 {
-                view.layoutIfNeeded()
-                UIView.animateWithDuration(0.25) {
-                    self.bannerPin?.constant = -self.bannerView.frame.size.height
-                    self.view.layoutIfNeeded()
-                }
-            }
-        } else {
-            if bannerPin?.constant != 0 {
-                view.layoutIfNeeded()
-                UIView.animateWithDuration(0.25) {
-                    self.bannerPin?.constant = 0
-                    self.view.layoutIfNeeded()
-                }
-
-            }
-
-        }
-    }
-    
-    func bannerViewActionShouldBegin(banner: ADBannerView!, willLeaveApplication willLeave: Bool) -> Bool {
-        if banner.bannerLoaded {
-            return true
-        } else {
-            activateInterface()
-            layoutAnimated(true)
-            return false
-        }
-    }
     
     // user input handlers 
     

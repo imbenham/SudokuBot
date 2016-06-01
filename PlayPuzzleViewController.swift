@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import iAd
 
 
 class PlayPuzzleViewController: SudokuController {
@@ -57,10 +56,6 @@ class PlayPuzzleViewController: SudokuController {
         
         activateInterface()
         
-        if self.puzzle != nil && !canDisplayBannerAds {
-            bannerLayoutComplete = false
-            canDisplayBannerAds = true
-        }
     }
     
     func showButtons(sender: AnyObject) {
@@ -240,9 +235,7 @@ class PlayPuzzleViewController: SudokuController {
                 
                 let bottomPinRelation: NSLayoutRelation = tag == 4 ? .GreaterThanOrEqual : .Equal
                 
-                
                 // lay out the buttons
-                
                 
                 let bottomPin = NSLayoutConstraint(item: viewItem, attribute: .Bottom, relatedBy: bottomPinRelation, toItem: originalContentView, attribute: .Bottom, multiplier: 1, constant: bottomPinOffset)
                 bottomPin.priority = 1000
@@ -276,7 +269,6 @@ class PlayPuzzleViewController: SudokuController {
                     constraints = [containerWidth, containerHeight, bottomPin, topPin, bottomLimiter, centerX, centerY]
                     
                 }
-                
                 
                 originalContentView.addConstraints(constraints)
                 
@@ -367,8 +359,6 @@ class PlayPuzzleViewController: SudokuController {
             
             button.setTitle(buttonInfo.title, forState: .Normal)
             button.addTarget(self, action: Selector(buttonInfo.action), forControlEvents: .TouchUpInside)
-            
-            
         }
         
         
@@ -1000,23 +990,7 @@ class PlayPuzzleViewController: SudokuController {
         loop.addTimer(timer!, forMode: NSDefaultRunLoopMode)
     }
     
-    // banner delegate overrides
-    
-    override func bannerViewActionShouldBegin(banner: ADBannerView!, willLeaveApplication willLeave: Bool) -> Bool {
-        
-        let superImp = super.bannerViewActionShouldBegin(banner, willLeaveApplication: willLeave)
-        if superImp == true {
-            deactivateInterface()
-        }
-        return superImp
-    }
-    
-    
-    
-    func bannerViewActionDidFinish(banner: ADBannerView!) {
-        activateInterface()
 
-    }
     
     // activate/deactivate interface
     

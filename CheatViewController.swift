@@ -96,10 +96,8 @@ class CheatViewController: SudokuController {
             let instructionAlert = UIAlertController(title: "Welcome to the dark side.", message: message, preferredStyle: .Alert)
             let dismiss = UIAlertAction(title: "OK", style: .Cancel, handler: nil)
             instructionAlert.addAction(dismiss)
-            self.presentViewController(instructionAlert, animated: true) { () in
-                self.bannerLayoutComplete = false
-                self.canDisplayBannerAds = true
-            }
+            self.presentViewController(instructionAlert, animated: true, completion: nil)
+               
             
             
         }
@@ -159,16 +157,7 @@ class CheatViewController: SudokuController {
 
     }
     
-    override func bannerViewActionShouldBegin(banner: ADBannerView!, willLeaveApplication willLeave: Bool) -> Bool {
-        return super.bannerViewActionShouldBegin(banner, willLeaveApplication: willLeave)
-    }
-    
-    
-    
-    func bannerViewActionDidFinish(banner: ADBannerView!) {
-        activateInterface()
-        
-    }
+  
     
     override func deactivateInterface() {
         if !iPhone4 {
@@ -200,9 +189,9 @@ class CheatViewController: SudokuController {
         if !iPhone4 {
             self.clearButton!.userInteractionEnabled = true
         }
-        self.numPad.userInteractionEnabled = true
-        self.board.userInteractionEnabled = true
-        self.numPad.refresh()
+        numPad.userInteractionEnabled = true
+        board.userInteractionEnabled = true
+        numPad.refresh()
     }
 
 }
